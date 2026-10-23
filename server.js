@@ -156,7 +156,11 @@ async function listSnippets(code) {
       "SELECT id, title, content, updated_at FROM snippets WHERE vault_code = $1 ORDER BY updated_at DESC",
       [code],
     );
-    return result.rows;
+    return result.rows.map((snippet) => ({
+      ...snippet,
+      id: Number(snippet.id),
+      updated_at: Number(snippet.updated_at),
+    }));
   }
   return db.prepare(
     "SELECT id, title, content, updated_at FROM snippets WHERE vault_code = ? ORDER BY updated_at DESC",
