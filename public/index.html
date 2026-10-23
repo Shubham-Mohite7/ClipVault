@@ -88,6 +88,7 @@
   .code-row input:focus { border-color: var(--text); background: var(--bg); }
   .remember { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; color: var(--text-2); font-size: 14px; }
   .remember input { accent-color: var(--text); }
+  .enter .hint { margin-top: 10px; color: var(--text-2); font-size: 13px; }
   .error { color: #ff3b30; font-size: 14px; margin-top: 14px; min-height: 20px; }
 
   /* New code reveal */
@@ -176,6 +177,7 @@
       <input inputmode="numeric" maxlength="1" autocomplete="off" aria-label="Digit 4">
       <input inputmode="numeric" maxlength="1" autocomplete="off" aria-label="Digit 5">
     </div>
+    <div class="hint">Opens automatically when all five digits are entered.</div>
     <label class="remember"><input id="remember" type="checkbox" checked> Remember me on this device</label>
     <div class="error" id="err"></div>
   </div>
@@ -215,6 +217,7 @@
 const $ = (id) => document.getElementById(id);
 const KEY = "clipvault-code";
 let code = null, snippets = [], editingId = null;
+let codeEntryInProgress = false;
 
 function toast(msg) {
   const t = $("toast"); t.textContent = msg; t.classList.add("show");
@@ -249,6 +252,8 @@ inputs.forEach((inp, i) => {
 });
 
 async function enterCode(c) {
+  if (codeEntryInProgress) return;
+  codeEntryInProgress = true;
   $("err").textContent = "";
   try {
     const data = await api("GET", `/api/vaults/${c}/snippets`);
@@ -261,6 +266,8 @@ async function enterCode(c) {
   } catch (e) {
     $("err").textContent = e.message;
     inputs.forEach((x) => (x.value = "")); inputs[0].focus();
+  } finally {
+    codeEntryInProgress = false;
   }
 }
 
