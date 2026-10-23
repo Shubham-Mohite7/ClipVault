@@ -52,7 +52,8 @@
     border-bottom: 1px solid color-mix(in srgb, var(--line) 50%, transparent);
     font-size: 14px;
   }
-  nav .brand { font-weight: 600; }
+  nav .brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+  nav .brand img { width: 24px; height: 24px; border-radius: 6px; }
   nav button { background: none; border: 0; color: var(--text-2); cursor: pointer; font-size: 14px; }
   nav button:hover { color: var(--text); }
 
@@ -147,7 +148,7 @@
 <body>
 
 <nav>
-  <span class="brand">ClipVault</span>
+  <span class="brand"><img src="/favicon.svg" alt="">ClipVault</span>
   <button id="logout" class="hidden">Sign out</button>
 </nav>
 
