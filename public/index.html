@@ -85,6 +85,8 @@
     transition: border-color .2s, background .2s;
   }
   .code-row input:focus { border-color: var(--text); background: var(--bg); }
+  .remember { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; color: var(--text-2); font-size: 14px; }
+  .remember input { accent-color: var(--text); }
   .error { color: #ff3b30; font-size: 14px; margin-top: 14px; min-height: 20px; }
 
   /* New code reveal */
@@ -173,6 +175,7 @@
       <input inputmode="numeric" maxlength="1" autocomplete="off" aria-label="Digit 4">
       <input inputmode="numeric" maxlength="1" autocomplete="off" aria-label="Digit 5">
     </div>
+    <label class="remember"><input id="remember" type="checkbox" checked> Remember me on this device</label>
     <div class="error" id="err"></div>
   </div>
 </main>
@@ -249,7 +252,10 @@ async function enterCode(c) {
   try {
     const data = await api("GET", `/api/vaults/${c}/snippets`);
     code = c; snippets = data.snippets;
-    try { localStorage.setItem(KEY, c); } catch {}
+    try {
+      if ($("remember").checked) localStorage.setItem(KEY, c);
+      else localStorage.removeItem(KEY);
+    } catch {}
     showApp();
   } catch (e) {
     $("err").textContent = e.message;
