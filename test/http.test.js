@@ -33,6 +33,8 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /href="\/terms\.html"/);
   assert.match(homeText, /id="themeToggle"/);
   assert.match(homeText, /clipvault-theme/);
+  assert.match(homeText, /window\.vaq/);
+  assert.match(homeText, /src="\/_vercel\/insights\/script\.js"/);
   assert.match(homeText, /function renderSnippetSkeleton\(\)/);
   assert.match(homeText, /function renderFileSkeleton\(\)/);
   assert.match(homeText, /aria-label="Checking Google Drive"/);
@@ -44,6 +46,9 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(privacyText, /Privacy Policy/);
   assert.match(privacyText, /drive\.file/);
   assert.match(privacyText, /contact\.mohite@gmail\.com/);
+  assert.match(privacyText, /Website analytics/);
+  assert.match(privacyText, /vercel\.com\/docs\/analytics\/privacy-policy/);
+  assert.match(privacyText, /src="\/_vercel\/insights\/script\.js"/);
 
   const terms = await request("/terms.html");
   assert.equal(terms.status, 200);
@@ -52,6 +57,7 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(termsText, /five-digit code/);
   assert.match(termsText, /Google Drive/);
   assert.match(termsText, /contact\.mohite@gmail\.com/);
+  assert.match(termsText, /src="\/_vercel\/insights\/script\.js"/);
 
   const health = await request("/healthz");
   assert.equal(health.status, 200);
