@@ -29,6 +29,14 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.equal(home.status, 200);
   const homeText = await home.text();
   assert.match(homeText, /ClipVault/);
+  assert.match(homeText, /<title>ClipVault — Free Online Clipboard/);
+  assert.match(homeText, /name="description"/);
+  assert.match(homeText, /rel="canonical" href="https:\/\/www\.clipvault\.lol\/"/);
+  assert.match(homeText, /property="og:title"/);
+  assert.match(homeText, /A simple online clipboard for your snippets/);
+  const structuredData = homeText.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+  assert.ok(structuredData, "homepage should include WebApplication structured data");
+  assert.equal(JSON.parse(structuredData[1])["@type"], "WebApplication");
   assert.match(homeText, /href="\/privacy\.html"/);
   assert.match(homeText, /href="\/terms\.html"/);
   assert.match(homeText, /id="themeToggle"/);
@@ -44,6 +52,7 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.equal(privacy.status, 200);
   const privacyText = await privacy.text();
   assert.match(privacyText, /Privacy Policy/);
+  assert.match(privacyText, /rel="canonical" href="https:\/\/www\.clipvault\.lol\/privacy\.html"/);
   assert.match(privacyText, /drive\.file/);
   assert.match(privacyText, /contact\.mohite@gmail\.com/);
   assert.match(privacyText, /Website analytics/);
@@ -54,10 +63,24 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.equal(terms.status, 200);
   const termsText = await terms.text();
   assert.match(termsText, /Terms of Service/);
+  assert.match(termsText, /rel="canonical" href="https:\/\/www\.clipvault\.lol\/terms\.html"/);
   assert.match(termsText, /five-digit code/);
   assert.match(termsText, /Google Drive/);
   assert.match(termsText, /contact\.mohite@gmail\.com/);
   assert.match(termsText, /src="\/_vercel\/insights\/script\.js"/);
+
+  const robots = await request("/robots.txt");
+  assert.equal(robots.status, 200);
+  const robotsText = await robots.text();
+  assert.match(robotsText, /Disallow: \/api\//);
+  assert.match(robotsText, /Sitemap: https:\/\/www\.clipvault\.lol\/sitemap\.xml/);
+
+  const sitemap = await request("/sitemap.xml");
+  assert.equal(sitemap.status, 200);
+  const sitemapText = await sitemap.text();
+  assert.match(sitemapText, /https:\/\/www\.clipvault\.lol\//);
+  assert.match(sitemapText, /https:\/\/www\.clipvault\.lol\/privacy\.html/);
+  assert.match(sitemapText, /https:\/\/www\.clipvault\.lol\/terms\.html/);
 
   const health = await request("/healthz");
   assert.equal(health.status, 200);

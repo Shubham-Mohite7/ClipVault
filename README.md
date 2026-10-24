@@ -81,6 +81,8 @@ To collect page views, enable **Web Analytics** in the Vercel project dashboard 
 
 The public privacy policy and Terms of Service are served at `/privacy.html` and `/terms.html`, and linked from the homepage. For Google OAuth branding, configure the production homepage, privacy-policy, and terms URLs on your verified custom domain.
 
+The public pages include canonical URLs for `https://www.clipvault.lol`, social sharing metadata, WebApplication structured data on the homepage, and a sitemap at `/sitemap.xml`. After deployment, add the sitemap in Google Search Console and request indexing for the homepage. A sitemap and metadata help search engines understand the site but do not guarantee rankings or indexing.
+
 ## Google Drive files
 
 Users can connect their own Google Drive and attach images or PDFs to a vault. ClipVault requests only the `drive.file` and `email` scopes, creates a `ClipVault` folder, and uploads files there. Refresh tokens are encrypted at rest with AES-256-GCM; access tokens are kept only in a short-lived per-instance memory cache. The app can access only files created by ClipVault through the granted `drive.file` scope. Disconnecting revokes access when possible and removes the app's file references; it does not delete the user's Drive files.

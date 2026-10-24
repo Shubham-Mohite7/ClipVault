@@ -3,9 +3,36 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ClipVault</title>
+<title>ClipVault — Free Online Clipboard &amp; Text Snippet Vault</title>
+<meta name="description" content="Save text snippets in a free online clipboard. Open your vault on any device with a simple 5-digit code — no account required.">
+<link rel="canonical" href="https://www.clipvault.lol/">
+<meta name="robots" content="index,follow">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ClipVault">
+<meta property="og:title" content="ClipVault — Free Online Clipboard">
+<meta property="og:description" content="Save text snippets in a free online clipboard and open them on any device with a 5-digit code. No account required.">
+<meta property="og:url" content="https://www.clipvault.lol/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="ClipVault — Free Online Clipboard">
+<meta name="twitter:description" content="Save text snippets and open them on any device with a 5-digit code. No account required.">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <meta name="theme-color" content="#000000">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "ClipVault",
+  "url": "https://www.clipvault.lol/",
+  "description": "A free online clipboard for saving text snippets and opening them on any device with a 5-digit code.",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "Any",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  }
+}
+</script>
 <script>
   window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
 </script>
@@ -114,6 +141,13 @@ try {
   .hero .hero-note { margin-top: 18px; font-size: 14px; }
   .hero-note a { color: var(--text); text-underline-offset: 3px; }
   .hero .actions { margin-top: 36px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .about { max-width: 920px; margin: 64px auto 0; padding: 0 28px 72px; }
+  .about h2 { text-align: center; font-size: clamp(26px, 4vw, 34px); letter-spacing: -.03em; }
+  .about > p { max-width: 680px; margin: 14px auto 0; color: var(--text-2); text-align: center; line-height: 1.6; }
+  .about-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 28px; }
+  .about-grid article { padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); }
+  .about-grid h3 { font-size: 16px; font-weight: 600; }
+  .about-grid p { margin-top: 8px; color: var(--text-2); font-size: 14px; line-height: 1.55; }
   .enter { margin: 34px auto 0; max-width: 400px; padding: 0 22px; text-align: center; animation: rise-in 500ms 60ms ease-out both; }
   .enter .label { font-size: 14px; color: var(--text-2); margin-bottom: 14px; }
   .code-row { display: flex; gap: 10px; justify-content: center; }
@@ -239,6 +273,8 @@ try {
     .hero { padding: 72px 20px 36px; }
     .hero h1 { font-size: clamp(40px, 12vw, 58px); }
     .hero p { font-size: 17px; }
+    .about { margin-top: 48px; padding: 0 20px 56px; }
+    .about-grid { grid-template-columns: 1fr; gap: 10px; margin-top: 22px; }
     .hero .actions { margin-top: 28px; }
     .enter { margin-top: 28px; }
     .wrap { padding: 32px 18px max(56px, env(safe-area-inset-bottom)); }
@@ -280,7 +316,7 @@ try {
 <main id="landing">
   <section class="hero">
     <h1>Your clipboard<br>Anywhere.</h1>
-    <p>Save the text you paste again and again. Open it on any device with just five digits. No account needed.</p>
+    <p>Save text snippets in a free online clipboard and open them on any device with a simple five-digit code. No account needed.</p>
     <p class="hero-note">Optionally connect Google Drive to attach images and PDFs. ClipVault only accesses files created with this app. <a href="/privacy.html">Learn how your data is handled</a>.</p>
     <div class="actions"><button class="btn" id="create">Get my code</button></div>
   </section>
@@ -304,6 +340,25 @@ try {
     <label class="remember"><input id="remember" type="checkbox" checked> Remember me on this device</label>
     <div class="error" id="err" aria-live="polite"></div>
   </div>
+
+  <section class="about" aria-labelledby="about-title">
+    <h2 id="about-title">A simple online clipboard for your snippets</h2>
+    <p>ClipVault makes it easy to move text between your devices. Create a vault, save notes or text you reuse, then open it anywhere with its five-digit code. There is no account to create and nothing to install.</p>
+    <div class="about-grid">
+      <article>
+        <h3>Save and reuse text</h3>
+        <p>Keep useful snippets together, search them when you need them, and copy a snippet to your clipboard with one tap.</p>
+      </article>
+      <article>
+        <h3>Open it on another device</h3>
+        <p>Enter the same vault code on a phone, tablet, or computer to access the text saved in that vault.</p>
+      </article>
+      <article>
+        <h3>No account required</h3>
+        <p>Your code is the way into your vault. Anyone who has it can view its contents, so avoid storing passwords or sensitive information.</p>
+      </article>
+    </div>
+  </section>
 </main>
 
 <!-- App -->
