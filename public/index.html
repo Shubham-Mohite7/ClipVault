@@ -161,7 +161,6 @@ try {
   .code-actions { margin-top: 12px; }
   .remember { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; color: var(--text-2); font-size: 14px; }
   .remember input { accent-color: var(--text); }
-  .remembered-hint { margin-top: 10px; color: var(--text-2); font-size: 13px; }
   .error { color: #ff3b30; font-size: 14px; margin-top: 14px; min-height: 20px; }
   .error.pending { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--text-2); }
   .error.pending::before {
@@ -349,7 +348,6 @@ try {
     </div>
     <div class="code-actions"><button id="openVault" class="btn small secondary hidden" type="button">Open vault</button></div>
     <label class="remember"><input id="remember" type="checkbox" checked> Remember me on this device</label>
-    <div id="rememberedHint" class="remembered-hint hidden">Your last used code is filled in.</div>
     <div class="error" id="err" role="status" aria-live="polite"></div>
   </div>
 
@@ -545,7 +543,6 @@ function handleCodeEntry() {
 function dismissRememberedSuggestion() {
   rememberedSuggestion = null;
   $("openVault").classList.add("hidden");
-  $("rememberedHint").classList.add("hidden");
 }
 
 $("openVault").addEventListener("click", () => {
@@ -1010,7 +1007,6 @@ async function remove(id) {
     fillCodeEntry(candidate);
     rememberedSuggestion = candidate;
     $("openVault").classList.remove("hidden");
-    $("rememberedHint").classList.remove("hidden");
   } else {
     rememberCheckbox.checked = false;
     if (savedCode) {

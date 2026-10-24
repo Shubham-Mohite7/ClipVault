@@ -87,8 +87,7 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /aria-label="Loading files"/);
   assert.match(homeText, /placeholder="A" aria-label="Code character 1"/);
   assert.match(homeText, /placeholder="0" aria-label="Code character 6"/);
-  assert.match(homeText, /id="rememberedHint"/);
-  assert.match(homeText, /Your last used code is filled in/);
+  assert.doesNotMatch(homeText, /Your last used code is filled in/);
   assert.match(homeText, /id="openVault" class="btn small secondary hidden"/);
   assert.match(homeText, /function saveRememberedCode\(value\)/);
   assert.match(homeText, /if \(value && value !== rememberedSuggestion\) enterCode\(value\)/);
