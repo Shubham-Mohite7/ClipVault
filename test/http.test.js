@@ -74,6 +74,9 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /href="\/terms\.html"/);
   assert.match(homeText, /id="themeToggle"/);
   assert.match(homeText, /clipvault-theme/);
+  assert.match(homeText, /--theme-motion: 420ms cubic-bezier\(\.22, 1, \.36, 1\)/);
+  assert.match(homeText, /\* \{ transition: color var\(--theme-motion\), background-color var\(--theme-motion\), border-color var\(--theme-motion\), box-shadow var\(--theme-motion\); \}/);
+  assert.match(homeText, /transition-duration: \.01ms !important/);
   assert.match(homeText, /window\.vaq/);
   assert.match(homeText, /src="\/_vercel\/insights\/script\.js"/);
   assert.match(homeText, /function renderSnippetSkeleton\(\)/);

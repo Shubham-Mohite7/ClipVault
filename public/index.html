@@ -60,6 +60,7 @@ try {
     --radius: 18px;
     --motion-fast: 150ms;
     --motion: 220ms;
+    --theme-motion: 420ms cubic-bezier(.22, 1, .36, 1);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme]) {
@@ -84,6 +85,7 @@ try {
     --accent-text: #000000;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  * { transition: color var(--theme-motion), background-color var(--theme-motion), border-color var(--theme-motion), box-shadow var(--theme-motion); }
   html { -webkit-text-size-adjust: 100%; }
   html:focus-within { scroll-behavior: smooth; }
   body {
@@ -96,7 +98,7 @@ try {
     letter-spacing: -0.011em;
     min-height: 100vh;
     min-height: 100svh;
-    transition: background-color var(--motion), color var(--motion);
+    transition: background-color var(--theme-motion), color var(--theme-motion);
   }
   button, input, textarea { font: inherit; color: inherit; letter-spacing: inherit; }
   button, a, input, textarea { touch-action: manipulation; }
