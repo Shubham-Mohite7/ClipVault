@@ -30,6 +30,7 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   const homeText = await home.text();
   assert.match(homeText, /ClipVault/);
   assert.match(homeText, /href="\/privacy\.html"/);
+  assert.match(homeText, /href="\/terms\.html"/);
 
   const privacy = await request("/privacy.html");
   assert.equal(privacy.status, 200);
@@ -37,6 +38,14 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(privacyText, /Privacy Policy/);
   assert.match(privacyText, /drive\.file/);
   assert.match(privacyText, /contact\.mohite@gmail\.com/);
+
+  const terms = await request("/terms.html");
+  assert.equal(terms.status, 200);
+  const termsText = await terms.text();
+  assert.match(termsText, /Terms of Service/);
+  assert.match(termsText, /five-digit code/);
+  assert.match(termsText, /Google Drive/);
+  assert.match(termsText, /contact\.mohite@gmail\.com/);
 
   const health = await request("/healthz");
   assert.equal(health.status, 200);

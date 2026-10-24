@@ -77,7 +77,7 @@ A 5-digit code is weak security, not an account password. Do not store passwords
 
 The Vercel rewrite sends API paths and `/healthz` to the Express function while `/` and other static files are served from `public/`. No region is pinned in `vercel.json`; choose one in Vercel if needed.
 
-The public privacy policy is served at `/privacy.html` and linked from the homepage. For Google OAuth branding, configure the production homepage and privacy-policy URLs on your verified custom domain.
+The public privacy policy and Terms of Service are served at `/privacy.html` and `/terms.html`, and linked from the homepage. For Google OAuth branding, configure the production homepage, privacy-policy, and terms URLs on your verified custom domain.
 
 ## Google Drive files
 
