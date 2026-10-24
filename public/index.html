@@ -164,6 +164,9 @@
     font-size: 15px; transition: all .3s cubic-bezier(.2,.8,.2,1); pointer-events: none; z-index: 100;
   }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .site-footer { padding: 24px 22px 32px; text-align: center; color: var(--text-2); font-size: 13px; }
+  .site-footer a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+  .site-footer a:hover { color: var(--text); }
 </style>
 </head>
 <body>
@@ -257,6 +260,12 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<footer class="site-footer">
+  <a href="/privacy.html">Privacy Policy</a>
+  <span aria-hidden="true"> · </span>
+  <a href="mailto:contact.mohite@gmail.com">Contact</a>
+</footer>
 
 <script>
 const $ = (id) => document.getElementById(id);

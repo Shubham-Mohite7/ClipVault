@@ -27,7 +27,16 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   const request = (url, options) => fetch(`${base}${url}`, options);
   const home = await request("/");
   assert.equal(home.status, 200);
-  assert.match(await home.text(), /ClipVault/);
+  const homeText = await home.text();
+  assert.match(homeText, /ClipVault/);
+  assert.match(homeText, /href="\/privacy\.html"/);
+
+  const privacy = await request("/privacy.html");
+  assert.equal(privacy.status, 200);
+  const privacyText = await privacy.text();
+  assert.match(privacyText, /Privacy Policy/);
+  assert.match(privacyText, /drive\.file/);
+  assert.match(privacyText, /contact\.mohite@gmail\.com/);
 
   const health = await request("/healthz");
   assert.equal(health.status, 200);

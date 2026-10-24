@@ -77,6 +77,8 @@ A 5-digit code is weak security, not an account password. Do not store passwords
 
 The Vercel rewrite sends API paths and `/healthz` to the Express function while `/` and other static files are served from `public/`. No region is pinned in `vercel.json`; choose one in Vercel if needed.
 
+The public privacy policy is served at `/privacy.html` and linked from the homepage. For Google OAuth branding, configure the production homepage and privacy-policy URLs on your verified custom domain.
+
 ## Google Drive files
 
 Users can connect their own Google Drive and attach images or PDFs to a vault. ClipVault requests only the `drive.file` and `email` scopes, creates a `ClipVault` folder, and uploads files there. Refresh tokens are encrypted at rest with AES-256-GCM; access tokens are kept only in a short-lived per-instance memory cache. The app can access only files created by ClipVault through the granted `drive.file` scope. Disconnecting revokes access when possible and removes the app's file references; it does not delete the user's Drive files.

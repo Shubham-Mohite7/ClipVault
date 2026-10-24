@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#000000">
+<meta name="description" content="ClipVault Privacy Policy explains what information ClipVault stores and how Google Drive files are handled.">
+<title>Privacy Policy — ClipVault</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #ffffff;
+    --text: #1d1d1f;
+    --muted: #6e6e73;
+    --line: #d2d2d7;
+    --card: #f5f5f7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --text: #f5f5f7;
+      --muted: #a1a1a6;
+      --line: #424245;
+      --card: #161617;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.65;
+  }
+  nav {
+    min-height: 52px;
+    padding: 0 max(22px, env(safe-area-inset-left));
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+  }
+  nav a { color: var(--text); text-decoration: none; font-weight: 600; }
+  main { max-width: 760px; margin: 0 auto; padding: 56px 22px 88px; }
+  h1 { font-size: clamp(36px, 7vw, 52px); line-height: 1.1; letter-spacing: -.035em; }
+  .updated { color: var(--muted); font-size: 14px; margin: 12px 0 32px; }
+  h2 { font-size: 21px; margin: 34px 0 8px; letter-spacing: -.02em; }
+  p, li { color: var(--muted); }
+  ul { padding-left: 22px; }
+  a { color: inherit; }
+  .contact { padding: 18px 20px; border-radius: 18px; background: var(--card); }
+  footer { border-top: 1px solid var(--line); padding: 22px; text-align: center; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<nav><a href="/">ClipVault</a></nav>
+<main>
+  <h1>Privacy Policy</h1>
+  <p class="updated">Effective date: October 24, 2026</p>
+
+  <p>ClipVault lets you save text snippets in a vault that you access with a five-digit code. You may also connect your Google Account to attach images and PDFs stored in your own Google Drive. This policy explains what ClipVault processes when you use the service.</p>
+
+  <h2>Information ClipVault stores</h2>
+  <ul>
+    <li><strong>Vault and snippet data:</strong> your five-digit vault code, snippets and their titles, and timestamps needed to provide the service.</li>
+    <li><strong>Drive file information:</strong> when you connect Drive, ClipVault stores your Google account email, the identifier of the app-created Drive folder and files, and each attached file's name, type, size, and timestamp. The file contents are stored in your Google Drive, not ClipVault's database.</li>
+    <li><strong>Google authorization:</strong> ClipVault stores an encrypted Google refresh token so it can access the files created for ClipVault after you leave the site. The token is encrypted at rest. Short-lived Google access tokens are held in server memory when needed.</li>
+    <li><strong>Technical information:</strong> ClipVault processes your IP address for abuse prevention and rate limiting. Rate-limit counters are temporary. Your browser may store your vault code locally when you select “Remember me on this device.”</li>
+  </ul>
+
+  <h2>How Google data is used</h2>
+  <p>ClipVault requests the Google Drive <code>drive.file</code> scope and permission to see your email address. Drive access is used only to create a ClipVault folder, upload, list, display, download, and move to trash the files you attach through ClipVault, and to show which Google account is connected. ClipVault does not request general access to your entire Drive, sell Google user data, or use it for advertising.</p>
+  <p>Google handles sign-in and provides Google Drive. Use of Google services is also subject to Google's own terms and privacy policy. ClipVault's hosting and database providers process data on the service's behalf.</p>
+
+  <h2>Sharing and security</h2>
+  <p>ClipVault does not sell your personal information. Snippets and attached file references are provided to people who enter the corresponding vault code. Anyone who knows the five-digit code can access that vault, so do not store sensitive information there. Drive file contents remain in your Google Drive and are accessed by ClipVault through Google's API.</p>
+  <p>ClipVault uses access controls, rate limits, HTTPS in production, and encryption for stored Google refresh tokens. No method of storage or transmission can be guaranteed completely secure.</p>
+
+  <h2>Retention and deletion</h2>
+  <p>You can delete individual snippets and attachments from a vault. Deleting an attachment in ClipVault moves that file to the trash in your Google Drive. Disconnecting Google Drive asks Google to revoke the token, removes ClipVault's stored token and file references, and leaves the files in your Drive.</p>
+  <p>Vaults that have not been used for one year are purged from ClipVault. This removes the vault, its snippets, stored Drive token, and file references from the app database. It does not delete files from your Google Drive. Temporary rate-limit records are also periodically removed.</p>
+  <p>You can clear a remembered vault code by signing out in the app or clearing this site's local storage in your browser.</p>
+
+  <h2>Changes and contact</h2>
+  <p>This policy may be updated as ClipVault changes. The current version will be published on this page with its effective date.</p>
+  <p class="contact">Questions about privacy? Contact <a href="mailto:contact.mohite@gmail.com">contact.mohite@gmail.com</a>.</p>
+</main>
+<footer><a href="/">Back to ClipVault</a></footer>
+</body>
+</html>
