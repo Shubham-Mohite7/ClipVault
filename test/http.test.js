@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const Database = require("better-sqlite3");
 
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "clipvault-drive-test-"));
 process.env.DB_PATH = path.join(tempDir, "test.db");
@@ -12,6 +13,27 @@ delete process.env.GOOGLE_CLIENT_ID;
 delete process.env.GOOGLE_CLIENT_SECRET;
 delete process.env.GOOGLE_REDIRECT_URI;
 delete process.env.TOKEN_ENC_KEY;
+
+const legacyDb = new Database(process.env.DB_PATH);
+legacyDb.exec(`
+  CREATE TABLE vaults (
+    code TEXT PRIMARY KEY CHECK (length(code) = 5),
+    created_at INTEGER NOT NULL,
+    last_used INTEGER NOT NULL
+  );
+  CREATE TABLE snippets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    vault_code TEXT NOT NULL REFERENCES vaults(code) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
+  INSERT INTO vaults VALUES ('12345', 1, 1);
+  INSERT INTO snippets (vault_code, title, content, created_at, updated_at)
+    VALUES ('12345', 'Legacy', 'Still here', 1, 1);
+`);
+legacyDb.close();
 
 const app = require("../server");
 
@@ -67,7 +89,8 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   const termsText = await terms.text();
   assert.match(termsText, /Terms of Service/);
   assert.match(termsText, /rel="canonical" href="https:\/\/www\.clipvault\.lol\/terms\.html"/);
-  assert.match(termsText, /five-digit code/);
+  assert.match(termsText, /abc-123/);
+  assert.match(termsText, /existing five-digit codes/);
   assert.match(termsText, /Google Drive/);
   assert.match(termsText, /moves its tracked ClipVault attachments to Google Drive Trash/);
   assert.match(termsText, /contact\.mohite@gmail\.com/);
@@ -90,10 +113,16 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.equal(health.status, 200);
   assert.deepEqual(await health.json(), { ok: true });
 
+  const legacyList = await request("/api/vaults/12345/snippets");
+  assert.equal(legacyList.status, 200);
+  assert.deepEqual((await legacyList.json()).snippets.map(({ title, content }) => ({ title, content })), [
+    { title: "Legacy", content: "Still here" },
+  ]);
+
   const created = await request("/api/vaults", { method: "POST" });
   assert.equal(created.status, 201);
   const { code } = await created.json();
-  assert.match(code, /^\d{5}$/);
+  assert.match(code, /^[a-z]{3}-\d{3}$/);
   const added = await request(`/api/vaults/${code}/snippets`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -101,10 +130,11 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   });
   assert.equal(added.status, 201);
   const snippet = await added.json();
-  const list = await request(`/api/vaults/${code}/snippets`);
+  const list = await request(`/api/vaults/${code.toUpperCase()}/snippets`);
   assert.deepEqual((await list.json()).snippets.map(({ id, title, content }) => ({ id, title, content })), [
     { id: snippet.id, title: "Test", content: "Hello" },
   ]);
+  assert.equal((await request("/api/vaults/99999x/snippets")).status, 404);
 
   const driveRoutes = [
     ["GET", `/api/vaults/${code}/drive/connect`],

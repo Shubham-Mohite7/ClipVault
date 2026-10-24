@@ -24,8 +24,10 @@ test("tampered encrypted refresh token is rejected", () => {
 
 test("OAuth state accepts valid, rejects expired and tampered states", () => {
   const now = 1_800_000_000_000;
-  const state = createSignedState("01234", key, now);
-  assert.equal(verifySignedState(state, key, now).code, "01234");
+  const state = createSignedState("abc-123", key, now);
+  assert.equal(verifySignedState(state, key, now).code, "abc-123");
+  assert.equal(verifySignedState(createSignedState("01234", key, now), key, now).code, "01234");
+  assert.throws(() => createSignedState("ab-123", key, now));
   assert.throws(() => verifySignedState(state, key, now + 601_000));
   const [payload, signature] = state.split(".");
   const tamperedPayload = `${payload[0] === "a" ? "b" : "a"}${payload.slice(1)}`;

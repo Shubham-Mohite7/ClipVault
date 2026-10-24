@@ -1,7 +1,7 @@
 {
   "name": "clipvault",
   "version": "1.0.0",
-  "description": "Store ready-to-paste text behind a 5-digit code. No sign up.",
+  "description": "Store ready-to-paste text behind a memorable code. No sign up.",
   "main": "server.js",
   "engines": {
     "node": ">=18"

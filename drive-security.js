@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const { isValidVaultCode, normalizeVaultCode } = require("./vault-codes");
 
 function encryptionKey(value = process.env.TOKEN_ENC_KEY) {
   if (!/^[a-f\d]{64}$/i.test(value || "")) {
@@ -32,6 +33,9 @@ function stateSigningKey(key = encryptionKey()) {
 }
 
 function createSignedState(code, key = encryptionKey(), now = Date.now()) {
+  if (!isValidVaultCode(code) || normalizeVaultCode(code) !== code) {
+    throw new Error("Invalid vault code");
+  }
   const payload = Buffer.from(JSON.stringify({
     code,
     nonce: crypto.randomBytes(16).toString("base64url"),
@@ -55,7 +59,8 @@ function verifySignedState(state, key = encryptionKey(), now = Date.now()) {
   }
 
   const payload = JSON.parse(Buffer.from(parts[0], "base64url").toString("utf8"));
-  if (!/^\d{5}$/.test(payload.code) || typeof payload.nonce !== "string"
+  if (!isValidVaultCode(payload.code) || normalizeVaultCode(payload.code) !== payload.code
+      || typeof payload.nonce !== "string"
       || !payload.nonce || !Number.isInteger(payload.exp) || payload.exp <= Math.floor(now / 1000)) {
     throw new Error("Invalid state");
   }

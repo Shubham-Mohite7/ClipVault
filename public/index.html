@@ -4,17 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ClipVault — Free Online Clipboard &amp; Text Snippet Vault</title>
-<meta name="description" content="Save text snippets in a free online clipboard. Open your vault on any device with a simple 5-digit code — no account required.">
+<meta name="description" content="Save text snippets in a free online clipboard. Open your vault on any device with a simple code — no account required.">
 <link rel="canonical" href="https://www.clipvault.lol/">
 <meta name="robots" content="index,follow">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ClipVault">
 <meta property="og:title" content="ClipVault — Free Online Clipboard">
-<meta property="og:description" content="Save text snippets in a free online clipboard and open them on any device with a 5-digit code. No account required.">
+<meta property="og:description" content="Save text snippets in a free online clipboard and open them on any device with a simple code. No account required.">
 <meta property="og:url" content="https://www.clipvault.lol/">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="ClipVault — Free Online Clipboard">
-<meta name="twitter:description" content="Save text snippets and open them on any device with a 5-digit code. No account required.">
+<meta name="twitter:description" content="Save text snippets and open them on any device with a simple code. No account required.">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <meta name="theme-color" content="#000000">
 <script type="application/ld+json">
@@ -23,7 +23,7 @@
   "@type": "WebApplication",
   "name": "ClipVault",
   "url": "https://www.clipvault.lol/",
-  "description": "A free online clipboard for saving text snippets and opening them on any device with a 5-digit code.",
+  "description": "A free online clipboard for saving text snippets and opening them on any device with a simple code.",
   "applicationCategory": "UtilitiesApplication",
   "operatingSystem": "Any",
   "offers": {
@@ -152,7 +152,7 @@ try {
   .enter .label { font-size: 14px; color: var(--text-2); margin-bottom: 14px; }
   .code-row { display: flex; gap: 10px; justify-content: center; }
   .code-row input {
-    width: clamp(44px, 13vw, 56px); height: clamp(54px, 16vw, 66px); text-align: center; font-size: 28px; font-weight: 600;
+    width: min(100%, 300px); height: 58px; text-align: center; font-size: 24px; font-weight: 600; letter-spacing: .12em;
     background: var(--bg-2); border: 1.5px solid transparent; border-radius: 14px; outline: none;
     transition: border-color var(--motion-fast), background var(--motion-fast), transform var(--motion-fast);
   }
@@ -289,8 +289,7 @@ try {
     .drop-area { padding: 22px 14px; }
   }
   @media (max-width: 360px) {
-    .code-row { gap: 7px; }
-    .code-row input { width: clamp(40px, 12vw, 48px); height: 54px; }
+    .code-row input { height: 54px; }
     .wrap { padding-inline: 14px; }
     .file-grid { grid-template-columns: 1fr; }
     .head > .btn { min-width: 0; padding-inline: 16px; }
@@ -317,14 +316,14 @@ try {
 <main id="landing">
   <section class="hero">
     <h1>Your clipboard<br>Anywhere.</h1>
-    <p>Save text snippets in a free online clipboard and open them on any device with a simple five-digit code. No account needed.</p>
+    <p>Save text snippets in a free online clipboard and open them on any device with a memorable code. No account needed.</p>
     <p class="hero-note">Optionally connect Google Drive to attach images and PDFs. ClipVault only accesses files created with this app. <a href="/privacy.html">Learn how your data is handled</a>.</p>
     <div class="actions"><button class="btn" id="create">Get my code</button></div>
   </section>
 
   <div id="reveal" class="reveal hidden">
     <div style="font-size:15px;color:var(--text-2)">Your code</div>
-    <div class="big" id="newCode">00000</div>
+    <div class="big" id="newCode">abc-123</div>
     <p>Remember this. It's the only way back in, and there's no reset. Anyone with this code can see your text, so don't store passwords here.</p>
     <button class="btn" id="goVault">Open my vault</button>
   </div>
@@ -332,11 +331,7 @@ try {
   <div class="enter">
     <div class="label">Already have a code?</div>
     <div class="code-row" id="codeRow">
-      <input inputmode="numeric" maxlength="1" autocomplete="off" aria-label="Digit 1">
-      <input inputmode="numeric" maxlength="1" autocomplete="off" aria-label="Digit 2">
-      <input inputmode="numeric" maxlength="1" autocomplete="off" aria-label="Digit 3">
-      <input inputmode="numeric" maxlength="1" autocomplete="off" aria-label="Digit 4">
-      <input inputmode="numeric" maxlength="1" autocomplete="off" aria-label="Digit 5">
+      <input type="text" inputmode="text" maxlength="7" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="abc-123" aria-label="Vault code">
     </div>
     <label class="remember"><input id="remember" type="checkbox" checked> Remember me on this device</label>
     <div class="error" id="err" aria-live="polite"></div>
@@ -344,7 +339,7 @@ try {
 
   <section class="about" aria-labelledby="about-title">
     <h2 id="about-title">A simple online clipboard for your snippets</h2>
-    <p>ClipVault makes it easy to move text between your devices. Create a vault, save notes or text you reuse, then open it anywhere with its five-digit code. There is no account to create and nothing to install.</p>
+    <p>ClipVault makes it easy to move text between your devices. Create a vault, save notes or text you reuse, then open it anywhere with its memorable code. There is no account to create and nothing to install.</p>
     <div class="about-grid">
       <article>
         <h3>Save and reuse text</h3>
@@ -486,20 +481,26 @@ async function api(method, url, body) {
 }
 
 /* ---------- Landing ---------- */
-const inputs = [...document.querySelectorAll("#codeRow input")];
-inputs.forEach((inp, i) => {
-  inp.addEventListener("input", () => {
-    inp.value = inp.value.replace(/\D/g, "").slice(-1);
-    if (inp.value && i < 4) inputs[i + 1].focus();
-    if (inputs.every((x) => x.value)) enterCode(inputs.map((x) => x.value).join(""));
-  });
-  inp.addEventListener("keydown", (e) => {
-    if (e.key === "Backspace" && !inp.value && i > 0) inputs[i - 1].focus();
-  });
-  inp.addEventListener("paste", (e) => {
-    const digits = (e.clipboardData.getData("text") || "").replace(/\D/g, "").slice(0, 5);
-    if (digits.length === 5) { e.preventDefault(); digits.split("").forEach((d, j) => (inputs[j].value = d)); enterCode(digits); }
-  });
+const codeInput = $("codeRow").querySelector("input");
+function formatCodeEntry(value) {
+  const compact = value.trim().replace(/-/g, "").toLowerCase();
+  if (/^\d{0,5}$/.test(compact)) return compact;
+  if (/^[a-z]{0,3}\d{0,3}$/.test(compact)) {
+    const letters = compact.slice(0, 3);
+    const digits = compact.slice(3);
+    return digits ? `${letters}-${digits}` : letters;
+  }
+  return value.slice(0, 7).toLowerCase();
+}
+
+codeInput.addEventListener("input", () => {
+  codeInput.value = formatCodeEntry(codeInput.value);
+  if (/^(?:\d{5}|[a-z]{3}-\d{3})$/.test(codeInput.value)) enterCode(codeInput.value);
+});
+codeInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && /^(?:\d{5}|[a-z]{3}-\d{3})$/.test(codeInput.value)) {
+    enterCode(codeInput.value);
+  }
 });
 
 async function enterCode(c) {
@@ -507,7 +508,7 @@ async function enterCode(c) {
   codeEntryInProgress = true;
   $("err").classList.add("pending");
   $("err").textContent = "Opening your vault…";
-  inputs.forEach((input) => { input.disabled = true; });
+  codeInput.disabled = true;
   let entryFailed = false;
   code = c;
   showApp(true);
@@ -526,10 +527,10 @@ async function enterCode(c) {
     $("landing").classList.remove("hidden");
     $("err").classList.remove("pending");
     $("err").textContent = e.message;
-    inputs.forEach((x) => (x.value = ""));
+    codeInput.value = "";
   } finally {
-    inputs.forEach((input) => { input.disabled = false; });
-    if (entryFailed) inputs[0].focus();
+    codeInput.disabled = false;
+    if (entryFailed) codeInput.focus();
     codeEntryInProgress = false;
   }
 }

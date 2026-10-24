@@ -10,6 +10,7 @@ const {
   verifySignedState,
 } = require("./drive-security");
 const { ALLOWED_MIME_TYPES, trashTrackedFiles, validateUpload } = require("./drive-files");
+const { createVaultCode, isValidVaultCode, normalizeVaultCode } = require("./vault-codes");
 
 const PORT = process.env.PORT || 3000;
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, "clipvault.db");
@@ -51,7 +52,12 @@ if (databaseMode === "postgres") {
   db.pragma("foreign_keys = ON");
   db.exec(`
     CREATE TABLE IF NOT EXISTS vaults (
-      code        TEXT PRIMARY KEY CHECK (length(code) = 5),
+      code        TEXT PRIMARY KEY CHECK (
+        (length(code) = 5 AND code NOT GLOB '*[^0-9]*')
+        OR (length(code) = 7 AND substr(code, 4, 1) = '-'
+            AND substr(code, 1, 3) NOT GLOB '*[^a-z]*'
+            AND substr(code, 5, 3) NOT GLOB '*[^0-9]*')
+      ),
       created_at  INTEGER NOT NULL,
       last_used   INTEGER NOT NULL
     );
@@ -65,6 +71,38 @@ if (databaseMode === "postgres") {
     );
     CREATE INDEX IF NOT EXISTS idx_snippets_vault ON snippets(vault_code);
   `);
+  const vaultSchema = db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'vaults'").get().sql;
+  if (!vaultSchema.includes("GLOB")) {
+    db.pragma("foreign_keys = OFF");
+    try {
+      db.exec(`
+        BEGIN;
+        CREATE TABLE vaults_new (
+          code TEXT PRIMARY KEY CHECK (
+            (length(code) = 5 AND code NOT GLOB '*[^0-9]*')
+            OR (length(code) = 7 AND substr(code, 4, 1) = '-'
+                AND substr(code, 1, 3) NOT GLOB '*[^a-z]*'
+                AND substr(code, 5, 3) NOT GLOB '*[^0-9]*')
+          ),
+          created_at INTEGER NOT NULL,
+          last_used INTEGER NOT NULL
+        );
+        INSERT INTO vaults_new (code, created_at, last_used)
+          SELECT code, created_at, last_used FROM vaults;
+        DROP TABLE vaults;
+        ALTER TABLE vaults_new RENAME TO vaults;
+        COMMIT;
+      `);
+    } catch (error) {
+      db.exec("ROLLBACK");
+      throw error;
+    } finally {
+      db.pragma("foreign_keys = ON");
+    }
+    if (db.pragma("foreign_key_check").length) {
+      throw new Error("SQLite vault-code migration left invalid references");
+    }
+  }
 }
 
 const YEAR = 365 * 24 * 3600 * 1000;
@@ -85,7 +123,7 @@ async function ensureDatabase() {
     postgresSchemaPromise = (async () => {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS vaults (
-          code CHAR(5) PRIMARY KEY CHECK (code ~ '^[0-9]{5}$'),
+          code TEXT PRIMARY KEY CHECK (code ~ '^([0-9]{5}|[a-z]{3}-[0-9]{3})$'),
           created_at BIGINT NOT NULL,
           last_used BIGINT NOT NULL
         )
@@ -93,7 +131,7 @@ async function ensureDatabase() {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS snippets (
           id BIGSERIAL PRIMARY KEY,
-          vault_code CHAR(5) NOT NULL REFERENCES vaults(code) ON DELETE CASCADE,
+          vault_code TEXT NOT NULL REFERENCES vaults(code) ON DELETE CASCADE,
           title TEXT NOT NULL,
           content TEXT NOT NULL,
           created_at BIGINT NOT NULL,
@@ -115,7 +153,7 @@ async function ensureDatabase() {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS files (
           id BIGSERIAL PRIMARY KEY,
-          vault_code CHAR(5) NOT NULL REFERENCES vaults(code) ON DELETE CASCADE,
+          vault_code TEXT NOT NULL REFERENCES vaults(code) ON DELETE CASCADE,
           drive_file_id TEXT NOT NULL,
           name TEXT NOT NULL,
           mime TEXT NOT NULL,
@@ -124,6 +162,21 @@ async function ensureDatabase() {
         )
       `);
       await pool.query("CREATE INDEX IF NOT EXISTS idx_files_vault ON files(vault_code)");
+      await pool.query("ALTER TABLE snippets DROP CONSTRAINT IF EXISTS snippets_vault_code_fkey");
+      await pool.query("ALTER TABLE files DROP CONSTRAINT IF EXISTS files_vault_code_fkey");
+      await pool.query("ALTER TABLE vaults DROP CONSTRAINT IF EXISTS vaults_code_check");
+      await pool.query("ALTER TABLE vaults ALTER COLUMN code TYPE TEXT USING rtrim(code)");
+      await pool.query("ALTER TABLE snippets ALTER COLUMN vault_code TYPE TEXT USING rtrim(vault_code)");
+      await pool.query("ALTER TABLE files ALTER COLUMN vault_code TYPE TEXT USING rtrim(vault_code)");
+      await pool.query(
+        "ALTER TABLE vaults ADD CONSTRAINT vaults_code_check CHECK (code ~ '^([0-9]{5}|[a-z]{3}-[0-9]{3})$')",
+      );
+      await pool.query(
+        "ALTER TABLE snippets ADD CONSTRAINT snippets_vault_code_fkey FOREIGN KEY (vault_code) REFERENCES vaults(code) ON DELETE CASCADE",
+      );
+      await pool.query(
+        "ALTER TABLE files ADD CONSTRAINT files_vault_code_fkey FOREIGN KEY (vault_code) REFERENCES vaults(code) ON DELETE CASCADE",
+      );
       await pool.query("ALTER TABLE vaults ENABLE ROW LEVEL SECURITY");
       await pool.query("ALTER TABLE snippets ENABLE ROW LEVEL SECURITY");
       await pool.query("ALTER TABLE rate_limits ENABLE ROW LEVEL SECURITY");
@@ -136,7 +189,7 @@ async function ensureDatabase() {
 async function createVault() {
   await ensureDatabase();
   for (let attempt = 0; attempt < 50; attempt++) {
-    const code = String(crypto.randomInt(0, 100000)).padStart(5, "0");
+    const code = createVaultCode();
     const now = Date.now();
     if (databaseMode === "postgres") {
       try {
@@ -515,10 +568,11 @@ const fileContentLimit = limiter({ name: "file-content", windowMs: 60 * 1000, ma
 async function requireVault(req, res, next) {
   try {
     await ensureDatabase();
-    const code = req.params.code;
-    if (!/^\d{5}$/.test(code) || !(await vaultExists(code))) {
+    const code = normalizeVaultCode(req.params.code);
+    if (!isValidVaultCode(code) || !(await vaultExists(code))) {
       return res.status(404).json({ error: "Code not found" });
     }
+    req.params.code = code;
     await touchVault(code);
     next();
   } catch (error) {
@@ -852,7 +906,7 @@ app.get("/api/cron/purge", asyncHandler(async (req, res) => {
 
 app.use((error, req, res, _next) => {
   if (res.headersSent) return;
-  if (error?.type === "entity.too.large" && /^\/api\/vaults\/\d{5}\/files$/.test(req.path)) {
+  if (error?.type === "entity.too.large" && /^\/api\/vaults\/(?:\d{5}|[a-z]{3}-\d{3})\/files$/i.test(req.path)) {
     return res.status(413).json({ error: "File exceeds 4 MB" });
   }
   res.status(500).json({ error: "Server error" });
