@@ -1,6 +1,6 @@
 # ClipVault
 
-ClipVault stores ready-to-paste text snippets behind a random code in the format `abc-123`. No account is required. Existing five-digit vault codes remain supported. Local development uses SQLite; deployments can use Supabase Postgres.
+ClipVault stores ready-to-paste text snippets behind a random code in the format `ABC-123`. No account is required. Existing five-digit vault codes remain supported. Local development uses SQLite; deployments can use Supabase Postgres.
 
 ## Run locally
 
@@ -28,7 +28,7 @@ The Postgres schema is created lazily once per server instance. SQLite creates i
 
 | Table | Columns |
 |---|---|
-| `vaults` | `code` (`abc-123` format, or a legacy five-digit code), `created_at`, `last_used` |
+| `vaults` | `code` (`ABC-123` format, or a legacy five-digit code), `created_at`, `last_used` |
 | `snippets` | `id`, `vault_code` (foreign key with cascade delete), `title`, `content`, `created_at`, `updated_at` |
 | `rate_limits` (Postgres) | `key`, `window_start`, `count` (composite primary key on `key`, `window_start`) |
 | `files` (Postgres) | `id`, `vault_code`, `drive_file_id`, `name`, `mime`, `size`, `created_at` |
@@ -39,7 +39,7 @@ Postgres enables row-level security on all tables and creates no policies. Use t
 
 | Method | Path | Purpose |
 |---|---|---|
-| `POST` | `/api/vaults` | Create a vault; returns `{ "code": "abc-123" }` |
+| `POST` | `/api/vaults` | Create a vault; returns `{ "code": "ABC-123" }` |
 | `GET` | `/api/vaults/:code/snippets` | List snippets; returns `{ "snippets": [...] }` |
 | `POST` | `/api/vaults/:code/snippets` | Add a snippet from `{ "title": "...", "content": "..." }`; returns `{ "id": ... }` |
 | `PUT` | `/api/vaults/:code/snippets/:id` | Update a snippet |
@@ -107,4 +107,4 @@ Configure `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, and
 
 Files are limited to 4 MB each and 50 per vault. Supported formats are PNG, JPEG, GIF, WebP, and PDF; file contents are checked against their signatures, and SVG is not accepted. Rate limiting allows 30 uploads per hour per IP and 60 file-content requests per minute per IP, in addition to the existing 20 code lookups per minute.
 
-The vault code is the only app-level access control: anyone who knows it can view that vault's file list and files. New codes use the `abc-123` format, while existing five-digit codes continue to work. Do not use codes for sensitive material.
+The vault code is the only app-level access control: anyone who knows it can view that vault's file list and files. New codes use the `ABC-123` format, while existing five-digit codes continue to work. Do not use codes for sensitive material.

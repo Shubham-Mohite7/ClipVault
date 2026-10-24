@@ -11,7 +11,7 @@ function isValidVaultCode(value) {
 }
 
 function createVaultCode() {
-  const letters = Array.from({ length: 3 }, () => String.fromCharCode(97 + crypto.randomInt(26))).join("");
+  const letters = Array.from({ length: 3 }, () => String.fromCharCode(65 + crypto.randomInt(26))).join("");
   const digits = String(crypto.randomInt(1000)).padStart(3, "0");
   return `${letters}-${digits}`;
 }

@@ -150,13 +150,14 @@ try {
   .about-grid p { margin-top: 8px; color: var(--text-2); font-size: 14px; line-height: 1.55; }
   .enter { margin: 34px auto 0; max-width: 400px; padding: 0 22px; text-align: center; animation: rise-in 500ms 60ms ease-out both; }
   .enter .label { font-size: 14px; color: var(--text-2); margin-bottom: 14px; }
-  .code-row { display: flex; gap: 10px; justify-content: center; }
+  .code-row { display: flex; gap: 6px; justify-content: center; align-items: center; }
   .code-row input {
-    width: min(100%, 300px); height: 58px; text-align: center; font-size: 24px; font-weight: 600; letter-spacing: .12em;
+    width: clamp(36px, 10vw, 44px); height: 54px; padding: 0; text-align: center; font-size: 22px; font-weight: 600;
     background: var(--bg-2); border: 1.5px solid transparent; border-radius: 14px; outline: none;
     transition: border-color var(--motion-fast), background var(--motion-fast), transform var(--motion-fast);
   }
   .code-row input:focus { border-color: var(--text); background: var(--bg); transform: translateY(-2px); }
+  .code-row .code-separator { margin: 0 1px; color: var(--text-2); font-size: 22px; }
   .remember { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; color: var(--text-2); font-size: 14px; }
   .remember input { accent-color: var(--text); }
   .error { color: #ff3b30; font-size: 14px; margin-top: 14px; min-height: 20px; }
@@ -323,15 +324,21 @@ try {
 
   <div id="reveal" class="reveal hidden">
     <div style="font-size:15px;color:var(--text-2)">Your code</div>
-    <div class="big" id="newCode">abc-123</div>
+    <div class="big" id="newCode">ABC-123</div>
     <p>Remember this. It's the only way back in, and there's no reset. Anyone with this code can see your text, so don't store passwords here.</p>
     <button class="btn" id="goVault">Open my vault</button>
   </div>
 
   <div class="enter">
     <div class="label">Already have a code?</div>
-    <div class="code-row" id="codeRow">
-      <input type="text" inputmode="text" maxlength="7" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="abc-123" aria-label="Vault code">
+    <div class="code-row" id="codeRow" role="group" aria-label="Vault code">
+      <input type="text" inputmode="text" maxlength="1" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="A" aria-label="Code character 1">
+      <input type="text" inputmode="text" maxlength="1" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="A" aria-label="Code character 2">
+      <input type="text" inputmode="text" maxlength="1" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="A" aria-label="Code character 3">
+      <span class="code-separator" aria-hidden="true">-</span>
+      <input type="text" inputmode="numeric" maxlength="1" autocomplete="off" placeholder="0" aria-label="Code character 4">
+      <input type="text" inputmode="numeric" maxlength="1" autocomplete="off" placeholder="0" aria-label="Code character 5">
+      <input type="text" inputmode="numeric" maxlength="1" autocomplete="off" placeholder="0" aria-label="Code character 6">
     </div>
     <label class="remember"><input id="remember" type="checkbox" checked> Remember me on this device</label>
     <div class="error" id="err" aria-live="polite"></div>
@@ -481,26 +488,54 @@ async function api(method, url, body) {
 }
 
 /* ---------- Landing ---------- */
-const codeInput = $("codeRow").querySelector("input");
-function formatCodeEntry(value) {
-  const compact = value.trim().replace(/-/g, "").toLowerCase();
-  if (/^\d{0,5}$/.test(compact)) return compact;
-  if (/^[a-z]{0,3}\d{0,3}$/.test(compact)) {
-    const letters = compact.slice(0, 3);
-    const digits = compact.slice(3);
-    return digits ? `${letters}-${digits}` : letters;
-  }
-  return value.slice(0, 7).toLowerCase();
+const codeInputs = [...$("codeRow").querySelectorAll("input")];
+function readCodeEntry() {
+  const value = codeInputs.map((input) => input.value).join("");
+  if (/^\d{5}$/.test(value)) return value;
+  if (/^[A-Z]{3}\d{3}$/.test(value)) return `${value.slice(0, 3)}-${value.slice(3)}`;
+  return "";
 }
 
-codeInput.addEventListener("input", () => {
-  codeInput.value = formatCodeEntry(codeInput.value);
-  if (/^(?:\d{5}|[a-z]{3}-\d{3})$/.test(codeInput.value)) enterCode(codeInput.value);
-});
-codeInput.addEventListener("keydown", (event) => {
-  if (event.key === "Enter" && /^(?:\d{5}|[a-z]{3}-\d{3})$/.test(codeInput.value)) {
-    enterCode(codeInput.value);
+function fillCodeEntry(value) {
+  const compact = value.trim().replace(/-/g, "").toUpperCase();
+  if (/^\d{1,5}$/.test(compact)) {
+    codeInputs.forEach((input, index) => { input.value = compact[index] || ""; });
+    return;
   }
+  if (/^[A-Z]{0,3}\d{0,3}$/.test(compact)) {
+    const code = `${compact.slice(0, 3)}${compact.slice(3)}`;
+    codeInputs.forEach((input, index) => { input.value = code[index] || ""; });
+    return;
+  }
+  codeInputs.forEach((input) => { input.value = ""; });
+}
+
+function handleCodeEntry() {
+  const value = readCodeEntry();
+  if (value) enterCode(value);
+}
+
+codeInputs.forEach((input, index) => {
+  input.addEventListener("input", () => {
+    const character = input.value.slice(-1).toUpperCase();
+    input.value = character;
+    if (character && index < codeInputs.length - 1) codeInputs[index + 1].focus();
+    handleCodeEntry();
+  });
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Backspace" && !input.value && index > 0) codeInputs[index - 1].focus();
+    if (event.key === "Enter") handleCodeEntry();
+  });
+  input.addEventListener("paste", (event) => {
+    const pasted = event.clipboardData.getData("text");
+    const compact = pasted.trim().replace(/-/g, "").toUpperCase();
+    if (!/^(?:\d{1,5}|[A-Z]{0,3}\d{0,3})$/.test(compact)) return;
+    event.preventDefault();
+    fillCodeEntry(pasted);
+    const target = Math.min(compact.length, codeInputs.length - 1);
+    codeInputs[target].focus();
+    handleCodeEntry();
+  });
 });
 
 async function enterCode(c) {
@@ -508,15 +543,15 @@ async function enterCode(c) {
   codeEntryInProgress = true;
   $("err").classList.add("pending");
   $("err").textContent = "Opening your vault…";
-  codeInput.disabled = true;
+  codeInputs.forEach((input) => { input.disabled = true; });
   let entryFailed = false;
-  code = c;
+  code = c.toUpperCase();
   showApp(true);
   try {
-    const data = await api("GET", `/api/vaults/${c}/snippets`);
+    const data = await api("GET", `/api/vaults/${code}/snippets`);
     snippets = data.snippets;
     try {
-      if ($("remember").checked) localStorage.setItem(KEY, c);
+      if ($("remember").checked) localStorage.setItem(KEY, code);
       else localStorage.removeItem(KEY);
     } catch {}
     showApp();
@@ -527,10 +562,10 @@ async function enterCode(c) {
     $("landing").classList.remove("hidden");
     $("err").classList.remove("pending");
     $("err").textContent = e.message;
-    codeInput.value = "";
+    codeInputs.forEach((input) => { input.value = ""; });
   } finally {
-    codeInput.disabled = false;
-    if (entryFailed) codeInput.focus();
+    codeInputs.forEach((input) => { input.disabled = false; });
+    if (entryFailed) codeInputs[0].focus();
     codeEntryInProgress = false;
   }
 }

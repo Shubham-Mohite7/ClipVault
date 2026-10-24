@@ -189,7 +189,7 @@ async function ensureDatabase() {
 async function createVault() {
   await ensureDatabase();
   for (let attempt = 0; attempt < 50; attempt++) {
-    const code = createVaultCode();
+    const code = normalizeVaultCode(createVaultCode());
     const now = Date.now();
     if (databaseMode === "postgres") {
       try {
@@ -197,7 +197,7 @@ async function createVault() {
           "INSERT INTO vaults (code, created_at, last_used) VALUES ($1, $2, $3)",
           [code, now, now],
         );
-        return code;
+        return code.toUpperCase();
       } catch (error) {
         if (error.code === "23505") continue;
         throw error;
@@ -206,7 +206,7 @@ async function createVault() {
     const exists = db.prepare("SELECT 1 FROM vaults WHERE code = ?").get(code);
     if (exists) continue;
     db.prepare("INSERT INTO vaults (code, created_at, last_used) VALUES (?, ?, ?)").run(code, now, now);
-    return code;
+    return code.toUpperCase();
   }
   throw new Error("No free codes");
 }

@@ -69,6 +69,9 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /function renderFileSkeleton\(\)/);
   assert.match(homeText, /aria-label="Checking Google Drive"/);
   assert.match(homeText, /aria-label="Loading files"/);
+  assert.match(homeText, /placeholder="A" aria-label="Code character 1"/);
+  assert.match(homeText, /placeholder="0" aria-label="Code character 6"/);
+  assert.match(homeText, /id="newCode">ABC-123/);
   assert.match(homeText, /move every file uploaded through this ClipVault vault to Google Drive Trash/);
 
   const privacy = await request("/privacy.html");
@@ -89,7 +92,7 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   const termsText = await terms.text();
   assert.match(termsText, /Terms of Service/);
   assert.match(termsText, /rel="canonical" href="https:\/\/www\.clipvault\.lol\/terms\.html"/);
-  assert.match(termsText, /abc-123/);
+  assert.match(termsText, /ABC-123/);
   assert.match(termsText, /existing five-digit codes/);
   assert.match(termsText, /Google Drive/);
   assert.match(termsText, /moves its tracked ClipVault attachments to Google Drive Trash/);
@@ -122,7 +125,7 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   const created = await request("/api/vaults", { method: "POST" });
   assert.equal(created.status, 201);
   const { code } = await created.json();
-  assert.match(code, /^[a-z]{3}-\d{3}$/);
+  assert.match(code, /^[A-Z]{3}-\d{3}$/);
   const added = await request(`/api/vaults/${code}/snippets`, {
     method: "POST",
     headers: { "content-type": "application/json" },
