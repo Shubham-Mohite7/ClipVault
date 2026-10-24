@@ -70,6 +70,15 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /window\.vaq/);
   assert.match(homeText, /src="\/_vercel\/insights\/script\.js"/);
   assert.match(homeText, /function renderSnippetSkeleton\(\)/);
+  assert.match(homeText, /code-check-spin/);
+  assert.match(homeText, /Checking your code/);
+  assert.match(homeText, /id="err" role="status" aria-live="polite"/);
+  const codeEntryHandler = homeText.slice(
+    homeText.indexOf("async function enterCode(c)"),
+    homeText.indexOf('$("create").onclick'),
+  );
+  assert.ok(codeEntryHandler.indexOf("await api(") < codeEntryHandler.indexOf("showApp()"));
+  assert.doesNotMatch(codeEntryHandler, /showApp\(true\)/);
   assert.match(homeText, /function renderFileSkeleton\(\)/);
   assert.match(homeText, /aria-label="Checking Google Drive"/);
   assert.match(homeText, /aria-label="Loading files"/);
