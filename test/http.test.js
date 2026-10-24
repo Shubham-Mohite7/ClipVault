@@ -51,7 +51,7 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.equal(home.status, 200);
   const homeText = await home.text();
   assert.match(homeText, /ClipVault/);
-  assert.match(homeText, /<title>ClipVault — Free Online Clipboard/);
+  assert.match(homeText, /<title>ClipVault: Free Online Clipboard/);
   assert.match(homeText, /name="description"/);
   assert.match(homeText, /rel="manifest" href="\/manifest\.webmanifest"/);
   assert.match(homeText, /apple-mobile-web-app-capable/);
@@ -61,15 +61,15 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /Add to Home Screen/);
   assert.match(homeText, /serviceWorker\.register\("\/service-worker\.js"\)/);
   assert.match(homeText, /Save text, images, and PDFs/);
-  assert.match(homeText, /no ClipVault login required/);
+  assert.match(homeText, /No account needed/);
   assert.match(homeText, /Attachments stay in Google Drive/);
-  assert.match(homeText, /Save text, images, and PDFs\. Open your vault anywhere with a code—no account needed\./);
+  assert.match(homeText, /Save text, images, and PDFs\. Open your vault anywhere with a code\. No account needed\./);
   assert.match(homeText, /Images and PDFs stay in your Google Drive/);
   assert.match(homeText, /\"description\": \"A free online clipboard for saving text snippets and attaching images and PDFs in Google Drive/);
   assert.match(homeText, /rel="canonical" href="https:\/\/www\.clipvault\.lol\/"/);
   assert.match(homeText, /property="og:title"/);
   assert.match(homeText, /A simple online clipboard for your snippets/);
-  assert.match(homeText, /Save snippets and open them on any device with your code—no account required\./);
+  assert.match(homeText, /Save snippets and open them on any device with your code\. No account required\./);
   const structuredData = homeText.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
   assert.ok(structuredData, "homepage should include WebApplication structured data");
   assert.equal(JSON.parse(structuredData[1])["@type"], "WebApplication");
