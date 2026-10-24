@@ -53,6 +53,10 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /ClipVault/);
   assert.match(homeText, /<title>ClipVault — Free Online Clipboard/);
   assert.match(homeText, /name="description"/);
+  assert.match(homeText, /Save text, images, and PDFs/);
+  assert.match(homeText, /no ClipVault login required/);
+  assert.match(homeText, /Attachments stay in Google Drive/);
+  assert.match(homeText, /\"description\": \"A free online clipboard for saving text snippets and attaching images and PDFs in Google Drive/);
   assert.match(homeText, /rel="canonical" href="https:\/\/www\.clipvault\.lol\/"/);
   assert.match(homeText, /property="og:title"/);
   assert.match(homeText, /A simple online clipboard for your snippets/);
