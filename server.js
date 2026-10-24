@@ -561,6 +561,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const createLimit = limiter({ name: "create", windowMs: 60 * 60 * 1000, max: 10 });
 const lookupLimit = limiter({ name: "lookup", windowMs: 60 * 1000, max: 20 });
+const codeCheckLimit = limiter({ name: "code-check", windowMs: 60 * 1000, max: 20 });
 const uploadLimit = limiter({ name: "upload", windowMs: 60 * 60 * 1000, max: 30 });
 // Supports lazy thumbnails for a full 50-file vault without changing the 20/min code-lookup limit.
 const fileContentLimit = limiter({ name: "file-content", windowMs: 60 * 1000, max: 60 });
@@ -598,6 +599,15 @@ app.get("/healthz", asyncHandler(async (_req, res) => {
 app.post("/api/vaults", createLimit, asyncHandler(async (_req, res) => {
   const code = await createVault();
   res.status(201).json({ code });
+}));
+
+app.get("/api/vaults/:code/check", codeCheckLimit, asyncHandler(async (req, res) => {
+  await ensureDatabase();
+  const code = normalizeVaultCode(req.params.code);
+  if (!isValidVaultCode(code) || !(await vaultExists(code))) {
+    return res.status(404).json({ error: "Code not found" });
+  }
+  res.json({ valid: true });
 }));
 
 app.get("/api/vaults/:code/snippets", lookupLimit, requireVault, asyncHandler(async (req, res) => {

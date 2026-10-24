@@ -551,8 +551,11 @@ async function enterCode(c) {
   codeInputs.forEach((input) => { input.disabled = true; });
   const candidateCode = c.toUpperCase();
   try {
-    const data = await api("GET", `/api/vaults/${candidateCode}/snippets`);
+    await api("GET", `/api/vaults/${candidateCode}/check`);
     code = candidateCode;
+    $("err").textContent = "Code found. Opening your vault…";
+    showApp(true);
+    const data = await api("GET", `/api/vaults/${candidateCode}/snippets`);
     snippets = data.snippets;
     try {
       if ($("remember").checked) localStorage.setItem(KEY, code);
@@ -562,6 +565,8 @@ async function enterCode(c) {
     showApp();
   } catch (e) {
     code = null;
+    $("app").classList.add("hidden");
+    $("landing").classList.remove("hidden");
     $("err").textContent = e.message;
   } finally {
     $("err").classList.remove("pending");

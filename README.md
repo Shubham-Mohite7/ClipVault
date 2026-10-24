@@ -40,6 +40,7 @@ Postgres enables row-level security on all tables and creates no policies. Use t
 | Method | Path | Purpose |
 |---|---|---|
 | `POST` | `/api/vaults` | Create a vault; returns `{ "code": "ABC-123" }` |
+| `GET` | `/api/vaults/:code/check` | Quickly verify a code exists before loading its snippets |
 | `GET` | `/api/vaults/:code/snippets` | List snippets; returns `{ "snippets": [...] }` |
 | `POST` | `/api/vaults/:code/snippets` | Add a snippet from `{ "title": "...", "content": "..." }`; returns `{ "id": ... }` |
 | `PUT` | `/api/vaults/:code/snippets/:id` | Update a snippet |

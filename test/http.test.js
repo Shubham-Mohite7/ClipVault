@@ -72,13 +72,16 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /function renderSnippetSkeleton\(\)/);
   assert.match(homeText, /code-check-spin/);
   assert.match(homeText, /Checking your code/);
+  assert.match(homeText, /Code found\. Opening your vault/);
   assert.match(homeText, /id="err" role="status" aria-live="polite"/);
   const codeEntryHandler = homeText.slice(
     homeText.indexOf("async function enterCode(c)"),
     homeText.indexOf('$("create").onclick'),
   );
-  assert.ok(codeEntryHandler.indexOf("await api(") < codeEntryHandler.indexOf("showApp()"));
-  assert.doesNotMatch(codeEntryHandler, /showApp\(true\)/);
+  const codeCheckIndex = codeEntryHandler.indexOf("/check");
+  const loadingIndex = codeEntryHandler.indexOf("showApp(true)");
+  const snippetsIndex = codeEntryHandler.indexOf("/snippets");
+  assert.ok(codeCheckIndex >= 0 && codeCheckIndex < loadingIndex && loadingIndex < snippetsIndex);
   assert.match(homeText, /function renderFileSkeleton\(\)/);
   assert.match(homeText, /aria-label="Checking Google Drive"/);
   assert.match(homeText, /aria-label="Loading files"/);
@@ -134,11 +137,17 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.deepEqual((await legacyList.json()).snippets.map(({ title, content }) => ({ title, content })), [
     { title: "Legacy", content: "Still here" },
   ]);
+  assert.deepEqual(await (await request("/api/vaults/12345/check")).json(), { valid: true });
 
   const created = await request("/api/vaults", { method: "POST" });
   assert.equal(created.status, 201);
   const { code } = await created.json();
   assert.match(code, /^[A-Z]{3}-\d{3}$/);
+  const validCodeCheck = await request(`/api/vaults/${code}/check`);
+  assert.equal(validCodeCheck.status, 200);
+  assert.deepEqual(await validCodeCheck.json(), { valid: true });
+  assert.equal((await request("/api/vaults/99999x/check")).status, 404);
+  assert.equal((await request("/api/vaults/abc-999/check")).status, 404);
   const added = await request(`/api/vaults/${code}/snippets`, {
     method: "POST",
     headers: { "content-type": "application/json" },
