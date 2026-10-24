@@ -445,13 +445,13 @@ try {
 <script>
 const $ = (id) => document.getElementById(id);
 const KEY = "clipvault-code";
-const DRIVE_RETURN_KEY = "clipvault-drive-return-code";
 const THEME_KEY = "clipvault-theme";
 let code = null, snippets = [], editingId = null;
 let codeEntryInProgress = false;
 let drivePanelLoaded = false, drivePanelLoading = false, fileUploadInProgress = false;
 let searchFrame = 0;
 const driveNotice = new URLSearchParams(location.search).get("drive");
+const driveReturnTicket = new URLSearchParams(location.hash.slice(1)).get("return");
 let activeTab = driveNotice === "connected" || driveNotice === "error" ? "files" : "text";
 const allowedFileTypes = new Set(["image/png", "image/jpeg", "image/gif", "image/webp", "application/pdf"]);
 const maxFileSize = 4 * 1024 * 1024;
@@ -777,11 +777,7 @@ $("connectDrive").onclick = async () => {
   button.disabled = true;
   button.textContent = "Connecting…";
   try {
-    const result = await api("GET", `/api/vaults/${code}/drive/connect`);
-    sessionStorage.setItem(DRIVE_RETURN_KEY, JSON.stringify({
-      code,
-      remember: rememberCheckbox.checked,
-    }));
+    const result = await api("GET", `/api/vaults/${code}/drive/connect?remember=${rememberCheckbox.checked}`);
     location.assign(result.url);
   } catch (e) {
     toast(e.message);
@@ -1003,23 +999,8 @@ async function remove(id) {
 }
 
 /* ---------- Restore the current vault after OAuth or suggest the saved code ---------- */
-(() => {
-  let oauthReturnCode, savedCode;
-  try {
-    oauthReturnCode = JSON.parse(sessionStorage.getItem(DRIVE_RETURN_KEY) || "null");
-    sessionStorage.removeItem(DRIVE_RETURN_KEY);
-  } catch {}
-  if (driveNotice === "connected" || driveNotice === "error") {
-    const candidate = typeof oauthReturnCode?.code === "string"
-      ? oauthReturnCode.code.trim().toUpperCase()
-      : "";
-    if (/^(?:\d{5}|[A-Z]{3}-\d{3})$/.test(candidate)) {
-      rememberCheckbox.checked = oauthReturnCode.remember === true;
-      enterCode(candidate);
-      return;
-    }
-  }
-
+function suggestRememberedCode() {
+  let savedCode;
   try { savedCode = localStorage.getItem(KEY); } catch {}
   const candidate = typeof savedCode === "string" ? savedCode.trim().toUpperCase() : "";
   if (/^(?:\d{5}|[A-Z]{3}-\d{3})$/.test(candidate)) {
@@ -1033,12 +1014,29 @@ async function remove(id) {
       try { localStorage.removeItem(KEY); } catch {}
     }
   }
-})();
+}
+
+async function restoreOAuthReturn(ticket) {
+  $("err").classList.add("pending");
+  $("err").textContent = "Returning to your vault…";
+  try {
+    const result = await api("POST", "/api/drive/restore", { ticket });
+    rememberCheckbox.checked = result.remember;
+    await enterCode(result.code);
+  } catch (error) {
+    $("err").textContent = error.message;
+    suggestRememberedCode();
+  } finally {
+    $("err").classList.remove("pending");
+  }
+}
 
 if (driveNotice === "connected" || driveNotice === "error") {
-  history.replaceState(null, "", location.pathname + location.hash);
+  history.replaceState(null, "", location.pathname);
+  if (driveReturnTicket) restoreOAuthReturn(driveReturnTicket);
+  else suggestRememberedCode();
   setTimeout(() => toast(driveNotice === "connected" ? "Google Drive connected" : "Could not connect Google Drive"), 0);
-}
+} else suggestRememberedCode();
 </script>
 </body>
 </html>

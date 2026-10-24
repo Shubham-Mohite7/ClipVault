@@ -32,12 +32,13 @@ function stateSigningKey(key = encryptionKey()) {
   return crypto.createHmac("sha256", key).update("clipvault-drive-oauth-state").digest();
 }
 
-function createSignedState(code, key = encryptionKey(), now = Date.now()) {
+function createSignedState(code, key = encryptionKey(), now = Date.now(), remember = false) {
   if (!isValidVaultCode(code) || normalizeVaultCode(code) !== code) {
     throw new Error("Invalid vault code");
   }
   const payload = Buffer.from(JSON.stringify({
     code,
+    remember: remember === true,
     nonce: crypto.randomBytes(16).toString("base64url"),
     exp: Math.floor(now / 1000) + 600,
   })).toString("base64url");
@@ -61,10 +62,11 @@ function verifySignedState(state, key = encryptionKey(), now = Date.now()) {
   const payload = JSON.parse(Buffer.from(parts[0], "base64url").toString("utf8"));
   if (!isValidVaultCode(payload.code) || normalizeVaultCode(payload.code) !== payload.code
       || typeof payload.nonce !== "string"
+      || (payload.remember !== undefined && typeof payload.remember !== "boolean")
       || !payload.nonce || !Number.isInteger(payload.exp) || payload.exp <= Math.floor(now / 1000)) {
     throw new Error("Invalid state");
   }
-  return payload;
+  return { ...payload, remember: payload.remember === true };
 }
 
 module.exports = {

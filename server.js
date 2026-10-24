@@ -11,11 +11,14 @@ const {
 } = require("./drive-security");
 const { ALLOWED_MIME_TYPES, trashTrackedFiles, validateUpload } = require("./drive-files");
 const { createVaultCode, isValidVaultCode, normalizeVaultCode } = require("./vault-codes");
+const { consumeOAuthReturnTicket, issueOAuthReturnTicket } = require("./oauth-return");
 
 const PORT = process.env.PORT || 3000;
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, "clipvault.db");
 const DATABASE_URL = process.env.DATABASE_URL;
 const databaseMode = DATABASE_URL ? "postgres" : process.env.VERCEL ? "unconfigured" : "sqlite";
+const PUBLIC_APP_URL = process.env.PUBLIC_APP_URL
+  || (process.env.VERCEL ? "https://www.clipvault.lol" : "");
 
 let db;
 let pool;
@@ -161,6 +164,15 @@ async function ensureDatabase() {
           created_at BIGINT NOT NULL
         )
       `);
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS oauth_return_tickets (
+          ticket_hash TEXT PRIMARY KEY,
+          vault_code TEXT NOT NULL REFERENCES vaults(code) ON DELETE CASCADE,
+          remember BOOLEAN NOT NULL,
+          expires_at BIGINT NOT NULL
+        )
+      `);
+      await pool.query("CREATE INDEX IF NOT EXISTS idx_oauth_return_tickets_expiry ON oauth_return_tickets(expires_at)");
       await pool.query("CREATE INDEX IF NOT EXISTS idx_files_vault ON files(vault_code)");
       await pool.query("ALTER TABLE snippets DROP CONSTRAINT IF EXISTS snippets_vault_code_fkey");
       await pool.query("ALTER TABLE files DROP CONSTRAINT IF EXISTS files_vault_code_fkey");
@@ -181,6 +193,7 @@ async function ensureDatabase() {
       await pool.query("ALTER TABLE snippets ENABLE ROW LEVEL SECURITY");
       await pool.query("ALTER TABLE rate_limits ENABLE ROW LEVEL SECURITY");
       await pool.query("ALTER TABLE files ENABLE ROW LEVEL SECURITY");
+      await pool.query("ALTER TABLE oauth_return_tickets ENABLE ROW LEVEL SECURITY");
     })();
   }
   await postgresSchemaPromise;
@@ -300,18 +313,21 @@ async function purgeOldVaults() {
   const cutoff = Date.now() - YEAR;
   let vaultsDeleted;
   let rateLimitsDeleted = 0;
+  let oauthReturnTicketsDeleted = 0;
 
   if (databaseMode === "postgres") {
     const vaults = await pool.query("DELETE FROM vaults WHERE last_used < $1", [cutoff]);
     vaultsDeleted = vaults.rowCount;
     const rateLimits = await pool.query("DELETE FROM rate_limits WHERE window_start < $1", [Date.now() - TWO_DAYS]);
     rateLimitsDeleted = rateLimits.rowCount;
+    const oauthTickets = await pool.query("DELETE FROM oauth_return_tickets WHERE expires_at < $1", [Date.now()]);
+    oauthReturnTicketsDeleted = oauthTickets.rowCount;
   } else {
     const result = db.prepare("DELETE FROM vaults WHERE last_used < ?").run(cutoff);
     vaultsDeleted = result.changes;
   }
 
-  return { vaultsDeleted, rateLimitsDeleted };
+  return { vaultsDeleted, rateLimitsDeleted, oauthReturnTicketsDeleted };
 }
 
 function driveConfiguration() {
@@ -562,6 +578,7 @@ app.use(express.static(path.join(__dirname, "public")));
 const createLimit = limiter({ name: "create", windowMs: 60 * 60 * 1000, max: 10 });
 const lookupLimit = limiter({ name: "lookup", windowMs: 60 * 1000, max: 20 });
 const codeCheckLimit = limiter({ name: "code-check", windowMs: 60 * 1000, max: 20 });
+const oauthReturnLimit = limiter({ name: "oauth-return", windowMs: 60 * 1000, max: 10 });
 const uploadLimit = limiter({ name: "upload", windowMs: 60 * 60 * 1000, max: 30 });
 // Supports lazy thumbnails for a full 50-file vault without changing the 20/min code-lookup limit.
 const fileContentLimit = limiter({ name: "file-content", windowMs: 60 * 1000, max: 60 });
@@ -643,7 +660,12 @@ app.get("/api/vaults/:code/drive/connect", requireDriveBackend, lookupLimit, req
     return res.status(409).json({ error: "Google Drive is already connected" });
   }
   const config = driveConfiguration();
-  const state = createSignedState(req.params.code, config.encryptionKey);
+  const state = createSignedState(
+    req.params.code,
+    config.encryptionKey,
+    Date.now(),
+    req.query.remember === "true",
+  );
   const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   url.search = new URLSearchParams({
     client_id: config.clientId,
@@ -657,13 +679,26 @@ app.get("/api/vaults/:code/drive/connect", requireDriveBackend, lookupLimit, req
   res.json({ url: url.toString() });
 }));
 
+app.post("/api/drive/restore", requireDriveBackend, oauthReturnLimit, asyncHandler(async (req, res) => {
+  await ensureDatabase();
+  if (typeof req.body?.ticket !== "string" || !/^[A-Za-z0-9_-]{40,}$/.test(req.body.ticket)) {
+    return res.status(400).json({ error: "Invalid Drive return ticket" });
+  }
+  const result = await consumeOAuthReturnTicket(pool, req.body?.ticket);
+  if (!result) return res.status(404).json({ error: "Drive return expired. Please open your vault again." });
+  res.json(result);
+}));
+
 app.get("/api/drive/callback", requireDriveBackend, asyncHandler(async (req, res) => {
+  let vaultCode;
+  let rememberForReturn = false;
   try {
-    if (typeof req.query.code !== "string" || typeof req.query.state !== "string" || req.query.error) {
-      throw new Error("OAuth callback failed");
-    }
+    if (typeof req.query.state !== "string") throw new Error("OAuth callback failed");
     const config = driveConfiguration();
     const state = verifySignedState(req.query.state, config.encryptionKey);
+    vaultCode = state.code;
+    rememberForReturn = state.remember === true;
+    if (typeof req.query.code !== "string" || req.query.error) throw new Error("OAuth callback failed");
     if (!(await vaultExists(state.code))) throw new Error("Vault not found");
 
     const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
@@ -707,11 +742,20 @@ app.get("/api/drive/callback", requireDriveBackend, asyncHandler(async (req, res
       [encryptRefreshToken(tokens.refresh_token, config.encryptionKey), folder.id, user.email, state.code],
     );
     accessTokenCache.delete(state.code);
-    res.redirect("/?drive=connected");
+    const ticket = await issueOAuthReturnTicket(pool, state.code, state.remember === true);
+    res.redirect(oauthReturnUrl("connected", ticket));
   } catch {
-    res.redirect("/?drive=error");
+    const ticket = vaultCode
+      ? await issueOAuthReturnTicket(pool, vaultCode, rememberForReturn)
+      : null;
+    res.redirect(oauthReturnUrl("error", ticket));
   }
 }));
+
+function oauthReturnUrl(status, ticket) {
+  const path = `/?drive=${encodeURIComponent(status)}${ticket ? `#return=${encodeURIComponent(ticket)}` : ""}`;
+  return PUBLIC_APP_URL ? new URL(path, PUBLIC_APP_URL).toString() : path;
+}
 
 app.get("/api/vaults/:code/drive/status", requireDriveBackend, lookupLimit, requireVault, asyncHandler(async (req, res) => {
   const vault = await getDriveVault(req.params.code);

@@ -88,13 +88,13 @@ The public pages include canonical URLs for `https://www.clipvault.lol`, social 
 
 Users can connect their own Google Drive and attach images or PDFs to a vault. ClipVault requests only the `drive.file` and `email` scopes, creates a `ClipVault` folder, and uploads files there. Refresh tokens are encrypted at rest with AES-256-GCM; access tokens are kept only in a short-lived per-instance memory cache. The app can access only files created by ClipVault through the granted `drive.file` scope. Disconnecting first moves all tracked ClipVault attachments to Google Drive Trash; if any move fails, the connection remains active for retry. Files elsewhere in the user's Drive are unaffected.
 
-Drive attachments require Postgres and all four environment variables below. In local development, set `GOOGLE_REDIRECT_URI=http://localhost:3000/api/drive/callback`; in production, use `https://YOUR-APP.vercel.app/api/drive/callback`. Generate a 32-byte encryption key with:
+Drive attachments require Postgres and the Google environment variables below. Set `PUBLIC_APP_URL` to the public site origin (for example, `https://www.clipvault.lol`) so Google OAuth returns to the canonical site. In local development, set `GOOGLE_REDIRECT_URI=http://localhost:3000/api/drive/callback`; in production, use the registered callback such as `https://YOUR-APP.vercel.app/api/drive/callback`. OAuth return uses a hashed, single-use Postgres ticket that expires after five minutes, so it also works when the callback and public site use different domains. Generate a 32-byte encryption key with:
 
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Configure `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, and `TOKEN_ENC_KEY` locally and in Vercel. Never commit real values. A Google client ID/secret is not a substitute for keeping `TOKEN_ENC_KEY` private.
+Configure `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `TOKEN_ENC_KEY`, and `PUBLIC_APP_URL` locally and in Vercel. Never commit real values. A Google client ID/secret is not a substitute for keeping `TOKEN_ENC_KEY` private.
 
 ### Google Cloud setup
 

@@ -7,6 +7,11 @@ const {
   verifySignedState,
 } = require("../drive-security");
 const { trashTrackedFiles, validateUpload } = require("../drive-files");
+const {
+  consumeOAuthReturnTicket,
+  hashOAuthReturnTicket,
+  issueOAuthReturnTicket,
+} = require("../oauth-return");
 
 const key = Buffer.alloc(32, 7);
 
@@ -24,15 +29,50 @@ test("tampered encrypted refresh token is rejected", () => {
 
 test("OAuth state accepts valid, rejects expired and tampered states", () => {
   const now = 1_800_000_000_000;
-  const state = createSignedState("abc-123", key, now);
+  const state = createSignedState("abc-123", key, now, true);
   assert.equal(verifySignedState(state, key, now).code, "abc-123");
-  assert.equal(verifySignedState(createSignedState("01234", key, now), key, now).code, "01234");
+  assert.equal(verifySignedState(state, key, now).remember, true);
+  assert.equal(verifySignedState(createSignedState("abc-123", key, now), key, now).remember, false);
+  const legacyState = createSignedState("01234", key, now);
+  assert.equal(verifySignedState(legacyState, key, now).code, "01234");
+  assert.equal(verifySignedState(legacyState, key, now).remember, false);
   assert.throws(() => createSignedState("ab-123", key, now));
   assert.throws(() => verifySignedState(state, key, now + 601_000));
   const [payload, signature] = state.split(".");
   const tamperedPayload = `${payload[0] === "a" ? "b" : "a"}${payload.slice(1)}`;
   const tampered = `${tamperedPayload}.${signature}`;
   assert.throws(() => verifySignedState(tampered, key, now));
+});
+
+test("OAuth return tickets are hashed, short-lived, and consumed once", async () => {
+  const tickets = new Map();
+  const pool = {
+    async query(sql, values) {
+      if (sql.startsWith("INSERT INTO oauth_return_tickets")) {
+        const [hash, code, remember, expiresAt] = values;
+        tickets.set(hash, { vault_code: code, remember, expires_at: expiresAt });
+        return { rows: [] };
+      }
+      if (sql.startsWith("DELETE FROM oauth_return_tickets")) {
+        const [hash, now] = values;
+        const ticket = tickets.get(hash);
+        if (!ticket || ticket.expires_at <= now) return { rows: [] };
+        tickets.delete(hash);
+        return { rows: [{ vault_code: ticket.vault_code, remember: ticket.remember }] };
+      }
+      throw new Error("Unexpected query");
+    },
+  };
+  const now = 1_800_000_000_000;
+  const ticket = await issueOAuthReturnTicket(pool, "abc-123", true, now);
+  assert.equal(tickets.size, 1);
+  assert.equal(tickets.has(ticket), false);
+  assert.deepEqual(await consumeOAuthReturnTicket(pool, ticket, now), { code: "abc-123", remember: true });
+  assert.equal(await consumeOAuthReturnTicket(pool, ticket, now), null);
+
+  const expired = await issueOAuthReturnTicket(pool, "abc-123", false, now);
+  assert.equal(await consumeOAuthReturnTicket(pool, expired, now + 5 * 60 * 1000), null);
+  assert.throws(() => hashOAuthReturnTicket("bad"));
 });
 
 test("upload validation rejects wrong signatures, oversized data, and SVG", () => {
