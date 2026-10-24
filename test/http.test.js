@@ -47,6 +47,7 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /function renderFileSkeleton\(\)/);
   assert.match(homeText, /aria-label="Checking Google Drive"/);
   assert.match(homeText, /aria-label="Loading files"/);
+  assert.match(homeText, /move every file uploaded through this ClipVault vault to Google Drive Trash/);
 
   const privacy = await request("/privacy.html");
   assert.equal(privacy.status, 200);
@@ -57,6 +58,8 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(privacyText, /contact\.mohite@gmail\.com/);
   assert.match(privacyText, /Website analytics/);
   assert.match(privacyText, /vercel\.com\/docs\/analytics\/privacy-policy/);
+  assert.match(privacyText, /moves all tracked ClipVault attachments/);
+  assert.match(privacyText, /connection remains active so you can retry/);
   assert.match(privacyText, /src="\/_vercel\/insights\/script\.js"/);
 
   const terms = await request("/terms.html");
@@ -66,6 +69,7 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(termsText, /rel="canonical" href="https:\/\/www\.clipvault\.lol\/terms\.html"/);
   assert.match(termsText, /five-digit code/);
   assert.match(termsText, /Google Drive/);
+  assert.match(termsText, /moves its tracked ClipVault attachments to Google Drive Trash/);
   assert.match(termsText, /contact\.mohite@gmail\.com/);
   assert.match(termsText, /src="\/_vercel\/insights\/script\.js"/);
 

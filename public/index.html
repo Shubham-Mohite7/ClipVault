@@ -714,14 +714,20 @@ $("connectDrive").onclick = async () => {
 };
 
 $("disconnectDrive").onclick = async () => {
-  if (!confirm("Disconnect Google Drive? ClipVault will forget these files and remove its access, but the files will stay in your Google Drive.")) return;
+  if (!confirm("Disconnect Google Drive? This will move every file uploaded through this ClipVault vault to Google Drive Trash before disconnecting. Files elsewhere in your Drive will not be affected. If cleanup fails, Drive will stay connected so you can retry.")) return;
+  const button = $("disconnectDrive");
+  button.disabled = true;
+  button.textContent = "Disconnecting…";
   try {
     await api("POST", `/api/vaults/${code}/drive/disconnect`);
-    toast("Drive disconnected. Files remain in your Google Drive.");
+    toast("ClipVault files moved to Google Drive Trash and Drive disconnected.");
     drivePanelLoaded = false;
     await loadDrivePanel();
   } catch (e) {
     toast(e.message);
+  } finally {
+    button.disabled = false;
+    button.textContent = "Disconnect";
   }
 };
 

@@ -6,7 +6,7 @@ const {
   encryptRefreshToken,
   verifySignedState,
 } = require("../drive-security");
-const { validateUpload } = require("../drive-files");
+const { trashTrackedFiles, validateUpload } = require("../drive-files");
 
 const key = Buffer.alloc(32, 7);
 
@@ -46,4 +46,40 @@ test("upload validation rejects wrong signatures, oversized data, and SVG", () =
     () => validateUpload("image/svg+xml", Buffer.from("<svg/>"), "image.svg"),
     { status: 400 },
   );
+});
+
+test("disconnect trashes each tracked file before removing its reference", async () => {
+  const calls = [];
+  const count = await trashTrackedFiles(
+    [
+      { id: 1, driveFileId: "drive-1" },
+      { id: 2, driveFileId: "drive-2" },
+    ],
+    async (id) => calls.push(`trash:${id}`),
+    async (id) => calls.push(`remove:${id}`),
+  );
+
+  assert.equal(count, 2);
+  assert.deepEqual(calls, ["trash:drive-1", "remove:1", "trash:drive-2", "remove:2"]);
+});
+
+test("disconnect stops when a Drive file cannot be trashed", async () => {
+  const calls = [];
+  await assert.rejects(
+    trashTrackedFiles(
+      [
+        { id: 1, driveFileId: "drive-1" },
+        { id: 2, driveFileId: "drive-2" },
+        { id: 3, driveFileId: "drive-3" },
+      ],
+      async (id) => {
+        calls.push(`trash:${id}`);
+        if (id === "drive-2") throw new Error("Google Drive error");
+      },
+      async (id) => calls.push(`remove:${id}`),
+    ),
+    /Google Drive error/,
+  );
+
+  assert.deepEqual(calls, ["trash:drive-1", "remove:1", "trash:drive-2"]);
 });

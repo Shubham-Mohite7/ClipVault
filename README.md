@@ -46,7 +46,7 @@ Postgres enables row-level security on all tables and creates no policies. Use t
 | `DELETE` | `/api/vaults/:code/snippets/:id` | Delete a snippet |
 | `GET` | `/api/vaults/:code/drive/connect` | Get the Google consent URL |
 | `GET` | `/api/vaults/:code/drive/status` | Check Drive connection |
-| `POST` | `/api/vaults/:code/drive/disconnect` | Disconnect Drive; app file references are removed but files stay in Drive |
+| `POST` | `/api/vaults/:code/drive/disconnect` | Move tracked ClipVault attachments to Google Drive Trash, then disconnect Drive |
 | `GET` | `/api/vaults/:code/files` | List attached file metadata |
 | `POST` | `/api/vaults/:code/files?name=<filename>` | Upload a raw image/PDF body |
 | `GET` | `/api/vaults/:code/files/:id/content` | View or download a file (`?download=1`) |
@@ -85,7 +85,7 @@ The public pages include canonical URLs for `https://www.clipvault.lol`, social 
 
 ## Google Drive files
 
-Users can connect their own Google Drive and attach images or PDFs to a vault. ClipVault requests only the `drive.file` and `email` scopes, creates a `ClipVault` folder, and uploads files there. Refresh tokens are encrypted at rest with AES-256-GCM; access tokens are kept only in a short-lived per-instance memory cache. The app can access only files created by ClipVault through the granted `drive.file` scope. Disconnecting revokes access when possible and removes the app's file references; it does not delete the user's Drive files.
+Users can connect their own Google Drive and attach images or PDFs to a vault. ClipVault requests only the `drive.file` and `email` scopes, creates a `ClipVault` folder, and uploads files there. Refresh tokens are encrypted at rest with AES-256-GCM; access tokens are kept only in a short-lived per-instance memory cache. The app can access only files created by ClipVault through the granted `drive.file` scope. Disconnecting first moves all tracked ClipVault attachments to Google Drive Trash; if any move fails, the connection remains active for retry. Files elsewhere in the user's Drive are unaffected.
 
 Drive attachments require Postgres and all four environment variables below. In local development, set `GOOGLE_REDIRECT_URI=http://localhost:3000/api/drive/callback`; in production, use `https://YOUR-APP.vercel.app/api/drive/callback`. Generate a 32-byte encryption key with:
 

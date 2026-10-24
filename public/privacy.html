@@ -81,7 +81,7 @@
   </ul>
 
   <h2>How Google data is used</h2>
-  <p>ClipVault requests the Google Drive <code>drive.file</code> scope and permission to see your email address. Drive access is used only to create a ClipVault folder, upload, list, display, download, and move to trash the files you attach through ClipVault, and to show which Google account is connected. ClipVault does not request general access to your entire Drive, sell Google user data, or use it for advertising.</p>
+  <p>ClipVault requests the Google Drive <code>drive.file</code> scope and permission to see your email address. Drive access is used only to create a ClipVault folder, upload, list, display, download, and move to trash the files you attach through ClipVault, and to show which Google account is connected. When you disconnect, ClipVault moves its tracked attachments to Google Drive Trash before removing its access and stored file references. Files elsewhere in your Drive are not affected. ClipVault does not request general access to your entire Drive, sell Google user data, or use it for advertising.</p>
   <p>Google handles sign-in and provides Google Drive. Use of Google services is also subject to Google's own terms and privacy policy. ClipVault's hosting and database providers process data on the service's behalf.</p>
 
   <h2>Website analytics</h2>
@@ -92,7 +92,7 @@
   <p>ClipVault uses access controls, rate limits, HTTPS in production, and encryption for stored Google refresh tokens. No method of storage or transmission can be guaranteed completely secure.</p>
 
   <h2>Retention and deletion</h2>
-  <p>You can delete individual snippets and attachments from a vault. Deleting an attachment in ClipVault moves that file to the trash in your Google Drive. Disconnecting Google Drive asks Google to revoke the token, removes ClipVault's stored token and file references, and leaves the files in your Drive.</p>
+  <p>You can delete individual snippets and attachments from a vault. Deleting an attachment in ClipVault moves that file to the trash in your Google Drive. Disconnecting Google Drive first moves all tracked ClipVault attachments for that vault to Google Drive Trash, then removes ClipVault's stored token and file references. Files outside ClipVault are not affected. If any attachment cannot be moved to Trash, the connection remains active so you can retry.</p>
   <p>Vaults that have not been used for one year are purged from ClipVault. This removes the vault, its snippets, stored Drive token, and file references from the app database. It does not delete files from your Google Drive. Temporary rate-limit records are also periodically removed.</p>
   <p>You can clear a remembered vault code by signing out in the app or clearing this site's local storage in your browser.</p>
 

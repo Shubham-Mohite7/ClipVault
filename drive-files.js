@@ -49,4 +49,19 @@ function validateUpload(mime, body, name) {
   return { mime, body, name: sanitizeFilename(name), size: body.length };
 }
 
-module.exports = { ALLOWED_MIME_TYPES, MAX_FILE_SIZE, hasValidMagicBytes, sanitizeFilename, validateUpload };
+async function trashTrackedFiles(files, trashFile, removeReference) {
+  for (const file of files) {
+    await trashFile(file.driveFileId);
+    await removeReference(file.id);
+  }
+  return files.length;
+}
+
+module.exports = {
+  ALLOWED_MIME_TYPES,
+  MAX_FILE_SIZE,
+  hasValidMagicBytes,
+  sanitizeFilename,
+  trashTrackedFiles,
+  validateUpload,
+};

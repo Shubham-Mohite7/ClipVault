@@ -9,7 +9,7 @@ const {
   encryptionKey,
   verifySignedState,
 } = require("./drive-security");
-const { ALLOWED_MIME_TYPES, validateUpload } = require("./drive-files");
+const { ALLOWED_MIME_TYPES, trashTrackedFiles, validateUpload } = require("./drive-files");
 
 const PORT = process.env.PORT || 3000;
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, "clipvault.db");
@@ -656,26 +656,59 @@ app.get("/api/vaults/:code/drive/status", requireDriveBackend, lookupLimit, requ
 }));
 
 app.post("/api/vaults/:code/drive/disconnect", requireDriveBackend, lookupLimit, requireVault, requireDriveConnection, asyncHandler(async (req, res) => {
-  try {
-    const config = driveConfiguration();
-    const refreshToken = decryptRefreshToken(req.driveVault.drive_refresh_token, config.encryptionKey);
-    await fetch("https://oauth2.googleapis.com/revoke", {
-      method: "POST",
-      headers: { "content-type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ token: refreshToken }),
-    });
-  } catch {
-    // Revocation is best-effort; local access must still be removed.
-  }
-
+  const accessToken = await getDriveAccessToken(req.params.code, req.driveVault);
+  const config = driveConfiguration();
+  const refreshToken = decryptRefreshToken(req.driveVault.drive_refresh_token, config.encryptionKey);
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    const vault = await client.query(
+      "SELECT drive_refresh_token FROM vaults WHERE code = $1 FOR UPDATE",
+      [req.params.code],
+    );
+    if (!vault.rows[0]?.drive_refresh_token) {
+      throw driveError("Google Drive is no longer connected.", 409, "DRIVE_DISCONNECTED");
+    }
+    const files = await client.query(
+      "SELECT id, drive_file_id FROM files WHERE vault_code = $1 ORDER BY created_at, id",
+      [req.params.code],
+    );
+    await trashTrackedFiles(
+      files.rows.map((file) => ({ id: Number(file.id), driveFileId: file.drive_file_id })),
+      async (driveFileId) => {
+        let response;
+        try {
+          response = await fetch(
+            `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(driveFileId)}`,
+            {
+              method: "PATCH",
+              headers: { ...driveAuthorizationHeader(accessToken), "content-type": "application/json" },
+              body: JSON.stringify({ trashed: true }),
+            },
+          );
+        } catch {
+          throw driveError(
+            "Could not move every ClipVault file to Google Drive Trash. Drive remains connected; please retry.",
+            502,
+            "GOOGLE_DRIVE_DELETE_FAILED",
+          );
+        }
+        if (!response.ok && response.status !== 404) {
+          throw driveError(
+            "Could not move every ClipVault file to Google Drive Trash. Drive remains connected; please retry.",
+            502,
+            "GOOGLE_DRIVE_DELETE_FAILED",
+          );
+        }
+      },
+      async (id) => {
+        await client.query("DELETE FROM files WHERE vault_code = $1 AND id = $2", [req.params.code, id]);
+      },
+    );
     await client.query(
       "UPDATE vaults SET drive_refresh_token = NULL, drive_folder_id = NULL, drive_email = NULL WHERE code = $1",
       [req.params.code],
     );
-    await client.query("DELETE FROM files WHERE vault_code = $1", [req.params.code]);
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");
@@ -684,6 +717,15 @@ app.post("/api/vaults/:code/drive/disconnect", requireDriveBackend, lookupLimit,
     client.release();
   }
   accessTokenCache.delete(req.params.code);
+  try {
+    await fetch("https://oauth2.googleapis.com/revoke", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ token: refreshToken }),
+    });
+  } catch {
+    // Local access and file references are already removed.
+  }
   res.json({ ok: true });
 }));
 
