@@ -247,6 +247,16 @@ try {
   .drop-area:focus, .drop-area.dragging { outline: 2px solid var(--text); outline-offset: 2px; }
   .drop-area p { color: var(--text-2); margin-bottom: 14px; }
   .upload-status { color: var(--text-2); font-size: 14px; margin: 14px 0; }
+  .upload-progress { display: grid; gap: 8px; margin: 16px 0; }
+  .upload-progress progress {
+    appearance: none; -webkit-appearance: none; width: 100%; height: 8px; overflow: hidden;
+    border: 0; border-radius: 999px; background: color-mix(in srgb, var(--text-2) 16%, transparent); color: #30d158;
+  }
+  .upload-progress progress::-webkit-progress-bar { border-radius: 999px; background: color-mix(in srgb, var(--text-2) 16%, transparent); }
+  .upload-progress progress::-webkit-progress-value { border-radius: 999px; background: linear-gradient(90deg, #28c840, #30d158); transition: width 180ms ease-out; }
+  .upload-progress progress::-moz-progress-bar { border-radius: 999px; background: linear-gradient(90deg, #28c840, #30d158); transition: width 180ms ease-out; }
+  .upload-progress-detail { display: flex; justify-content: space-between; gap: 12px; color: var(--text-2); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .upload-progress-detail span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); gap: 14px; margin-top: 22px; }
   .file-card { min-width: 0; overflow: hidden; background: var(--bg-2); border-radius: var(--radius); transition: transform var(--motion), box-shadow var(--motion), background-color var(--motion); }
   .file-preview { width: 100%; height: 160px; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--bg-2) 70%, var(--line)); object-fit: cover; }
@@ -428,6 +438,13 @@ try {
           <input id="fileInput" type="file" accept="image/png,image/jpeg,image/gif,image/webp,application/pdf" multiple hidden>
           <button class="btn secondary small" id="chooseFiles" type="button">Choose files</button>
         </div>
+        <div id="uploadProgress" class="upload-progress hidden">
+          <progress id="uploadProgressBar" max="100" value="0" aria-label="Overall upload progress"></progress>
+          <div class="upload-progress-detail" aria-hidden="true">
+            <span id="uploadProgressFile">Preparing uploads</span>
+            <span id="uploadProgressTotal">0%</span>
+          </div>
+        </div>
         <div id="uploadStatus" class="upload-status" aria-live="polite"></div>
         <div id="fileGrid" class="file-grid"></div>
       </div>
@@ -465,6 +482,7 @@ const THEME_KEY = "clipvault-theme";
 let code = null, snippets = [], editingId = null;
 let codeEntryInProgress = false;
 let drivePanelLoaded = false, drivePanelLoading = false, fileUploadInProgress = false;
+let uploadProgressTimeout = 0;
 let searchFrame = 0;
 const driveNotice = new URLSearchParams(location.search).get("drive");
 const driveReturnTicket = new URLSearchParams(location.hash.slice(1)).get("return");
@@ -869,42 +887,88 @@ async function deleteDriveFile(file) {
   }
 }
 
+function uploadFile(file, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `/api/vaults/${encodeURIComponent(code)}/files?name=${encodeURIComponent(file.name)}`);
+    xhr.setRequestHeader("Content-Type", file.type);
+    xhr.upload.onprogress = (event) => {
+      onProgress(event.loaded, event.lengthComputable ? event.total : file.size);
+    };
+    xhr.onerror = () => reject(new Error("Network error while uploading"));
+    xhr.onabort = () => reject(new Error("Upload was cancelled"));
+    xhr.onload = () => {
+      let result = {};
+      try { result = JSON.parse(xhr.responseText); } catch {}
+      if (xhr.status < 200 || xhr.status >= 300) {
+        reject(new Error(result.error || "Upload failed"));
+        return;
+      }
+      resolve(result);
+    };
+    xhr.send(file);
+  });
+}
+
 async function uploadFiles(fileList) {
   if (fileUploadInProgress) return;
+  const files = [...fileList];
+  const validFiles = files.filter((file) => {
+    if (!allowedFileTypes.has(file.type)) {
+      toast(`${file.name}: unsupported file type`);
+      return false;
+    }
+    if (file.size > maxFileSize) {
+      toast(`${file.name}: maximum file size is 4 MB`);
+      return false;
+    }
+    return true;
+  });
+  if (!validFiles.length) return;
+
   fileUploadInProgress = true;
+  clearTimeout(uploadProgressTimeout);
   $("dropArea").setAttribute("aria-busy", "true");
   $("chooseFiles").disabled = true;
-  const files = [...fileList];
+  $("uploadProgress").classList.remove("hidden");
+  $("uploadProgressBar").value = 0;
+  $("uploadProgressTotal").textContent = "0%";
+  const totalBytes = validFiles.reduce((total, file) => total + file.size, 0);
+  let transferredBytes = 0;
   let uploadedCount = 0;
   try {
-    for (const [index, file] of files.entries()) {
-      if (!allowedFileTypes.has(file.type)) {
-        toast(`${file.name}: unsupported file type`);
-        continue;
-      }
-      if (file.size > maxFileSize) {
-        toast(`${file.name}: maximum file size is 4 MB`);
-        continue;
-      }
-      $("uploadStatus").textContent = `Uploading ${index + 1} of ${files.length}: ${file.name}…`;
+    for (const [index, file] of validFiles.entries()) {
+      let fileBytesSent = 0;
+      $("uploadProgressFile").textContent = `File ${index + 1} of ${validFiles.length}: ${file.name}`;
+      $("uploadStatus").textContent = `Uploading ${index + 1} of ${validFiles.length}: ${file.name}`;
+      const updateProgress = (loaded, total) => {
+        fileBytesSent = Math.min(loaded, file.size);
+        const overallPercent = totalBytes
+          ? Math.min(100, Math.round(((transferredBytes + fileBytesSent) / totalBytes) * 100))
+          : Math.min(100, Math.round(((index + (total ? loaded / total : 0)) / validFiles.length) * 100));
+        const filePercent = total ? Math.min(100, Math.round((loaded / total) * 100)) : 0;
+        $("uploadProgressBar").value = overallPercent;
+        $("uploadProgressTotal").textContent = `${overallPercent}% total`;
+        $("uploadProgressFile").textContent =
+          `File ${index + 1} of ${validFiles.length}: ${formatFileSize(fileBytesSent)} of ${formatFileSize(file.size)} (${filePercent}%)`;
+      };
       try {
-        const response = await fetch(`/api/vaults/${encodeURIComponent(code)}/files?name=${encodeURIComponent(file.name)}`, {
-          method: "POST",
-          headers: { "Content-Type": file.type },
-          body: file,
-        });
-        const result = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(result.error || "Upload failed");
+        await uploadFile(file, updateProgress);
+        updateProgress(file.size, file.size);
         uploadedCount++;
       } catch (e) {
         toast(`${file.name}: ${e.message}`);
+      } finally {
+        transferredBytes += fileBytesSent;
       }
     }
+    $("uploadProgressBar").value = 100;
+    $("uploadProgressTotal").textContent = "100% total";
     if (uploadedCount) {
-      $("uploadStatus").textContent = `Uploaded ${uploadedCount} ${uploadedCount === 1 ? "file" : "files"}`;
+      $("uploadStatus").textContent = `Uploaded ${uploadedCount} of ${validFiles.length} ${validFiles.length === 1 ? "file" : "files"}`;
       await loadDriveFiles();
     } else {
-      $("uploadStatus").textContent = "";
+      $("uploadStatus").textContent = "No files uploaded";
     }
   } catch (e) {
     $("uploadStatus").textContent = "Could not refresh the file list";
@@ -914,6 +978,10 @@ async function uploadFiles(fileList) {
     $("dropArea").removeAttribute("aria-busy");
     $("chooseFiles").disabled = false;
     $("fileInput").value = "";
+    uploadProgressTimeout = setTimeout(() => {
+      $("uploadProgress").classList.add("hidden");
+      uploadProgressTimeout = 0;
+    }, 1800);
   }
 }
 

@@ -98,6 +98,13 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /function renderFileSkeleton\(\)/);
   assert.match(homeText, /aria-label="Checking Google Drive"/);
   assert.match(homeText, /aria-label="Loading files"/);
+  assert.match(homeText, /id="uploadProgress" class="upload-progress hidden"/);
+  assert.match(homeText, /id="uploadProgressBar" max="100" value="0" aria-label="Overall upload progress"/);
+  assert.match(homeText, /function uploadFile\(file, onProgress\)/);
+  assert.match(homeText, /xhr\.upload\.onprogress/);
+  assert.match(homeText, /formatFileSize\(fileBytesSent\)\} of \$\{formatFileSize\(file\.size\)\}/);
+  assert.match(homeText, /Overall upload progress/);
+  assert.match(homeText, /Uploaded \$\{uploadedCount\} of \$\{validFiles\.length\}/);
   assert.match(homeText, /placeholder="A" aria-label="Code character 1"/);
   assert.match(homeText, /placeholder="0" aria-label="Code character 6"/);
   assert.match(homeText, /\.reveal \{[\s\S]*?backdrop-filter: blur\(28px\) saturate\(1\.5\)/);
