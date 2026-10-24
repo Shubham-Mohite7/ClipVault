@@ -31,6 +31,8 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /ClipVault/);
   assert.match(homeText, /href="\/privacy\.html"/);
   assert.match(homeText, /href="\/terms\.html"/);
+  assert.match(homeText, /id="themeToggle"/);
+  assert.match(homeText, /clipvault-theme/);
 
   const privacy = await request("/privacy.html");
   assert.equal(privacy.status, 200);

@@ -6,8 +6,15 @@
 <title>ClipVault</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <meta name="theme-color" content="#000000">
+<script>
+try {
+  const savedTheme = localStorage.getItem("clipvault-theme");
+  if (savedTheme === "light" || savedTheme === "dark") document.documentElement.dataset.theme = savedTheme;
+} catch {}
+</script>
 <style>
   :root {
+    color-scheme: light;
     --bg: #ffffff;
     --bg-2: #f5f5f7;
     --text: #1d1d1f;
@@ -20,7 +27,8 @@
     --motion: 220ms;
   }
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme]) {
+      color-scheme: dark;
       --bg: #000000;
       --bg-2: #161617;
       --text: #f5f5f7;
@@ -30,10 +38,22 @@
       --accent-text: #000000;
     }
   }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #000000;
+    --bg-2: #161617;
+    --text: #f5f5f7;
+    --text-2: #86868b;
+    --line: #424245;
+    --accent: #f5f5f7;
+    --accent-text: #000000;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html { -webkit-text-size-adjust: 100%; }
   html:focus-within { scroll-behavior: smooth; }
   body {
+    display: flex;
+    flex-direction: column;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
     background: var(--bg);
     color: var(--text);
@@ -41,10 +61,12 @@
     letter-spacing: -0.011em;
     min-height: 100vh;
     min-height: 100svh;
+    transition: background-color var(--motion), color var(--motion);
   }
   button, input, textarea { font: inherit; color: inherit; letter-spacing: inherit; }
   button, a, input, textarea { touch-action: manipulation; }
   .hidden { display: none !important; }
+  main { flex: 1 0 auto; }
 
   /* Nav */
   nav {
@@ -55,10 +77,14 @@
     border-bottom: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
     font-size: 16px;
   }
-  nav .brand { display: inline-flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 650; letter-spacing: -.025em; }
-  nav .brand img { width: 30px; height: 30px; border-radius: 8px; }
+  nav .brand { display: inline-flex; align-items: center; gap: 6px; font-size: 18px; font-weight: 650; letter-spacing: -.025em; }
+  nav .brand img { width: 38px; height: 38px; border-radius: 10px; }
+  .nav-actions { display: inline-flex; align-items: center; gap: 8px; }
   nav button { min-height: 44px; padding: 0 10px; background: none; border: 0; border-radius: 10px; color: var(--text-2); cursor: pointer; font-size: 14px; transition: color var(--motion-fast), background var(--motion-fast); }
   nav button:hover { color: var(--text); background: var(--bg-2); }
+  nav .theme-toggle { width: 44px; display: inline-grid; place-items: center; padding: 0; }
+  .theme-toggle svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .theme-toggle svg[hidden] { display: none; }
 
   /* Buttons */
   .btn {
@@ -122,7 +148,7 @@
   }
   .card {
     background: var(--bg-2); border-radius: var(--radius); padding: 20px 22px; margin-bottom: 14px;
-    transition: transform var(--motion), box-shadow var(--motion);
+    transition: transform var(--motion), box-shadow var(--motion), background-color var(--motion);
   }
   @media (hover: hover) and (pointer: fine) {
     .card:hover, .file-card:hover { transform: translateY(-2px); box-shadow: 0 8px 26px rgba(0,0,0,.07); }
@@ -140,12 +166,12 @@
   .drive-connect p { color: var(--text-2); line-height: 1.5; margin-bottom: 22px; }
   .drive-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0 18px; }
   .drive-email { color: var(--text-2); font-size: 14px; overflow-wrap: anywhere; }
-  .drop-area { border: 1.5px dashed var(--line); border-radius: var(--radius); padding: 28px 18px; text-align: center; cursor: pointer; background: var(--bg-2); }
+  .drop-area { border: 1.5px dashed var(--line); border-radius: var(--radius); padding: 28px 18px; text-align: center; cursor: pointer; background: var(--bg-2); transition: background-color var(--motion), border-color var(--motion); }
   .drop-area:focus, .drop-area.dragging { outline: 2px solid var(--text); outline-offset: 2px; }
   .drop-area p { color: var(--text-2); margin-bottom: 14px; }
   .upload-status { color: var(--text-2); font-size: 14px; margin: 14px 0; }
   .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); gap: 14px; margin-top: 22px; }
-  .file-card { min-width: 0; overflow: hidden; background: var(--bg-2); border-radius: var(--radius); transition: transform var(--motion), box-shadow var(--motion); }
+  .file-card { min-width: 0; overflow: hidden; background: var(--bg-2); border-radius: var(--radius); transition: transform var(--motion), box-shadow var(--motion), background-color var(--motion); }
   .file-preview { width: 100%; height: 160px; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--bg-2) 70%, var(--line)); object-fit: cover; }
   .pdf-icon { color: var(--text-2); font-size: 28px; font-weight: 700; letter-spacing: .08em; }
   .file-info { padding: 14px; }
@@ -176,7 +202,7 @@
     max-width: min(92vw, 520px); font-size: 14px; text-align: center; transition: opacity var(--motion), transform var(--motion); pointer-events: none; z-index: 100;
   }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
-  .site-footer { padding: 24px 22px max(32px, env(safe-area-inset-bottom)); text-align: center; color: var(--text-2); font-size: 13px; }
+  .site-footer { margin-top: auto; padding: 24px 22px max(32px, env(safe-area-inset-bottom)); text-align: center; color: var(--text-2); font-size: 13px; }
   .site-footer a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
   .site-footer a:hover { color: var(--text); }
   @keyframes rise-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
@@ -184,7 +210,7 @@
   @media (max-width: 600px) {
     nav { height: 58px; padding-left: max(18px, env(safe-area-inset-left)); padding-right: max(18px, env(safe-area-inset-right)); }
     nav .brand { font-size: 17px; }
-    nav .brand img { width: 28px; height: 28px; }
+    nav .brand img { width: 34px; height: 34px; }
     .hero { padding: 72px 20px 36px; }
     .hero h1 { font-size: clamp(40px, 12vw, 58px); }
     .hero p { font-size: 17px; }
@@ -216,13 +242,19 @@
 
 <nav>
   <span class="brand"><img src="/favicon.svg" alt="">ClipVault</span>
-  <button id="logout" class="hidden">Sign out</button>
+  <div class="nav-actions">
+    <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode" aria-pressed="false">
+      <svg id="moonIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.3A8.6 8.6 0 0 1 8.7 3.8 8.7 8.7 0 1 0 20.2 15.3Z"></path></svg>
+      <svg id="sunIcon" viewBox="0 0 24 24" aria-hidden="true" hidden><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path></svg>
+    </button>
+    <button id="logout" class="hidden">Sign out</button>
+  </div>
 </nav>
 
 <!-- Landing -->
 <main id="landing">
   <section class="hero">
-    <h1>Your clipboard.<br>Anywhere.</h1>
+    <h1>Your clipboard<br>Anywhere.</h1>
     <p>Save the text you paste again and again. Open it on any device with just five digits. No account needed.</p>
     <p class="hero-note">Optionally connect Google Drive to attach images and PDFs. ClipVault only accesses files created with this app. <a href="/privacy.html">Learn how your data is handled</a>.</p>
     <div class="actions"><button class="btn" id="create">Get my code</button></div>
@@ -316,6 +348,7 @@
 <script>
 const $ = (id) => document.getElementById(id);
 const KEY = "clipvault-code";
+const THEME_KEY = "clipvault-theme";
 let code = null, snippets = [], editingId = null;
 let codeEntryInProgress = false;
 let drivePanelLoaded = false, drivePanelLoading = false, fileUploadInProgress = false;
@@ -324,6 +357,30 @@ const driveNotice = new URLSearchParams(location.search).get("drive");
 let activeTab = driveNotice === "connected" || driveNotice === "error" ? "files" : "text";
 const allowedFileTypes = new Set(["image/png", "image/jpeg", "image/gif", "image/webp", "application/pdf"]);
 const maxFileSize = 4 * 1024 * 1024;
+
+function currentTheme() {
+  return document.documentElement.dataset.theme
+    || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+}
+
+function updateThemeToggle() {
+  const dark = currentTheme() === "dark";
+  const label = `Switch to ${dark ? "light" : "dark"} mode`;
+  $("themeToggle").setAttribute("aria-label", label);
+  $("themeToggle").setAttribute("title", label);
+  $("themeToggle").setAttribute("aria-pressed", String(dark));
+  $("moonIcon").hidden = dark;
+  $("sunIcon").hidden = !dark;
+  document.querySelector('meta[name="theme-color"]').content = dark ? "#000000" : "#ffffff";
+}
+
+$("themeToggle").onclick = () => {
+  const theme = currentTheme() === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = theme;
+  try { localStorage.setItem(THEME_KEY, theme); } catch {}
+  updateThemeToggle();
+};
+updateThemeToggle();
 
 function toast(msg) {
   const t = $("toast"); t.textContent = msg; t.classList.add("show");
