@@ -671,6 +671,7 @@ $("create").onclick = async () => {
 /* ---------- App ---------- */
 function showApp(loading = false) {
   $("landing").classList.add("hidden"); $("app").classList.remove("hidden");
+  $("installApp").classList.add("hidden");
   $("logout").classList.remove("hidden"); $("codeChip").textContent = code;
   if (loading) renderSnippetSkeleton();
   else render();

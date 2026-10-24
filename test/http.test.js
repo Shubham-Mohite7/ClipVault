@@ -56,6 +56,7 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /rel="manifest" href="\/manifest\.webmanifest"/);
   assert.match(homeText, /apple-mobile-web-app-capable/);
   assert.match(homeText, /id="installApp"/);
+  assert.match(homeText, /function showApp\(loading = false\)[\s\S]*?\$\("installApp"\)\.classList\.add\("hidden"\)/);
   assert.match(homeText, /beforeinstallprompt/);
   assert.match(homeText, /Add to Home Screen/);
   assert.match(homeText, /serviceWorker\.register\("\/service-worker\.js"\)/);
