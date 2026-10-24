@@ -104,6 +104,9 @@
   .head h2 { font-size: 40px; font-weight: 700; letter-spacing: -0.03em; }
   .head .codechip { color: var(--text-2); font-size: 15px; margin-top: 4px; }
   .head .codechip b { color: var(--text); letter-spacing: .12em; }
+  .segmented { display: inline-flex; gap: 3px; padding: 4px; margin-bottom: 24px; background: var(--bg-2); border-radius: 980px; }
+  .segmented button { border: 0; padding: 8px 18px; border-radius: 980px; color: var(--text-2); background: transparent; cursor: pointer; }
+  .segmented button[aria-selected="true"] { color: var(--text); background: var(--bg); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
   .search {
     width: 100%; padding: 12px 16px; border-radius: 12px; border: 0; outline: none;
     background: var(--bg-2); font-size: 17px; margin-bottom: 22px;
@@ -121,6 +124,24 @@
   .card .row { display: flex; gap: 18px; align-items: center; margin-top: 16px; }
   .card .row .grow { flex: 1; }
   .empty { text-align: center; color: var(--text-2); padding: 70px 0; font-size: 19px; }
+  .drive-connect { max-width: 560px; margin: 48px auto; text-align: center; padding: 32px; }
+  .drive-connect p { color: var(--text-2); line-height: 1.5; margin-bottom: 22px; }
+  .drive-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0 18px; }
+  .drive-email { color: var(--text-2); font-size: 14px; overflow-wrap: anywhere; }
+  .drop-area { border: 1.5px dashed var(--line); border-radius: var(--radius); padding: 28px 18px; text-align: center; cursor: pointer; background: var(--bg-2); }
+  .drop-area:focus, .drop-area.dragging { outline: 2px solid var(--text); outline-offset: 2px; }
+  .drop-area p { color: var(--text-2); margin-bottom: 14px; }
+  .upload-status { color: var(--text-2); font-size: 14px; margin: 14px 0; }
+  .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; margin-top: 22px; }
+  .file-card { min-width: 0; overflow: hidden; background: var(--bg-2); border-radius: var(--radius); }
+  .file-preview { width: 100%; height: 160px; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--bg-2) 70%, var(--line)); object-fit: cover; }
+  .pdf-icon { color: var(--text-2); font-size: 28px; font-weight: 700; letter-spacing: .08em; }
+  .file-info { padding: 14px; }
+  .file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+  .file-size { color: var(--text-2); font-size: 13px; margin-top: 4px; }
+  .file-actions { display: flex; justify-content: space-between; gap: 10px; margin-top: 12px; }
+  .file-actions a { color: var(--text-2); font-size: 14px; text-decoration: none; }
+  .file-actions a:hover { color: var(--text); }
 
   /* Modal */
   .overlay {
@@ -191,8 +212,34 @@
       </div>
       <button class="btn" id="add">New snippet</button>
     </div>
-    <input class="search" id="search" placeholder="Search" type="search">
-    <div id="list"></div>
+    <div class="segmented" role="tablist" aria-label="Vault content">
+      <button id="textTab" role="tab" aria-selected="true">Text</button>
+      <button id="filesTab" role="tab" aria-selected="false">Files</button>
+    </div>
+    <section id="textPanel" role="tabpanel">
+      <input class="search" id="search" placeholder="Search" type="search">
+      <div id="list"></div>
+    </section>
+    <section id="filesPanel" class="hidden" role="tabpanel">
+      <div id="driveConnectCard" class="drive-connect card">
+        <p>Attach images and PDFs. They are saved in your own Google Drive in a folder called ClipVault. We only access files created by this app.</p>
+        <p id="driveMessage" class="file-size"></p>
+        <button class="btn" id="connectDrive">Connect Google Drive</button>
+      </div>
+      <div id="driveConnectedPanel" class="hidden">
+        <div class="drive-toolbar">
+          <span class="drive-email" id="driveEmail"></span>
+          <button class="link danger" id="disconnectDrive">Disconnect</button>
+        </div>
+        <div class="drop-area" id="dropArea" tabindex="0" role="button" aria-label="Upload images or PDFs">
+          <p>Drop images or PDFs here, or choose files to upload (up to 4 MB each).</p>
+          <input id="fileInput" type="file" accept="image/png,image/jpeg,image/gif,image/webp,application/pdf" multiple hidden>
+          <button class="btn secondary small" id="chooseFiles" type="button">Choose files</button>
+        </div>
+        <div id="uploadStatus" class="upload-status" aria-live="polite"></div>
+        <div id="fileGrid" class="file-grid"></div>
+      </div>
+    </section>
   </div>
 </main>
 
@@ -216,6 +263,10 @@ const $ = (id) => document.getElementById(id);
 const KEY = "clipvault-code";
 let code = null, snippets = [], editingId = null;
 let codeEntryInProgress = false;
+const driveNotice = new URLSearchParams(location.search).get("drive");
+let activeTab = driveNotice === "connected" || driveNotice === "error" ? "files" : "text";
+const allowedFileTypes = new Set(["image/png", "image/jpeg", "image/gif", "image/webp", "application/pdf"]);
+const maxFileSize = 4 * 1024 * 1024;
 
 function toast(msg) {
   const t = $("toast"); t.textContent = msg; t.classList.add("show");
@@ -284,11 +335,205 @@ function showApp() {
   $("landing").classList.add("hidden"); $("app").classList.remove("hidden");
   $("logout").classList.remove("hidden"); $("codeChip").textContent = code;
   render();
+  setActiveTab(activeTab);
 }
 
 $("logout").onclick = () => {
   try { localStorage.removeItem(KEY); } catch {}
   location.reload();
+};
+
+function setActiveTab(tab) {
+  activeTab = tab;
+  $("textTab").setAttribute("aria-selected", String(tab === "text"));
+  $("filesTab").setAttribute("aria-selected", String(tab === "files"));
+  $("textPanel").classList.toggle("hidden", tab !== "text");
+  $("filesPanel").classList.toggle("hidden", tab !== "files");
+  $("add").classList.toggle("hidden", tab !== "text");
+  if (tab === "files" && code) loadDrivePanel();
+}
+
+$("textTab").onclick = () => setActiveTab("text");
+$("filesTab").onclick = () => setActiveTab("files");
+
+async function loadDrivePanel() {
+  $("driveConnectCard").classList.remove("hidden");
+  $("driveConnectedPanel").classList.add("hidden");
+  $("driveMessage").textContent = "";
+  let status;
+  try {
+    status = await api("GET", `/api/vaults/${code}/drive/status`);
+  } catch (e) {
+    $("driveMessage").textContent = e.message;
+    return;
+  }
+  if (!status.connected) return;
+  $("driveConnectCard").classList.add("hidden");
+  $("driveConnectedPanel").classList.remove("hidden");
+  $("driveEmail").textContent = status.email || "";
+  try {
+    await loadDriveFiles();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+function driveFileUrl(id, download = false) {
+  return `/api/vaults/${encodeURIComponent(code)}/files/${encodeURIComponent(id)}/content${download ? "?download=1" : ""}`;
+}
+
+function formatFileSize(size) {
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function renderDriveFiles(files) {
+  const grid = $("fileGrid");
+  grid.replaceChildren();
+  if (!files.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "No files yet. Upload an image or PDF to get started.";
+    grid.append(empty);
+    return;
+  }
+
+  for (const file of files) {
+    const card = document.createElement("article");
+    card.className = "file-card";
+    if (file.mime.startsWith("image/")) {
+      const image = document.createElement("img");
+      image.className = "file-preview";
+      image.src = driveFileUrl(file.id);
+      image.alt = file.name;
+      image.loading = "lazy";
+      card.append(image);
+    } else {
+      const preview = document.createElement("div");
+      preview.className = "file-preview pdf-icon";
+      preview.textContent = "PDF";
+      card.append(preview);
+    }
+
+    const info = document.createElement("div");
+    info.className = "file-info";
+    const name = document.createElement("div");
+    name.className = "file-name";
+    name.textContent = file.name;
+    name.title = file.name;
+    const size = document.createElement("div");
+    size.className = "file-size";
+    size.textContent = formatFileSize(file.size);
+    const actions = document.createElement("div");
+    actions.className = "file-actions";
+    const open = document.createElement("a");
+    open.href = driveFileUrl(file.id);
+    open.target = "_blank";
+    open.rel = "noopener";
+    open.textContent = "Open";
+    const download = document.createElement("a");
+    download.href = driveFileUrl(file.id, true);
+    download.download = file.name;
+    download.textContent = "Download";
+    const remove = document.createElement("button");
+    remove.className = "link danger";
+    remove.textContent = "Delete";
+    remove.onclick = () => deleteDriveFile(file);
+    actions.append(open, download, remove);
+    info.append(name, size, actions);
+    card.append(info);
+    grid.append(card);
+  }
+}
+
+async function loadDriveFiles() {
+  const result = await api("GET", `/api/vaults/${code}/files`);
+  renderDriveFiles(result.files);
+}
+
+$("connectDrive").onclick = async () => {
+  try {
+    const result = await api("GET", `/api/vaults/${code}/drive/connect`);
+    location.assign(result.url);
+  } catch (e) {
+    toast(e.message);
+  }
+};
+
+$("disconnectDrive").onclick = async () => {
+  if (!confirm("Disconnect Google Drive? ClipVault will forget these files and remove its access, but the files will stay in your Google Drive.")) return;
+  try {
+    await api("POST", `/api/vaults/${code}/drive/disconnect`);
+    toast("Drive disconnected. Files remain in your Google Drive.");
+    await loadDrivePanel();
+  } catch (e) {
+    toast(e.message);
+  }
+};
+
+async function deleteDriveFile(file) {
+  if (!confirm(`Move "${file.name}" to the trash in Google Drive?`)) return;
+  try {
+    await api("DELETE", `/api/vaults/${code}/files/${file.id}`);
+    await loadDriveFiles();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+async function uploadFiles(fileList) {
+  for (const file of fileList) {
+    if (!allowedFileTypes.has(file.type)) {
+      toast(`${file.name}: unsupported file type`);
+      continue;
+    }
+    if (file.size > maxFileSize) {
+      toast(`${file.name}: maximum file size is 4 MB`);
+      continue;
+    }
+    $("uploadStatus").textContent = `Uploading ${file.name}…`;
+    try {
+      const response = await fetch(`/api/vaults/${encodeURIComponent(code)}/files?name=${encodeURIComponent(file.name)}`, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Upload failed");
+      $("uploadStatus").textContent = `Uploaded ${file.name}`;
+      await loadDriveFiles();
+    } catch (e) {
+      $("uploadStatus").textContent = `Could not upload ${file.name}`;
+      toast(e.message);
+    }
+  }
+  $("fileInput").value = "";
+}
+
+$("chooseFiles").onclick = (event) => {
+  event.stopPropagation();
+  $("fileInput").click();
+};
+$("fileInput").onchange = () => uploadFiles($("fileInput").files);
+$("dropArea").onclick = (event) => {
+  if (event.target !== $("chooseFiles") && event.target !== $("fileInput")) $("fileInput").click();
+};
+$("dropArea").onkeydown = (event) => {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    $("fileInput").click();
+  }
+};
+$("dropArea").ondragover = (event) => {
+  event.preventDefault();
+  $("dropArea").classList.add("dragging");
+};
+$("dropArea").ondragleave = () => $("dropArea").classList.remove("dragging");
+$("dropArea").ondrop = (event) => {
+  event.preventDefault();
+  $("dropArea").classList.remove("dragging");
+  uploadFiles(event.dataTransfer.files);
 };
 
 function render() {
@@ -357,6 +602,11 @@ async function remove(id) {
 
 /* ---------- Auto sign-in on this device ---------- */
 (() => { let c; try { c = localStorage.getItem(KEY); } catch {} if (c) enterCode(c); })();
+
+if (driveNotice === "connected" || driveNotice === "error") {
+  history.replaceState(null, "", location.pathname + location.hash);
+  setTimeout(() => toast(driveNotice === "connected" ? "Google Drive connected" : "Could not connect Google Drive"), 0);
+}
 </script>
 </body>
 </html>

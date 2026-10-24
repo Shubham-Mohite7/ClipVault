@@ -1,0 +1,94 @@
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+
+const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "clipvault-drive-test-"));
+process.env.DB_PATH = path.join(tempDir, "test.db");
+delete process.env.DATABASE_URL;
+delete process.env.VERCEL;
+delete process.env.GOOGLE_CLIENT_ID;
+delete process.env.GOOGLE_CLIENT_SECRET;
+delete process.env.GOOGLE_REDIRECT_URI;
+delete process.env.TOKEN_ENC_KEY;
+
+const app = require("../server");
+
+test("SQLite APIs work and Drive routes and upload validation are safe", async (t) => {
+  const server = app.listen(0);
+  await new Promise((resolve) => server.once("listening", resolve));
+  t.after(async () => {
+    await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const request = (url, options) => fetch(`${base}${url}`, options);
+  const home = await request("/");
+  assert.equal(home.status, 200);
+  assert.match(await home.text(), /ClipVault/);
+
+  const health = await request("/healthz");
+  assert.equal(health.status, 200);
+  assert.deepEqual(await health.json(), { ok: true });
+
+  const created = await request("/api/vaults", { method: "POST" });
+  assert.equal(created.status, 201);
+  const { code } = await created.json();
+  assert.match(code, /^\d{5}$/);
+  const added = await request(`/api/vaults/${code}/snippets`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ title: "Test", content: "Hello" }),
+  });
+  assert.equal(added.status, 201);
+  const snippet = await added.json();
+  const list = await request(`/api/vaults/${code}/snippets`);
+  assert.deepEqual((await list.json()).snippets.map(({ id, title, content }) => ({ id, title, content })), [
+    { id: snippet.id, title: "Test", content: "Hello" },
+  ]);
+
+  const driveRoutes = [
+    ["GET", `/api/vaults/${code}/drive/connect`],
+    ["GET", `/api/vaults/${code}/drive/status`],
+    ["POST", `/api/vaults/${code}/drive/disconnect`],
+    ["GET", `/api/vaults/${code}/files`],
+    ["GET", `/api/vaults/${code}/files/1/content`],
+    ["DELETE", `/api/vaults/${code}/files/1`],
+    ["GET", "/api/drive/callback"],
+  ];
+  for (const [method, url] of driveRoutes) {
+    const response = await request(url, { method });
+    assert.equal(response.status, 501, `${method} ${url}`);
+    assert.deepEqual(await response.json(), { error: "Drive needs Postgres" });
+  }
+
+  const invalidMagic = await request(`/api/vaults/${code}/files?name=wrong.png`, {
+    method: "POST",
+    headers: { "content-type": "image/png" },
+    body: Buffer.from("not a PNG"),
+  });
+  assert.equal(invalidMagic.status, 400);
+
+  const svg = await request(`/api/vaults/${code}/files?name=image.svg`, {
+    method: "POST",
+    headers: { "content-type": "image/svg+xml" },
+    body: Buffer.from("<svg/>"),
+  });
+  assert.equal(svg.status, 400);
+
+  const oversizedSvg = await request(`/api/vaults/${code}/files?name=large.svg`, {
+    method: "POST",
+    headers: { "content-type": "image/svg+xml" },
+    body: Buffer.alloc(5 * 1024 * 1024),
+  });
+  assert.equal(oversizedSvg.status, 413);
+
+  const tooLarge = await request(`/api/vaults/${code}/files?name=large.png`, {
+    method: "POST",
+    headers: { "content-type": "image/png" },
+    body: Buffer.concat([Buffer.from("89504e47", "hex"), Buffer.alloc(5 * 1024 * 1024)]),
+  });
+  assert.equal(tooLarge.status, 413);
+});
