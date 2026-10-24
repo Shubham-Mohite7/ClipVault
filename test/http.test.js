@@ -105,6 +105,8 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /formatFileSize\(fileBytesSent\)\} of \$\{formatFileSize\(file\.size\)\}/);
   assert.match(homeText, /Overall upload progress/);
   assert.match(homeText, /Uploaded \$\{uploadedCount\} of \$\{validFiles\.length\}/);
+  assert.match(homeText, /\.file-actions \{ display: flex; flex-wrap: wrap; align-items: center/);
+  assert.match(homeText, /\.file-actions button\.link \{ margin-left: auto; padding-inline: 4px; \}/);
   assert.match(homeText, /placeholder="A" aria-label="Code character 1"/);
   assert.match(homeText, /placeholder="0" aria-label="Code character 6"/);
   assert.match(homeText, /\.reveal \{[\s\S]*?backdrop-filter: blur\(28px\) saturate\(1\.5\)/);

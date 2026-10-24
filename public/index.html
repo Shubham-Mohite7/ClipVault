@@ -264,8 +264,10 @@ try {
   .file-info { padding: 14px; }
   .file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
   .file-size { color: var(--text-2); font-size: 13px; margin-top: 4px; }
-  .file-actions { display: flex; justify-content: space-between; gap: 10px; margin-top: 12px; }
+  .file-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 12px; }
+  .file-actions a, .file-actions button { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; min-height: 40px; white-space: nowrap; }
   .file-actions a { color: var(--text-2); font-size: 14px; text-decoration: none; }
+  .file-actions button.link { margin-left: auto; padding-inline: 4px; }
   .file-actions a:hover { color: var(--text); }
 
   /* Modal */
