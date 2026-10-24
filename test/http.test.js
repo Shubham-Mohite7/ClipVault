@@ -63,10 +63,13 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /Save text, images, and PDFs/);
   assert.match(homeText, /no ClipVault login required/);
   assert.match(homeText, /Attachments stay in Google Drive/);
+  assert.match(homeText, /Save text, images, and PDFs\. Open your vault anywhere with a code—no account needed\./);
+  assert.match(homeText, /Images and PDFs stay in your Google Drive/);
   assert.match(homeText, /\"description\": \"A free online clipboard for saving text snippets and attaching images and PDFs in Google Drive/);
   assert.match(homeText, /rel="canonical" href="https:\/\/www\.clipvault\.lol\/"/);
   assert.match(homeText, /property="og:title"/);
   assert.match(homeText, /A simple online clipboard for your snippets/);
+  assert.match(homeText, /Save snippets and open them on any device with your code—no account required\./);
   const structuredData = homeText.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
   assert.ok(structuredData, "homepage should include WebApplication structured data");
   assert.equal(JSON.parse(structuredData[1])["@type"], "WebApplication");
