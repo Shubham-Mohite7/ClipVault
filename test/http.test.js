@@ -53,6 +53,12 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /ClipVault/);
   assert.match(homeText, /<title>ClipVault — Free Online Clipboard/);
   assert.match(homeText, /name="description"/);
+  assert.match(homeText, /rel="manifest" href="\/manifest\.webmanifest"/);
+  assert.match(homeText, /apple-mobile-web-app-capable/);
+  assert.match(homeText, /id="installApp"/);
+  assert.match(homeText, /beforeinstallprompt/);
+  assert.match(homeText, /Add to Home Screen/);
+  assert.match(homeText, /serviceWorker\.register\("\/service-worker\.js"\)/);
   assert.match(homeText, /Save text, images, and PDFs/);
   assert.match(homeText, /no ClipVault login required/);
   assert.match(homeText, /Attachments stay in Google Drive/);
@@ -146,6 +152,26 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(sitemapText, /https:\/\/www\.clipvault\.lol\//);
   assert.match(sitemapText, /https:\/\/www\.clipvault\.lol\/privacy\.html/);
   assert.match(sitemapText, /https:\/\/www\.clipvault\.lol\/terms\.html/);
+
+  const manifestResponse = await request("/manifest.webmanifest");
+  assert.equal(manifestResponse.status, 200);
+  const manifest = await manifestResponse.json();
+  assert.equal(manifest.name, "ClipVault — Online Clipboard");
+  assert.equal(manifest.display, "standalone");
+  assert.deepEqual(manifest.icons.map(({ sizes }) => sizes), ["192x192", "512x512"]);
+
+  for (const iconPath of ["/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png"]) {
+    const icon = await request(iconPath);
+    assert.equal(icon.status, 200, iconPath);
+    assert.match(icon.headers.get("content-type"), /image\/png/);
+    assert.ok(Number(icon.headers.get("content-length")) > 0);
+  }
+
+  const serviceWorker = await request("/service-worker.js");
+  assert.equal(serviceWorker.status, 200);
+  const serviceWorkerText = await serviceWorker.text();
+  assert.match(serviceWorkerText, /url\.pathname\.startsWith\("\/api\/"\)/);
+  assert.match(serviceWorkerText, /url\.pathname\.startsWith\("\/_vercel\/"\)/);
 
   const health = await request("/healthz");
   assert.equal(health.status, 200);

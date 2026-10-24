@@ -22,6 +22,10 @@ npm start
 
 The server listens on `PORT` if set, or port 3000 otherwise.
 
+## Install as an app
+
+ClipVault is a Progressive Web App and can be installed from its header's **Install app** button in browsers that support the install prompt. On iPhone or iPad, use Safari's **Share > Add to Home Screen**. The service worker caches the app shell for opening it offline, but vault data and Google Drive features still need a network connection.
+
 ## Database schema
 
 The Postgres schema is created lazily once per server instance. SQLite creates its equivalent tables when the local server starts.

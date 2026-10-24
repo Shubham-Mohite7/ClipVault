@@ -16,6 +16,10 @@
 <meta name="twitter:title" content="ClipVault — Free Online Clipboard, Image &amp; PDF Vault">
 <meta name="twitter:description" content="Save text, images, and PDFs, then access your vault on any device with a code—no ClipVault login required. Attachments stay in Google Drive.">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ClipVault">
 <meta name="theme-color" content="#000000">
 <script type="application/ld+json">
 {
@@ -113,6 +117,7 @@ try {
   .nav-actions { display: inline-flex; align-items: center; gap: 8px; }
   nav button { min-height: 44px; padding: 0 10px; background: none; border: 0; border-radius: 10px; color: var(--text-2); cursor: pointer; font-size: 14px; transition: color var(--motion-fast), background var(--motion-fast); }
   nav button:hover { color: var(--text); background: var(--bg-2); }
+  nav .install-app { padding-inline: 12px; color: var(--text); font-weight: 550; }
   nav .theme-toggle { width: 44px; display: inline-grid; place-items: center; padding: 0; }
   .theme-toggle svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   .theme-toggle svg[hidden] { display: none; }
@@ -278,6 +283,8 @@ try {
     nav { height: 58px; padding-left: max(18px, env(safe-area-inset-left)); padding-right: max(18px, env(safe-area-inset-right)); }
     nav .brand { font-size: 17px; }
     nav .brand img { width: 34px; height: 34px; }
+    nav .nav-actions { gap: 2px; }
+    nav .install-app { padding-inline: 8px; font-size: 13px; }
     .hero { padding: 72px 20px 36px; }
     .hero h1 { font-size: clamp(40px, 12vw, 58px); }
     .hero p { font-size: 17px; }
@@ -311,6 +318,7 @@ try {
 <nav>
   <span class="brand"><img src="/favicon.svg" alt="">ClipVault</span>
   <div class="nav-actions">
+    <button id="installApp" class="install-app" type="button">Install app</button>
     <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode" aria-pressed="false">
       <svg id="moonIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.3A8.6 8.6 0 0 1 8.7 3.8 8.7 8.7 0 1 0 20.2 15.3Z"></path></svg>
       <svg id="sunIcon" viewBox="0 0 24 24" aria-hidden="true" hidden><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path></svg>
@@ -453,6 +461,7 @@ let searchFrame = 0;
 const driveNotice = new URLSearchParams(location.search).get("drive");
 const driveReturnTicket = new URLSearchParams(location.hash.slice(1)).get("return");
 let activeTab = driveNotice === "connected" || driveNotice === "error" ? "files" : "text";
+let deferredInstallPrompt = null;
 const allowedFileTypes = new Set(["image/png", "image/jpeg", "image/gif", "image/webp", "application/pdf"]);
 const maxFileSize = 4 * 1024 * 1024;
 
@@ -479,6 +488,43 @@ $("themeToggle").onclick = () => {
   updateThemeToggle();
 };
 updateThemeToggle();
+
+function isInstalledApp() {
+  return window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+}
+
+if (isInstalledApp()) $("installApp").classList.add("hidden");
+
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+});
+
+window.addEventListener("appinstalled", () => {
+  deferredInstallPrompt = null;
+  $("installApp").classList.add("hidden");
+  toast("ClipVault installed");
+});
+
+$("installApp").addEventListener("click", async () => {
+  if (!deferredInstallPrompt) {
+    const isAppleMobile = /iPhone|iPad|iPod/.test(navigator.userAgent)
+      || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    alert(isAppleMobile
+      ? "To install ClipVault, tap Share, then choose Add to Home Screen."
+      : "To install ClipVault, open your browser menu and choose Install app or Add to Home screen.");
+    return;
+  }
+
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice;
+  deferredInstallPrompt = null;
+});
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/service-worker.js")
+    .catch((error) => console.error("ClipVault service worker registration failed:", error));
+}
 
 function toast(msg) {
   const t = $("toast"); t.textContent = msg; t.classList.add("show");
