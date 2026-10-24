@@ -33,6 +33,10 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /href="\/terms\.html"/);
   assert.match(homeText, /id="themeToggle"/);
   assert.match(homeText, /clipvault-theme/);
+  assert.match(homeText, /function renderSnippetSkeleton\(\)/);
+  assert.match(homeText, /function renderFileSkeleton\(\)/);
+  assert.match(homeText, /aria-label="Checking Google Drive"/);
+  assert.match(homeText, /aria-label="Loading files"/);
 
   const privacy = await request("/privacy.html");
   assert.equal(privacy.status, 200);

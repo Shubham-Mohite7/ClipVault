@@ -162,6 +162,27 @@ try {
   .card .row { display: flex; gap: 18px; align-items: center; margin-top: 16px; }
   .card .row .grow { flex: 1; }
   .empty { text-align: center; color: var(--text-2); padding: 70px 0; font-size: 19px; }
+  .skeleton {
+    background: linear-gradient(100deg, var(--bg-2) 30%, color-mix(in srgb, var(--text-2) 16%, var(--bg-2)) 50%, var(--bg-2) 70%);
+    background-size: 300% 100%;
+    animation: skeleton-shimmer 1.35s ease-in-out infinite;
+  }
+  .skeleton-line { height: 14px; border-radius: 7px; }
+  .snippet-skeleton { padding: 20px 22px; margin-bottom: 14px; }
+  .snippet-skeleton .skeleton-line:first-child { width: 38%; height: 18px; margin-bottom: 16px; }
+  .snippet-skeleton .skeleton-line:nth-child(2) { width: 88%; margin-bottom: 9px; }
+  .snippet-skeleton .skeleton-line:nth-child(3) { width: 64%; }
+  .snippet-skeleton .skeleton-actions { display: flex; gap: 12px; margin-top: 20px; }
+  .snippet-skeleton .skeleton-actions span { width: 64px; height: 34px; border-radius: 980px; }
+  .drive-status-skeleton { display: grid; justify-items: center; gap: 18px; padding: 18px 0; }
+  .drive-status-skeleton .skeleton-line { width: min(100%, 320px); }
+  .drive-status-skeleton .skeleton-line:last-child { width: 150px; height: 44px; border-radius: 980px; }
+  .file-skeleton .file-preview { border-radius: 0; }
+  .file-skeleton .file-info { display: grid; gap: 10px; }
+  .file-skeleton .skeleton-line:first-child { width: 78%; }
+  .file-skeleton .skeleton-line:nth-child(2) { width: 42%; height: 11px; }
+  .file-skeleton .skeleton-line:last-child { width: 100%; height: 36px; margin-top: 4px; border-radius: 8px; }
+  @keyframes skeleton-shimmer { to { background-position: -150% 0; } }
   .drive-connect { max-width: 560px; margin: 32px auto; text-align: center; padding: clamp(22px, 5vw, 36px); }
   .drive-connect p { color: var(--text-2); line-height: 1.5; margin-bottom: 22px; }
   .drive-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0 18px; }
@@ -301,9 +322,16 @@ try {
     </section>
     <section id="filesPanel" class="hidden" role="tabpanel">
       <div id="driveConnectCard" class="drive-connect card">
-        <p>Attach images and PDFs. They are saved in your own Google Drive in a folder called ClipVault. We only access files created by this app.</p>
-        <p id="driveMessage" class="file-size"></p>
-        <button class="btn" id="connectDrive">Connect Google Drive</button>
+        <div id="driveStatusSkeleton" class="drive-status-skeleton" role="status" aria-label="Checking Google Drive">
+          <span class="skeleton skeleton-line"></span>
+          <span class="skeleton skeleton-line"></span>
+          <span class="skeleton skeleton-line"></span>
+        </div>
+        <div id="driveConnectContent" class="hidden">
+          <p>Attach images and PDFs. They are saved in your own Google Drive in a folder called ClipVault. We only access files created by this app.</p>
+          <p id="driveMessage" class="file-size"></p>
+          <button class="btn" id="connectDrive">Connect Google Drive</button>
+        </div>
       </div>
       <div id="driveConnectedPanel" class="hidden">
         <div class="drive-toolbar">
@@ -421,9 +449,11 @@ async function enterCode(c) {
   $("err").textContent = "Opening your vault…";
   inputs.forEach((input) => { input.disabled = true; });
   let entryFailed = false;
+  code = c;
+  showApp(true);
   try {
     const data = await api("GET", `/api/vaults/${c}/snippets`);
-    code = c; snippets = data.snippets;
+    snippets = data.snippets;
     try {
       if ($("remember").checked) localStorage.setItem(KEY, c);
       else localStorage.removeItem(KEY);
@@ -431,6 +461,9 @@ async function enterCode(c) {
     showApp();
   } catch (e) {
     entryFailed = true;
+    code = null;
+    $("app").classList.add("hidden");
+    $("landing").classList.remove("hidden");
     $("err").classList.remove("pending");
     $("err").textContent = e.message;
     inputs.forEach((x) => (x.value = ""));
@@ -456,10 +489,11 @@ $("create").onclick = async () => {
 };
 
 /* ---------- App ---------- */
-function showApp() {
+function showApp(loading = false) {
   $("landing").classList.add("hidden"); $("app").classList.remove("hidden");
   $("logout").classList.remove("hidden"); $("codeChip").textContent = code;
-  render();
+  if (loading) renderSnippetSkeleton();
+  else render();
   setActiveTab(activeTab);
 }
 
@@ -485,17 +519,22 @@ async function loadDrivePanel() {
   if (drivePanelLoaded || drivePanelLoading) return;
   drivePanelLoading = true;
   $("driveConnectCard").classList.remove("hidden");
+  $("driveStatusSkeleton").classList.remove("hidden");
+  $("driveConnectContent").classList.add("hidden");
   $("driveConnectedPanel").classList.add("hidden");
-  $("driveMessage").textContent = "Checking Google Drive…";
   let status;
   try {
     status = await api("GET", `/api/vaults/${code}/drive/status`);
   } catch (e) {
+    $("driveStatusSkeleton").classList.add("hidden");
+    $("driveConnectContent").classList.remove("hidden");
     $("driveMessage").textContent = e.message;
     drivePanelLoading = false;
     return;
   }
   if (!status.connected) {
+    $("driveStatusSkeleton").classList.add("hidden");
+    $("driveConnectContent").classList.remove("hidden");
     $("driveMessage").textContent = "";
     drivePanelLoaded = true;
     drivePanelLoading = false;
@@ -527,6 +566,7 @@ function formatFileSize(size) {
 function renderDriveFiles(files) {
   const grid = $("fileGrid");
   grid.replaceChildren();
+  grid.removeAttribute("aria-busy");
   if (!files.length) {
     const empty = document.createElement("div");
     empty.className = "empty";
@@ -584,8 +624,19 @@ function renderDriveFiles(files) {
 }
 
 async function loadDriveFiles() {
-  const result = await api("GET", `/api/vaults/${code}/files`);
-  renderDriveFiles(result.files);
+  renderFileSkeleton();
+  try {
+    const result = await api("GET", `/api/vaults/${code}/files`);
+    renderDriveFiles(result.files);
+  } catch (e) {
+    $("fileGrid").replaceChildren();
+    $("fileGrid").removeAttribute("aria-busy");
+    const error = document.createElement("div");
+    error.className = "empty";
+    error.textContent = "Could not load files. Try opening the Files tab again.";
+    $("fileGrid").append(error);
+    throw e;
+  }
 }
 
 $("connectDrive").onclick = async () => {
@@ -700,7 +751,7 @@ $("dropArea").ondrop = (event) => {
 function render() {
   const term = $("search").value.toLowerCase();
   const items = snippets.filter((s) => (s.title + s.content).toLowerCase().includes(term));
-  const list = $("list"); list.innerHTML = "";
+  const list = $("list"); list.innerHTML = ""; list.removeAttribute("aria-busy");
   if (!items.length) {
     list.innerHTML = `<div class="empty">${snippets.length ? "No matches." : "Nothing here yet.<br>Add your first snippet."}</div>`;
     return;
@@ -721,6 +772,35 @@ function render() {
     el.append(h, pre, row); list.append(el);
   }
 }
+
+function renderSnippetSkeleton() {
+  const list = $("list");
+  list.setAttribute("aria-busy", "true");
+  list.innerHTML = `<div role="status" aria-label="Loading snippets">
+    ${Array.from({ length: 2 }, () => `<div class="card snippet-skeleton" aria-hidden="true">
+      <div class="skeleton skeleton-line"></div>
+      <div class="skeleton skeleton-line"></div>
+      <div class="skeleton skeleton-line"></div>
+      <div class="skeleton-actions"><span class="skeleton"></span><span class="skeleton"></span></div>
+    </div>`).join("")}
+  </div>`;
+}
+
+function renderFileSkeleton() {
+  const grid = $("fileGrid");
+  grid.setAttribute("aria-busy", "true");
+  grid.innerHTML = `<div role="status" aria-label="Loading files" style="display:contents">
+    ${Array.from({ length: 3 }, () => `<div class="file-card file-skeleton" aria-hidden="true">
+      <div class="file-preview skeleton"></div>
+      <div class="file-info">
+        <div class="skeleton skeleton-line"></div>
+        <div class="skeleton skeleton-line"></div>
+        <div class="skeleton"></div>
+      </div>
+    </div>`).join("")}
+  </div>`;
+}
+
 $("search").oninput = () => {
   cancelAnimationFrame(searchFrame);
   searchFrame = requestAnimationFrame(render);
@@ -735,7 +815,18 @@ async function copyText(text) {
   toast("Copied");
 }
 
-async function reload() { snippets = (await api("GET", `/api/vaults/${code}/snippets`)).snippets; render(); }
+async function reload() {
+  const previousSnippets = snippets;
+  renderSnippetSkeleton();
+  try {
+    snippets = (await api("GET", `/api/vaults/${code}/snippets`)).snippets;
+    render();
+  } catch (e) {
+    snippets = previousSnippets;
+    render();
+    throw e;
+  }
+}
 
 function openModal(s) {
   editingId = s ? s.id : null;
