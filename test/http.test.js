@@ -89,8 +89,11 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /placeholder="0" aria-label="Code character 6"/);
   assert.match(homeText, /id="rememberedHint"/);
   assert.match(homeText, /Your last used code is filled in/);
-  assert.match(homeText, /id="openVault" class="btn small secondary"/);
+  assert.match(homeText, /id="openVault" class="btn small secondary hidden"/);
   assert.match(homeText, /function saveRememberedCode\(value\)/);
+  assert.match(homeText, /if \(value && value !== rememberedSuggestion\) enterCode\(value\)/);
+  assert.match(homeText, /rememberedSuggestion = candidate/);
+  assert.match(homeText, /dismissRememberedSuggestion\(\)/);
   assert.match(homeText, /Remember the last code on this device/);
   assert.doesNotMatch(homeText, /Auto sign-in on this device/);
   const signOutHandler = homeText.slice(

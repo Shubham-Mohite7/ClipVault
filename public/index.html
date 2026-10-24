@@ -347,7 +347,7 @@ try {
       <input type="text" inputmode="numeric" maxlength="1" autocomplete="off" placeholder="0" aria-label="Code character 5">
       <input type="text" inputmode="numeric" maxlength="1" autocomplete="off" placeholder="0" aria-label="Code character 6">
     </div>
-    <div class="code-actions"><button id="openVault" class="btn small secondary" type="button">Open vault</button></div>
+    <div class="code-actions"><button id="openVault" class="btn small secondary hidden" type="button">Open vault</button></div>
     <label class="remember"><input id="remember" type="checkbox" checked> Remember me on this device</label>
     <div id="rememberedHint" class="remembered-hint hidden">Your last used code is filled in.</div>
     <div class="error" id="err" role="status" aria-live="polite"></div>
@@ -499,6 +499,7 @@ async function api(method, url, body) {
 /* ---------- Landing ---------- */
 const codeInputs = [...$("codeRow").querySelectorAll("input")];
 const rememberCheckbox = $("remember");
+let rememberedSuggestion = null;
 function readCodeEntry() {
   const value = codeInputs.map((input) => input.value).join("");
   if (/^\d{5}$/.test(value)) return value;
@@ -538,13 +539,23 @@ rememberCheckbox.addEventListener("change", () => {
 
 function handleCodeEntry() {
   const value = readCodeEntry();
-  if (value) enterCode(value);
+  if (value && value !== rememberedSuggestion) enterCode(value);
 }
 
-$("openVault").addEventListener("click", handleCodeEntry);
+function dismissRememberedSuggestion() {
+  rememberedSuggestion = null;
+  $("openVault").classList.add("hidden");
+  $("rememberedHint").classList.add("hidden");
+}
+
+$("openVault").addEventListener("click", () => {
+  const value = readCodeEntry();
+  if (value && value === rememberedSuggestion) enterCode(value);
+});
 
 codeInputs.forEach((input, index) => {
   input.addEventListener("input", () => {
+    dismissRememberedSuggestion();
     const character = input.value.slice(-1).toUpperCase();
     input.value = character;
     if (character && index < codeInputs.length - 1) codeInputs[index + 1].focus();
@@ -559,6 +570,7 @@ codeInputs.forEach((input, index) => {
     const compact = pasted.trim().replace(/-/g, "").toUpperCase();
     if (!/^(?:\d{1,5}|[A-Z]{0,3}\d{0,3})$/.test(compact)) return;
     event.preventDefault();
+    dismissRememberedSuggestion();
     fillCodeEntry(pasted);
     const target = Math.min(compact.length, codeInputs.length - 1);
     codeInputs[target].focus();
@@ -996,6 +1008,8 @@ async function remove(id) {
   if (/^(?:\d{5}|[A-Z]{3}-\d{3})$/.test(candidate)) {
     rememberCheckbox.checked = true;
     fillCodeEntry(candidate);
+    rememberedSuggestion = candidate;
+    $("openVault").classList.remove("hidden");
     $("rememberedHint").classList.remove("hidden");
   } else {
     rememberCheckbox.checked = false;
