@@ -158,8 +158,10 @@ try {
   }
   .code-row input:focus { border-color: var(--text); background: var(--bg); transform: translateY(-2px); }
   .code-row .code-separator { margin: 0 1px; color: var(--text-2); font-size: 22px; }
+  .code-actions { margin-top: 12px; }
   .remember { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; color: var(--text-2); font-size: 14px; }
   .remember input { accent-color: var(--text); }
+  .remembered-hint { margin-top: 10px; color: var(--text-2); font-size: 13px; }
   .error { color: #ff3b30; font-size: 14px; margin-top: 14px; min-height: 20px; }
   .error.pending { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--text-2); }
   .error.pending::before {
@@ -345,7 +347,9 @@ try {
       <input type="text" inputmode="numeric" maxlength="1" autocomplete="off" placeholder="0" aria-label="Code character 5">
       <input type="text" inputmode="numeric" maxlength="1" autocomplete="off" placeholder="0" aria-label="Code character 6">
     </div>
+    <div class="code-actions"><button id="openVault" class="btn small secondary" type="button">Open vault</button></div>
     <label class="remember"><input id="remember" type="checkbox" checked> Remember me on this device</label>
+    <div id="rememberedHint" class="remembered-hint hidden">Your last used code is filled in.</div>
     <div class="error" id="err" role="status" aria-live="polite"></div>
   </div>
 
@@ -494,6 +498,7 @@ async function api(method, url, body) {
 
 /* ---------- Landing ---------- */
 const codeInputs = [...$("codeRow").querySelectorAll("input")];
+const rememberCheckbox = $("remember");
 function readCodeEntry() {
   const value = codeInputs.map((input) => input.value).join("");
   if (/^\d{5}$/.test(value)) return value;
@@ -515,10 +520,28 @@ function fillCodeEntry(value) {
   codeInputs.forEach((input) => { input.value = ""; });
 }
 
+function saveRememberedCode(value) {
+  try {
+    if (rememberCheckbox.checked) localStorage.setItem(KEY, value);
+    else localStorage.removeItem(KEY);
+  } catch {}
+}
+
+rememberCheckbox.addEventListener("change", () => {
+  if (!rememberCheckbox.checked) {
+    try { localStorage.removeItem(KEY); } catch {}
+  } else {
+    const currentCode = code || readCodeEntry();
+    if (currentCode) saveRememberedCode(currentCode);
+  }
+});
+
 function handleCodeEntry() {
   const value = readCodeEntry();
   if (value) enterCode(value);
 }
+
+$("openVault").addEventListener("click", handleCodeEntry);
 
 codeInputs.forEach((input, index) => {
   input.addEventListener("input", () => {
@@ -549,6 +572,7 @@ async function enterCode(c) {
   $("err").classList.add("pending");
   $("err").textContent = "Checking your code…";
   codeInputs.forEach((input) => { input.disabled = true; });
+  $("openVault").disabled = true;
   const candidateCode = c.toUpperCase();
   try {
     await api("GET", `/api/vaults/${candidateCode}/check`);
@@ -557,10 +581,7 @@ async function enterCode(c) {
     showApp(true);
     const data = await api("GET", `/api/vaults/${candidateCode}/snippets`);
     snippets = data.snippets;
-    try {
-      if ($("remember").checked) localStorage.setItem(KEY, code);
-      else localStorage.removeItem(KEY);
-    } catch {}
+    saveRememberedCode(code);
     $("err").textContent = "";
     showApp();
   } catch (e) {
@@ -571,6 +592,7 @@ async function enterCode(c) {
   } finally {
     $("err").classList.remove("pending");
     codeInputs.forEach((input) => { input.disabled = false; });
+    $("openVault").disabled = false;
     codeEntryInProgress = false;
   }
 }
@@ -581,6 +603,7 @@ $("create").onclick = async () => {
   button.textContent = "Creating…";
   try {
     const { code: c } = await api("POST", "/api/vaults");
+    saveRememberedCode(c);
     $("newCode").textContent = c; $("reveal").classList.remove("hidden");
     $("create").classList.add("hidden");
     $("goVault").onclick = () => enterCode(c);
@@ -599,7 +622,6 @@ function showApp(loading = false) {
 }
 
 $("logout").onclick = () => {
-  try { localStorage.removeItem(KEY); } catch {}
   location.reload();
 };
 
@@ -966,8 +988,22 @@ async function remove(id) {
   catch (e) { toast(e.message); }
 }
 
-/* ---------- Auto sign-in on this device ---------- */
-(() => { let c; try { c = localStorage.getItem(KEY); } catch {} if (c) enterCode(c); })();
+/* ---------- Remember the last code on this device ---------- */
+(() => {
+  let savedCode;
+  try { savedCode = localStorage.getItem(KEY); } catch {}
+  const candidate = typeof savedCode === "string" ? savedCode.trim().toUpperCase() : "";
+  if (/^(?:\d{5}|[A-Z]{3}-\d{3})$/.test(candidate)) {
+    rememberCheckbox.checked = true;
+    fillCodeEntry(candidate);
+    $("rememberedHint").classList.remove("hidden");
+  } else {
+    rememberCheckbox.checked = false;
+    if (savedCode) {
+      try { localStorage.removeItem(KEY); } catch {}
+    }
+  }
+})();
 
 if (driveNotice === "connected" || driveNotice === "error") {
   history.replaceState(null, "", location.pathname + location.hash);

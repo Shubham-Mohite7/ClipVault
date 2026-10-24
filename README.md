@@ -80,7 +80,7 @@ The Vercel rewrite sends API paths and `/healthz` to the Express function while 
 
 To collect page views, enable **Web Analytics** in the Vercel project dashboard and redeploy. The static HTML pages include Vercel's `/_vercel/insights/script.js` integration; the React component and npm package are not needed for this project.
 
-The public privacy policy and Terms of Service are served at `/privacy.html` and `/terms.html`, and linked from the homepage. For Google OAuth branding, configure the production homepage, privacy-policy, and terms URLs on your verified custom domain.
+The public privacy policy and Terms of Service are served at `/privacy.html` and `/terms.html`, and linked from the homepage. If “Remember me on this device” is selected, the last successfully opened vault code is saved in that browser and prefilled on the next visit; signing out returns to the code-entry page without deleting the remembered code. For Google OAuth branding, configure the production homepage, privacy-policy, and terms URLs on your verified custom domain.
 
 The public pages include canonical URLs for `https://www.clipvault.lol`, social sharing metadata, WebApplication structured data on the homepage, and a sitemap at `/sitemap.xml`. After deployment, add the sitemap in Google Search Console and request indexing for the homepage. A sitemap and metadata help search engines understand the site but do not guarantee rankings or indexing.
 
