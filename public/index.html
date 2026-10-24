@@ -445,6 +445,7 @@ try {
 <script>
 const $ = (id) => document.getElementById(id);
 const KEY = "clipvault-code";
+const DRIVE_RETURN_KEY = "clipvault-drive-return-code";
 const THEME_KEY = "clipvault-theme";
 let code = null, snippets = [], editingId = null;
 let codeEntryInProgress = false;
@@ -777,6 +778,10 @@ $("connectDrive").onclick = async () => {
   button.textContent = "Connecting…";
   try {
     const result = await api("GET", `/api/vaults/${code}/drive/connect`);
+    sessionStorage.setItem(DRIVE_RETURN_KEY, JSON.stringify({
+      code,
+      remember: rememberCheckbox.checked,
+    }));
     location.assign(result.url);
   } catch (e) {
     toast(e.message);
@@ -997,9 +1002,24 @@ async function remove(id) {
   catch (e) { toast(e.message); }
 }
 
-/* ---------- Remember the last code on this device ---------- */
+/* ---------- Restore the current vault after OAuth or suggest the saved code ---------- */
 (() => {
-  let savedCode;
+  let oauthReturnCode, savedCode;
+  try {
+    oauthReturnCode = JSON.parse(sessionStorage.getItem(DRIVE_RETURN_KEY) || "null");
+    sessionStorage.removeItem(DRIVE_RETURN_KEY);
+  } catch {}
+  if (driveNotice === "connected" || driveNotice === "error") {
+    const candidate = typeof oauthReturnCode?.code === "string"
+      ? oauthReturnCode.code.trim().toUpperCase()
+      : "";
+    if (/^(?:\d{5}|[A-Z]{3}-\d{3})$/.test(candidate)) {
+      rememberCheckbox.checked = oauthReturnCode.remember === true;
+      enterCode(candidate);
+      return;
+    }
+  }
+
   try { savedCode = localStorage.getItem(KEY); } catch {}
   const candidate = typeof savedCode === "string" ? savedCode.trim().toUpperCase() : "";
   if (/^(?:\d{5}|[A-Z]{3}-\d{3})$/.test(candidate)) {

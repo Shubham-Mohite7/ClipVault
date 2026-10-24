@@ -93,7 +93,7 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /if \(value && value !== rememberedSuggestion\) enterCode\(value\)/);
   assert.match(homeText, /rememberedSuggestion = candidate/);
   assert.match(homeText, /dismissRememberedSuggestion\(\)/);
-  assert.match(homeText, /Remember the last code on this device/);
+  assert.match(homeText, /Restore the current vault after OAuth/);
   assert.doesNotMatch(homeText, /Auto sign-in on this device/);
   const signOutHandler = homeText.slice(
     homeText.indexOf('$("logout").onclick'),
@@ -102,6 +102,10 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.doesNotMatch(signOutHandler, /removeItem\(KEY\)/);
   assert.match(homeText, /id="newCode">ABC-123/);
   assert.match(homeText, /move every file uploaded through this ClipVault vault to Google Drive Trash/);
+  assert.match(homeText, /DRIVE_RETURN_KEY = "clipvault-drive-return-code"/);
+  assert.match(homeText, /sessionStorage\.setItem\(DRIVE_RETURN_KEY, JSON\.stringify/);
+  assert.match(homeText, /sessionStorage\.getItem\(DRIVE_RETURN_KEY\)/);
+  assert.match(homeText, /enterCode\(candidate\);\s*return;/);
 
   const privacy = await request("/privacy.html");
   assert.equal(privacy.status, 200);
@@ -113,6 +117,7 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(privacyText, /Website analytics/);
   assert.match(privacyText, /vercel\.com\/docs\/analytics\/privacy-policy/);
   assert.match(privacyText, /moves all tracked ClipVault attachments/);
+  assert.match(privacyText, /held temporarily in session storage while you connect Google Drive/);
   assert.match(privacyText, /connection remains active so you can retry/);
   assert.match(privacyText, /src="\/_vercel\/insights\/script\.js"/);
 
