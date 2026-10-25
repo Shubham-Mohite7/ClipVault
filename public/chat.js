@@ -12,10 +12,17 @@
   let messageCursor = "0";
   let pollTimer = 0;
   let polling = false;
+  let statusTimer = 0;
 
   function setStatus(message, isError = false) {
+    window.clearTimeout(statusTimer);
     $("chatStatus").textContent = message;
     $("chatStatus").classList.toggle("error", isError);
+    if (message && !isError) {
+      statusTimer = window.setTimeout(() => {
+        if ($("chatStatus").textContent === message) setStatus("");
+      }, 2400);
+    }
   }
 
   function showSection(sectionId) {
@@ -42,13 +49,16 @@
   function clearChatLists() {
     $("chatRequests").replaceChildren();
     $("chatConversations").replaceChildren();
+    $("chatColumns").classList.add("no-active-chat");
+    $("chatColumns").classList.remove("has-active-chat");
   }
 
   async function loadIdentity() {
     identity = await api("GET", "/chat/identity");
     $("chatSetupMessage").textContent = identity.registered
-      ? "This vault already has a secure chat identity. Enter its recovery phrase to unlock it on this device."
-      : "Set up a secure chat identity for this vault. You will only need to do this once.";
+      ? "Enter your recovery phrase to continue."
+      : "Your messages are encrypted on this device.";
+    $("chatSetup").querySelector("h3").textContent = identity.registered ? "Welcome back" : "Private chat";
     if (identity.registered) showSection("chatUnlock");
     else showSection("chatSetup");
   }
@@ -59,19 +69,18 @@
     $("chatOwnFingerprint").textContent = ownFingerprint;
     $("chatRecoveryInput").value = "";
     showSection("chatWorkspace");
-    setStatus("Chat unlocked on this device.");
+    setStatus("");
     await refreshChatData();
   }
 
   async function beginIdentitySetup() {
     $("chatCreateIdentity").disabled = true;
-    setStatus("Generating your secure chat identity…");
+    setStatus("");
     try {
       pendingIdentity = await crypto.createIdentity();
       $("chatRecoveryPhrase").textContent = pendingIdentity.recoveryPhrase;
       $("chatRecoveryConfirm").value = "";
       showSection("chatRecoverySetup");
-      setStatus("Save your recovery phrase before continuing.");
     } catch (error) {
       setStatus(error.message, true);
     } finally {
@@ -81,7 +90,7 @@
 
   async function confirmRecoveryPhrase() {
     if (!pendingIdentity || $("chatRecoveryConfirm").value.trim() !== pendingIdentity.recoveryPhrase) {
-      setStatus("The recovery phrase does not match. Copy it exactly before continuing.", true);
+      setStatus("Phrases do not match.", true);
       return;
     }
     $("chatConfirmRecovery").disabled = true;
@@ -100,7 +109,7 @@
       $("chatRecoveryPhrase").textContent = "";
       $("chatRecoveryConfirm").value = "";
       await unlockIdentity(recoveryPhrase);
-      setStatus("Secure chat is ready. Keep your recovery phrase somewhere private.");
+      setStatus("");
     } catch (error) {
       if (error.message.includes("already exists")) {
         pendingIdentity = null;
@@ -116,9 +125,9 @@
     if (!pendingIdentity) return;
     try {
       await navigator.clipboard.writeText(pendingIdentity.recoveryPhrase);
-      setStatus("Recovery phrase copied. Store it somewhere private.");
+      setStatus("Copied.");
     } catch {
-      setStatus("Select and copy the recovery phrase, then store it somewhere private.");
+      setStatus("Copy the phrase manually.", true);
     }
   }
 
@@ -173,6 +182,8 @@
         $("chatThreadEmpty").textContent = "This contact’s encryption key changed. Do not send messages until you verify the safety code.";
         $("chatThreadEmpty").classList.remove("hidden");
         $("chatActiveThread").classList.add("hidden");
+        $("chatColumns").classList.add("no-active-chat");
+        $("chatColumns").classList.remove("has-active-chat");
         setStatus("Warning: the saved safety code for this contact changed.", true);
         return;
       }
@@ -192,9 +203,9 @@
       $("chatMessages").replaceChildren();
       $("chatThreadEmpty").classList.add("hidden");
       $("chatActiveThread").classList.remove("hidden");
-      setStatus(pinnedFingerprint
-        ? "Compare the safety code with your contact if you have not already."
-        : "New safety code. Compare it with your contact through another trusted channel.");
+      $("chatColumns").classList.remove("no-active-chat");
+      $("chatColumns").classList.add("has-active-chat");
+      setStatus("");
       await loadMessages();
     } catch (error) {
       setStatus(error.message, true);
@@ -206,11 +217,10 @@
     const container = $("chatRequests");
     container.replaceChildren();
     if (!result.requests.length) {
-      const empty = document.createElement("small");
-      empty.textContent = "No pending requests";
-      container.append(empty);
+      $("chatRequestsSection").classList.add("hidden");
       return;
     }
+    $("chatRequestsSection").classList.remove("hidden");
     for (const request of result.requests) {
       const item = document.createElement("div");
       item.className = "chat-list-item";
@@ -255,11 +265,10 @@
     const container = $("chatConversations");
     container.replaceChildren();
     if (!conversations.length) {
-      const empty = document.createElement("small");
-      empty.textContent = "No chats yet";
-      container.append(empty);
+      $("chatConversationsSection").classList.add("hidden");
       return;
     }
+    $("chatConversationsSection").classList.remove("hidden");
     for (const conversation of conversations) {
       const button = document.createElement("button");
       button.className = "chat-list-item";
@@ -280,6 +289,8 @@
           $("chatThreadEmpty").textContent = "This contact’s encryption key changed. Do not send messages until you verify the safety code.";
           $("chatThreadEmpty").classList.remove("hidden");
           $("chatActiveThread").classList.add("hidden");
+          $("chatColumns").classList.add("no-active-chat");
+          $("chatColumns").classList.remove("has-active-chat");
           setStatus("Warning: the saved safety code for this contact changed.", true);
         } else {
           activeConversation = updated;
@@ -300,7 +311,7 @@
     try {
       const result = await api("POST", "/chat/requests", { recipientCode });
       $("chatRecipientCode").value = "";
-      setStatus(result.status === "pending" ? "Chat request sent. The other person must accept it." : "Request is already pending.");
+      setStatus(result.status === "pending" ? "Request sent." : "Already sent.");
       await loadConversations();
     } catch (error) {
       setStatus(error.message, true);
@@ -343,8 +354,10 @@
       $("chatActiveThread").classList.add("hidden");
       $("chatThreadEmpty").textContent = "Choose a chat or enter a vault code to start one.";
       $("chatThreadEmpty").classList.remove("hidden");
+      $("chatColumns").classList.add("no-active-chat");
+      $("chatColumns").classList.remove("has-active-chat");
       await loadConversations();
-      setStatus("Chat and its message history deleted.");
+      setStatus("Conversation deleted.");
     } catch (error) {
       setStatus(error.message, true);
     }
@@ -366,7 +379,7 @@
       $("chatThreadEmpty").classList.remove("hidden");
       showSection("chatSetup");
     }
-    setStatus("Loading secure chat…");
+    setStatus("");
     try {
       if (!identity) await loadIdentity();
       if (privateKeys) await refreshChatData();
@@ -401,6 +414,14 @@
   $("chatStartForm").addEventListener("submit", startChat);
   $("chatComposeForm").addEventListener("submit", sendMessage);
   $("chatDeleteButton").addEventListener("click", deleteConversation);
+  $("chatBackButton").addEventListener("click", () => {
+    activeConversation = null;
+    activeMessageKey = null;
+    $("chatActiveThread").classList.add("hidden");
+    $("chatThreadEmpty").classList.remove("hidden");
+    $("chatColumns").classList.add("no-active-chat");
+    $("chatColumns").classList.remove("has-active-chat");
+  });
 
   window.initEncryptedChat = initEncryptedChat;
 })();

@@ -63,8 +63,15 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /serviceWorker\.register\("\/service-worker\.js"\)/);
   assert.match(homeText, /id="chatTab" role="tab"/);
   assert.match(homeText, /id="chatPanel" class="hidden"/);
-  assert.match(homeText, /Messages are encrypted on your device before they reach the server/);
-  assert.match(homeText, /Compare safety codes with your contact through another trusted channel/);
+  assert.match(homeText, /Your messages are encrypted on this device/);
+  assert.match(homeText, /Private chat/);
+  assert.match(homeText, /placeholder="Vault code" aria-label="Vault code"/);
+  assert.match(homeText, /id="chatBackButton"/);
+  assert.match(homeText, /no-active-chat/);
+  assert.match(homeText, /has-active-chat/);
+  assert.match(homeText, /Compare with your contact through another trusted channel/);
+  assert.doesNotMatch(homeText, /The server can still see vault codes, participants, and message timing/);
+  assert.doesNotMatch(homeText, /Deleting removes this chat and its history for both people/);
   assert.match(homeText, /src="\/chat-crypto\.js" defer/);
   assert.match(homeText, /src="\/chat\.js" defer/);
   assert.match(homeText, /Save text, images, and PDFs/);
@@ -205,7 +212,7 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   const serviceWorkerText = await serviceWorker.text();
   assert.match(serviceWorkerText, /url\.pathname\.startsWith\("\/api\/"\)/);
   assert.match(serviceWorkerText, /url\.pathname\.startsWith\("\/_vercel\/"\)/);
-  assert.match(serviceWorkerText, /clipvault-shell-v3/);
+  assert.match(serviceWorkerText, /clipvault-shell-v5/);
   assert.match(serviceWorkerText, /"\/chat-crypto\.js"/);
   assert.match(serviceWorkerText, /"\/chat\.js"/);
   for (const scriptPath of ["/chat-crypto.js", "/chat.js"]) {

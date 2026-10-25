@@ -271,33 +271,60 @@ try {
   .file-actions a { color: var(--text-2); font-size: 14px; text-decoration: none; }
   .file-actions button.link { margin-left: auto; padding-inline: 4px; }
   .file-actions a:hover { color: var(--text); }
-  .chat-intro, .chat-trust-notice { color: var(--text-2); font-size: 14px; line-height: 1.55; }
-  .chat-intro { max-width: 680px; margin: 0 0 20px; }
+  .chat-trust-notice { color: var(--text-2); font-size: 13px; line-height: 1.5; }
   .chat-setup, .chat-sidebar, .chat-thread { min-width: 0; padding: 20px; border-radius: var(--radius); background: var(--bg-2); }
-  .chat-setup { max-width: 620px; }
-  .chat-setup p { margin-bottom: 14px; color: var(--text-2); line-height: 1.5; }
+  .chat-setup { max-width: 620px; display: grid; justify-items: center; align-content: center; min-height: 250px; padding: 28px 20px; text-align: center; }
+  .chat-setup p { max-width: 360px; margin-bottom: 14px; color: var(--text-2); line-height: 1.5; }
+  .chat-setup h3 { margin-bottom: 6px; font-size: 22px; font-weight: 650; letter-spacing: -.035em; }
+  .chat-lock-mark { width: 54px; height: 54px; margin-bottom: 16px; display: grid; place-items: center; border-radius: 18px; background: color-mix(in srgb, var(--accent) 7%, var(--bg-2)); color: var(--text-2); }
+  .chat-lock-mark svg { width: 25px; height: 25px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
   .chat-recovery-phrase { display: block; overflow-wrap: anywhere; padding: 14px; margin: 12px 0; border: 1px solid var(--line); border-radius: 12px; color: var(--text); font: 600 14px/1.5 ui-monospace, "SF Mono", Menlo, monospace; user-select: all; }
   .chat-recovery-input, .chat-recipient-input, .chat-message-input { width: 100%; min-height: 46px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); font-size: 16px; }
   .chat-setup label, .chat-sidebar label { display: block; margin: 14px 0 8px; font-size: 14px; }
-  .chat-workspace { display: grid; gap: 16px; }
-  .chat-trust-notice { padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; }
+  .chat-workspace { display: grid; gap: 12px; animation: chat-appear 240ms cubic-bezier(.22, 1, .36, 1) both; }
+  .chat-trust-notice { display: flex; align-items: center; gap: 7px; min-height: 30px; }
+  .chat-trust-notice svg { width: 15px; height: 15px; flex: 0 0 auto; fill: none; stroke: #30a46c; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .chat-trust-notice details { margin-left: auto; }
+  .chat-trust-notice summary { padding: 5px 8px; border-radius: 9px; background: color-mix(in srgb, var(--bg) 70%, transparent); color: var(--text-2); cursor: pointer; white-space: nowrap; }
+  .chat-trust-notice details[open] { position: relative; }
+  .chat-trust-notice details[open] .chat-trust-copy { position: absolute; z-index: 2; top: calc(100% + 8px); right: 0; width: min(300px, calc(100vw - 48px)); padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); box-shadow: 0 12px 32px rgba(0,0,0,.12); }
+  .chat-trust-copy p { margin-bottom: 8px; }
+  .chat-peer-safety { text-align: right; font-size: 12px; }
+  .chat-peer-safety summary { color: var(--text-2); cursor: pointer; }
+  .chat-peer-safety[open] { position: relative; }
+  .chat-peer-safety[open] .chat-trust-copy { position: absolute; z-index: 2; top: calc(100% + 8px); right: 0; width: min(300px, calc(100vw - 48px)); padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); box-shadow: 0 12px 32px rgba(0,0,0,.12); }
   .chat-fingerprint { display: block; margin-top: 6px; color: var(--text); font: 600 12px/1.6 ui-monospace, "SF Mono", Menlo, monospace; overflow-wrap: anywhere; }
   .chat-columns { display: grid; grid-template-columns: minmax(220px, .8fr) minmax(0, 1.6fr); gap: 16px; align-items: start; }
-  .chat-sidebar h3, .chat-thread h3 { margin: 0 0 12px; font-size: 16px; }
-  .chat-list { display: grid; gap: 8px; margin: 10px 0 20px; }
+  .chat-columns.no-active-chat .chat-thread { display: none; }
+  .chat-thread-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+  .chat-thread-head h3 { margin: 0; }
+  .chat-back-button { display: none; min-width: 40px; min-height: 40px; padding: 6px 10px; border: 0; border-radius: 12px; background: transparent; color: var(--text-2); font-size: 24px; cursor: pointer; }
+  .chat-back-button:hover { background: var(--bg); color: var(--text); }
+  .chat-sidebar h3, .chat-thread h3 { margin: 0 0 12px; font-size: 15px; font-weight: 620; }
+  .chat-list { display: grid; gap: 5px; margin: 8px 0 16px; }
   .chat-list-item { display: flex; width: 100%; justify-content: space-between; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--text); text-align: left; cursor: pointer; }
   .chat-list-item small { color: var(--text-2); }
+  .chat-list-empty { display: none; }
   .chat-thread-empty { min-height: 240px; display: grid; place-items: center; color: var(--text-2); text-align: center; }
-  .chat-messages { display: flex; flex-direction: column; gap: 10px; min-height: 180px; max-height: 50vh; overflow-y: auto; padding: 10px 2px; }
-  .chat-message { max-width: min(88%, 520px); padding: 10px 14px; border-radius: 16px; background: var(--bg); overflow-wrap: anywhere; white-space: pre-wrap; }
+  .chat-empty-art { width: 48px; height: 48px; margin-bottom: 12px; display: grid; place-items: center; border-radius: 16px; background: color-mix(in srgb, var(--accent) 7%, var(--bg-2)); color: var(--text-2); }
+  .chat-empty-art svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .chat-empty-title { color: var(--text); font-size: 15px; font-weight: 550; }
+  .chat-messages { display: flex; flex-direction: column; gap: 10px; min-height: 180px; max-height: 50vh; overflow-y: auto; padding: 14px 4px; }
+  .chat-message { max-width: min(88%, 520px); padding: 10px 14px; border-radius: 17px; background: var(--bg); overflow-wrap: anywhere; white-space: pre-wrap; animation: chat-appear 180ms ease-out both; }
   .chat-message.mine { align-self: flex-end; background: var(--accent); color: var(--accent-text); }
   .chat-message time { display: block; margin-top: 5px; color: var(--text-2); font-size: 11px; }
   .chat-message.mine time { color: color-mix(in srgb, var(--accent-text) 70%, transparent); }
-  .chat-compose { display: flex; align-items: end; gap: 10px; margin-top: 12px; }
-  .chat-message-input { min-height: 72px; max-height: 180px; resize: vertical; }
+  .chat-compose { display: flex; align-items: end; gap: 8px; margin-top: 12px; }
+  .chat-message-input { min-height: 52px; max-height: 140px; resize: none; overflow-y: auto; border-radius: 18px; }
+  .chat-compose .btn { min-height: 44px; padding: 9px 18px; }
   .chat-thread-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; }
-  .chat-status { min-height: 22px; margin-top: 12px; color: var(--text-2); font-size: 14px; }
+  .chat-status { min-height: 22px; margin-top: 12px; color: var(--text-2); font-size: 13px; }
   .chat-status.error { color: #ff3b30; }
+  .chat-delete-icon { width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 11px; background: transparent; color: var(--text-2); cursor: pointer; }
+  .chat-delete-icon:hover { background: color-mix(in srgb, #ff3b30 10%, transparent); color: #ff3b30; }
+  .chat-delete-icon svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .chat-status:empty { display: none; }
+  @keyframes chat-appear { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
   /* Modal */
   .overlay {
@@ -340,10 +367,18 @@ try {
     .enter { margin-top: 28px; }
     .reveal { width: calc(100% - 28px); margin-top: 36px; padding: 40px 20px 36px; border-radius: 28px; }
     .reveal .big { font-size: clamp(36px, 11.5vw, 52px); letter-spacing: .12em; margin-left: .12em; }
-    .chat-columns { grid-template-columns: 1fr; }
+    .chat-columns { grid-template-columns: 1fr; gap: 10px; }
     .chat-sidebar, .chat-thread { padding: 16px; }
-    .chat-compose { align-items: stretch; flex-direction: column; }
-    .chat-compose .btn { align-self: flex-end; }
+    .chat-columns.no-active-chat .chat-thread { display: none; }
+    .chat-columns.has-active-chat .chat-sidebar { display: none; }
+    .chat-columns.has-active-chat .chat-thread { min-height: min(68vh, 620px); }
+    .chat-columns.has-active-chat .chat-back-button { display: inline-grid; place-items: center; }
+    .chat-columns.has-active-chat #chatActiveThread { min-height: calc(min(68vh, 620px) - 32px); display: flex; flex-direction: column; }
+    .chat-columns.has-active-chat #chatMessages { flex: 1; min-height: 180px; max-height: none; }
+    .chat-sidebar h3 { margin-top: 14px !important; }
+    .chat-sidebar form { display: flex; align-items: center; gap: 8px; }
+    .chat-sidebar form .chat-recipient-input { min-width: 0; flex: 1; }
+    .chat-sidebar form .btn { flex: 0 0 auto; min-height: 44px; margin-top: 0 !important; padding: 9px 16px; font-size: 14px; }
     .wrap { padding: 32px 18px max(56px, env(safe-area-inset-bottom)); }
     .head { align-items: center; margin-bottom: 22px; }
     .head h2 { font-size: 36px; }
@@ -487,56 +522,82 @@ try {
       </div>
     </section>
     <section id="chatPanel" class="hidden" role="tabpanel" aria-label="End-to-end encrypted chat">
-      <p class="chat-intro">Chat privately using another vault code. Messages are encrypted on your device before they reach the server. Save your recovery phrase to unlock chat on another device.</p>
       <div id="chatSetup" class="chat-setup">
-        <p id="chatSetupMessage">Set up a secure chat identity for this vault. You will only need to do this once.</p>
-        <button id="chatCreateIdentity" class="btn" type="button">Set up secure chat</button>
+        <div class="chat-lock-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="3"></rect><path d="M8 10V7a4 4 0 1 1 8 0v3m-4 5v2"></path></svg></div>
+        <h3>Private chat</h3>
+        <p id="chatSetupMessage">Your messages are encrypted on this device.</p>
+        <button id="chatCreateIdentity" class="btn" type="button">Set up chat</button>
       </div>
       <div id="chatRecoverySetup" class="chat-setup hidden">
-        <p>Save this recovery phrase somewhere private. Anyone with it and your vault code can access your chat identity.</p>
+        <h3>Save your recovery phrase</h3>
+        <p>This phrase cannot be restored.</p>
         <code id="chatRecoveryPhrase" class="chat-recovery-phrase"></code>
-        <button id="chatCopyRecovery" class="btn secondary small" type="button">Copy recovery phrase</button>
-        <label for="chatRecoveryConfirm">Enter the recovery phrase to confirm you saved it</label>
+        <button id="chatCopyRecovery" class="btn secondary small" type="button">Copy phrase</button>
+        <label for="chatRecoveryConfirm">Confirm phrase</label>
         <input id="chatRecoveryConfirm" class="chat-recovery-input" type="text" autocomplete="off" spellcheck="false">
-        <button id="chatConfirmRecovery" class="btn" type="button">I saved my recovery phrase</button>
+        <button id="chatConfirmRecovery" class="btn" type="button">Continue</button>
       </div>
       <div id="chatUnlock" class="chat-setup hidden">
-        <p>Enter your recovery phrase to unlock your encrypted chat identity on this device.</p>
-        <label for="chatRecoveryInput">Recovery phrase</label>
+        <div class="chat-lock-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="3"></rect><path d="M8 10V7a4 4 0 1 1 8 0v3m-4 5v2"></path></svg></div>
+        <h3>Unlock chat</h3>
+        <p>Enter your recovery phrase.</p>
         <input id="chatRecoveryInput" class="chat-recovery-input" type="password" autocomplete="off" spellcheck="false">
-        <button id="chatUnlockButton" class="btn" type="button">Unlock chat</button>
+        <button id="chatUnlockButton" class="btn" type="button">Unlock</button>
       </div>
       <div id="chatWorkspace" class="chat-workspace hidden">
         <div class="chat-trust-notice">
-          Messages are end-to-end encrypted. The server can still see vault codes, participants, and message timing. Compare safety codes with your contact through another trusted channel to detect a substituted encryption key.
-          <span>Your safety code</span><code id="chatOwnFingerprint" class="chat-fingerprint"></code>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="3"></rect><path d="M8 10V7a4 4 0 1 1 8 0v3"></path></svg>
+          <span>End-to-end encrypted</span>
+          <details>
+            <summary>Verify</summary>
+            <div class="chat-trust-copy">
+              <p>Compare with your contact through another trusted channel.</p>
+              <code id="chatOwnFingerprint" class="chat-fingerprint"></code>
+            </div>
+          </details>
         </div>
-        <div class="chat-columns">
+        <div id="chatColumns" class="chat-columns no-active-chat">
           <aside class="chat-sidebar">
             <form id="chatStartForm">
-              <label for="chatRecipientCode">Start a chat with a vault code</label>
-              <input id="chatRecipientCode" class="chat-recipient-input" type="text" maxlength="7" placeholder="ABC-123" autocomplete="off" autocapitalize="characters" spellcheck="false" required>
-              <button class="btn small" type="submit" style="margin-top:10px">Send chat request</button>
+              <input id="chatRecipientCode" class="chat-recipient-input" type="text" maxlength="7" placeholder="Vault code" aria-label="Vault code" autocomplete="off" autocapitalize="characters" spellcheck="false" required>
+              <button class="btn small" type="submit" style="margin-top:0">Start chat</button>
             </form>
-            <h3 style="margin-top:24px">Chat requests</h3>
-            <div id="chatRequests" class="chat-list"></div>
-            <h3>Your chats</h3>
-            <div id="chatConversations" class="chat-list"></div>
+            <div id="chatRequestsSection">
+              <h3 style="margin-top:22px">Requests</h3>
+              <div id="chatRequests" class="chat-list"></div>
+            </div>
+            <div id="chatConversationsSection">
+              <h3>Recent</h3>
+              <div id="chatConversations" class="chat-list"></div>
+            </div>
           </aside>
           <section class="chat-thread" aria-label="Conversation">
-            <div id="chatThreadEmpty" class="chat-thread-empty">Choose a chat or enter a vault code to start one.</div>
+            <div id="chatThreadEmpty" class="chat-thread-empty">
+              <div>
+                <div class="chat-empty-art" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5 8 8 0 0 1-3.2-.7L4 20l1.7-4.3a7.5 7.5 0 1 1 14.3-4.2Z"></path><path d="m9.5 11.8 1.7 1.7 3.6-3.8"></path></svg></div>
+                <span class="chat-empty-title">Your conversations, private.</span>
+              </div>
+            </div>
             <div id="chatActiveThread" class="hidden">
-              <h3>Chat with <span id="chatPeerCode"></span></h3>
-              <div>Safety code <code id="chatPeerFingerprint" class="chat-fingerprint"></code></div>
+              <div class="chat-thread-head">
+                <button id="chatBackButton" class="chat-back-button" type="button" aria-label="Back to chats">‹</button>
+                <h3>Chat with <span id="chatPeerCode"></span></h3>
+                <details class="chat-peer-safety">
+                  <summary>Verify</summary>
+                  <div class="chat-trust-copy">
+                    <p>Compare with your contact through another trusted channel.</p>
+                    <code id="chatPeerFingerprint" class="chat-fingerprint"></code>
+                  </div>
+                </details>
+                <button id="chatDeleteButton" class="chat-delete-icon" type="button" aria-label="Delete chat" title="Delete chat">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 14h10l1-14M9 7V4h6v3"></path></svg>
+                </button>
+              </div>
               <div id="chatMessages" class="chat-messages" role="log" aria-live="polite"></div>
               <form id="chatComposeForm" class="chat-compose">
-                <textarea id="chatMessageInput" class="chat-message-input" maxlength="10000" placeholder="Write an encrypted message" required></textarea>
+                <textarea id="chatMessageInput" class="chat-message-input" maxlength="10000" placeholder="Message…" aria-label="Message" rows="1" required></textarea>
                 <button id="chatSendButton" class="btn" type="submit">Send</button>
               </form>
-              <div class="chat-thread-actions">
-                <span class="file-size">Deleting removes this chat and its history for both people.</span>
-                <button id="chatDeleteButton" class="link danger" type="button">Delete chat</button>
-              </div>
             </div>
           </section>
         </div>
