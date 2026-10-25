@@ -157,9 +157,10 @@ try {
   .chat-notification-button { position: relative; display: inline-grid; width: 42px; place-items: center; padding: 0 !important; }
   .chat-notification-button svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
   .chat-notification-count { position: absolute; top: 2px; right: 1px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 99px; background: #0a84ff; color: white; font-size: 10px; line-height: 16px; text-align: center; }
-  .chat-notification-panel { position: absolute; z-index: 20; top: calc(100% + 8px); right: 0; width: min(320px, calc(100vw - 24px)); max-height: min(60vh, 380px); overflow: auto; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); box-shadow: 0 12px 32px rgba(0,0,0,.18); }
+  .chat-notification-panel { position: fixed; z-index: 20; top: 72px; right: max(12px, env(safe-area-inset-right)); width: min(340px, calc(100vw - 24px)); max-height: min(60vh, 380px); max-height: min(60dvh, 380px); overflow: auto; overscroll-behavior: contain; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); box-shadow: 0 12px 32px rgba(0,0,0,.18); }
   .chat-notification-heading { margin: 2px 4px 8px; color: var(--text-2); font-size: 12px; font-weight: 600; }
-  .chat-notification-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 7px; border-top: 1px solid color-mix(in srgb, var(--line) 65%, transparent); font-size: 13px; }
+  .chat-notification-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; padding: 9px 7px; border-top: 1px solid color-mix(in srgb, var(--line) 65%, transparent); font-size: 13px; }
+  .chat-notification-item span { min-width: 0; overflow-wrap: anywhere; }
   .chat-notification-item button { min-height: 32px; padding: 4px 8px; color: var(--text); font-size: 12px; }
   .chat-notification-empty { padding: 10px 5px; color: var(--text-2); font-size: 13px; }
   nav button { min-height: 44px; padding: 0 10px; background: none; border: 0; border-radius: 10px; color: var(--text-2); cursor: pointer; font-size: 14px; transition: color var(--motion-fast), background var(--motion-fast); }
@@ -704,6 +705,7 @@ try {
   @keyframes modal-in { from { opacity: 0; transform: translateY(6px) scale(.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
   @media (max-width: 600px) {
     nav { height: 58px; padding-left: max(18px, env(safe-area-inset-left)); padding-right: max(18px, env(safe-area-inset-right)); }
+    .chat-notification-panel { top: 66px; left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); width: auto; }
     nav .brand { font-size: 17px; }
     nav .brand img { width: 34px; height: 34px; }
     nav .nav-actions { gap: 2px; }
