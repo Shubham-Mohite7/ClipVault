@@ -164,6 +164,71 @@ try {
   .about-grid article { padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); }
   .about-grid h3 { font-size: 16px; font-weight: 600; }
   .about-grid p { margin-top: 8px; color: var(--text-2); font-size: 14px; line-height: 1.55; }
+  .e2ee-demo {
+    --fg: var(--text);
+    --muted: var(--text-2);
+    --e2ee-fg: var(--text);
+    --e2ee-muted: var(--text-2);
+    --e2ee-stage-a: var(--bg-2);
+    --e2ee-stage-b: color-mix(in srgb, var(--bg-2) 72%, var(--bg));
+    --phone-a: var(--bg-2);
+    --phone-b: color-mix(in srgb, var(--line) 55%, var(--bg-2));
+    --screen: var(--bg);
+    --island: var(--text);
+    --bubble-in: color-mix(in srgb, var(--text) 8%, var(--bg));
+    --cloud-a: var(--bg);
+    --cloud-b: var(--bg-2);
+    --blue-a: #45a5ff;
+    --blue-b: #0a84ff;
+    --indigo-a: #837dff;
+    --indigo-b: #6258d9;
+    --green: #30a46c;
+    --red: #ff453a;
+    --e2ee-shadow: color-mix(in srgb, var(--text) 14%, transparent);
+    margin-top: 46px;
+  }
+  .e2ee-intro { max-width: 660px; margin: 0 auto 18px; text-align: center; }
+  .e2ee-eyebrow { margin-bottom: 7px; color: var(--text-2); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+  .e2ee-intro h2 { font-size: clamp(24px, 4vw, 32px); letter-spacing: -.035em; }
+  .e2ee-intro > p:last-child { margin-top: 8px; color: var(--text-2); line-height: 1.55; }
+  .e2ee-stage { padding: clamp(8px, 2vw, 18px); overflow: hidden; border: 1px solid var(--line); border-radius: 22px; background: linear-gradient(180deg, var(--e2ee-stage-a), var(--e2ee-stage-b)); }
+  #e2ee-scene { display: block; width: 100%; height: auto; overflow: visible; }
+  #e2ee-scene { --px: 95px; --pop: 0; --pd: 0s; --lk: 0; --eye: 0; --rc: 0; --rp: 0; --rd: 0s; --lkr: 1; --ka: 0; --kb: 0; }
+  .e2ee-text { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  .e2ee-mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .e2ee-soft { filter: drop-shadow(0 8px 10px var(--e2ee-shadow)); }
+  .e2ee-wire { stroke: var(--line); stroke-width: 3; stroke-linecap: round; stroke-dasharray: .1 9; animation: e2ee-flow 1.2s linear infinite; }
+  #e2ee-packet { transform: translate(var(--px), 168px); opacity: var(--pop); --l: var(--lk); transition: transform 1.1s cubic-bezier(.45, 0, .2, 1), opacity .35s ease var(--pd); }
+  #e2ee-rc { opacity: var(--rc); --l: var(--lkr); transition: opacity .4s ease var(--rd); }
+  #e2ee-rp { opacity: var(--rp); transition: opacity .4s ease var(--rd); }
+  .e2ee-shackle { transform: translateY(calc((1 - var(--l)) * -3.5px)); transition: transform .35s ease; }
+  #e2ee-cloud { transform-box: fill-box; transform-origin: center; transform: scale(calc(1 + var(--eye) * .05)); transition: transform .5s ease; }
+  #e2ee-eye { transform: translate(350px, 62px) scale(calc(.6 + var(--eye) * .4)); opacity: var(--eye); transition: transform .45s cubic-bezier(.3, 1.5, .5, 1), opacity .3s ease; }
+  .e2ee-ring { transform-box: fill-box; transform-origin: center; animation: e2ee-pulse 1.5s ease-out infinite; }
+  #e2ee-keyA .e2ee-ring { opacity: var(--ka); }
+  #e2ee-keyB .e2ee-ring { opacity: var(--kb); }
+  .e2ee-chip { transform-box: fill-box; transform-origin: center; transition: transform .4s ease; }
+  #e2ee-keyA .e2ee-chip { transform: scale(calc(1 + var(--ka) * .12)); }
+  #e2ee-keyB .e2ee-chip { transform: scale(calc(1 + var(--kb) * .12)); }
+  .e2ee-panel { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 16px 28px; padding: 18px 2px 0; }
+  .e2ee-caption { min-width: 0; min-height: 8rem; }
+  .e2ee-step { margin: 0 0 6px; color: var(--text-2); font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; font-variant-numeric: tabular-nums; }
+  .e2ee-caption h3 { margin: 0 0 7px; font-size: clamp(20px, 3.5vw, 26px); font-weight: 650; letter-spacing: -.025em; }
+  .e2ee-caption { text-align: center; }
+  .e2ee-caption > p:last-child { max-width: 50ch; margin: 0 auto; color: var(--text-2); font-size: 15px; line-height: 1.5; }
+  .e2ee-controls { display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 18px; }
+  .e2ee-dots { display: flex; align-items: center; gap: 8px; }
+  .e2ee-dot { appearance: none; width: 8px; height: 8px; padding: 0; border: 0; border-radius: 99px; background: var(--line); cursor: pointer; transition: width 220ms ease, background-color 220ms ease; }
+  .e2ee-dot[aria-current="true"] { width: 22px; background: var(--accent); }
+  .e2ee-dot:focus-visible, .e2ee-play:focus-visible { outline: 3px solid color-mix(in srgb, var(--text) 55%, transparent); outline-offset: 3px; }
+  .e2ee-play { min-width: 90px; min-height: 38px; padding: 8px 16px; border: 0; border-radius: 99px; background: var(--accent); color: var(--accent-text); font-size: 13px; font-weight: 600; cursor: pointer; transition: transform 140ms ease, opacity 140ms ease; }
+  .e2ee-play:active { transform: scale(.97); }
+  @keyframes e2ee-flow { to { stroke-dashoffset: -9; } }
+  @keyframes e2ee-pulse { 0% { transform: scale(1); } 100% { transform: scale(1.9); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .e2ee-wire, .e2ee-ring { animation: none; }
+    #e2ee-packet, #e2ee-rc, #e2ee-rp, .e2ee-shackle, #e2ee-cloud, #e2ee-eye, .e2ee-chip { transition: none; }
+  }
   .enter { margin: 34px auto 0; max-width: 400px; padding: 0 22px; text-align: center; animation: rise-in 500ms 60ms ease-out both; }
   .enter .label { font-size: 14px; color: var(--text-2); margin-bottom: 14px; }
   .code-row { display: flex; gap: 6px; justify-content: center; align-items: center; }
@@ -484,6 +549,11 @@ try {
     .hero p { font-size: 17px; }
     .about { margin-top: 48px; padding: 0 20px 56px; }
     .about-grid { grid-template-columns: 1fr; gap: 10px; margin-top: 22px; }
+    .e2ee-demo { margin-top: 34px; }
+    .e2ee-panel { grid-template-columns: minmax(0, 1fr); gap: 12px; padding-top: 14px; }
+    .e2ee-caption { min-height: 0; }
+    .e2ee-controls { flex-direction: row; justify-content: center; align-items: center; }
+    .e2ee-dots { gap: 7px; }
     .hero .actions { margin-top: 28px; }
     .enter { margin-top: 28px; }
     .reveal { width: calc(100% - 28px); margin-top: 36px; padding: 40px 20px 36px; border-radius: 28px; }
@@ -583,6 +653,140 @@ try {
         <p>Anyone with your code can access your vault. Don’t store passwords here.</p>
       </article>
     </div>
+    <section class="e2ee-demo" aria-labelledby="e2ee-heading">
+      <div class="e2ee-intro">
+        <p class="e2ee-eyebrow">ClipVault Chat</p>
+        <h2 id="e2ee-heading">Private from end to end.</h2>
+        <p>See how a message is encrypted on one device, relayed unreadable, and opened only by its recipient.</p>
+      </div>
+      <div class="e2ee-stage">
+        <svg id="e2ee-scene" viewBox="0 0 700 380" role="img" aria-label="A message is encrypted on Mia’s device, relayed unreadable through a server, and decrypted on Sam’s device.">
+      <defs>
+        <linearGradient id="e2ee-gPhone" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" style="stop-color:var(--phone-a)"/><stop offset="1" style="stop-color:var(--phone-b)"/>
+        </linearGradient>
+        <linearGradient id="e2ee-gCloud" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" style="stop-color:var(--cloud-a)"/><stop offset="1" style="stop-color:var(--cloud-b)"/>
+        </linearGradient>
+        <linearGradient id="e2ee-gBlue" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" style="stop-color:var(--blue-a)"/><stop offset="1" style="stop-color:var(--blue-b)"/>
+        </linearGradient>
+        <linearGradient id="e2ee-gIndigo" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" style="stop-color:var(--indigo-a)"/><stop offset="1" style="stop-color:var(--indigo-b)"/>
+        </linearGradient>
+        <g id="e2ee-phone">
+          <rect x="0" y="40" width="130" height="260" rx="30" fill="url(#e2ee-gPhone)" style="stroke:var(--line)" stroke-width="1"/>
+          <rect x="8" y="48" width="114" height="244" rx="23" style="fill:var(--screen)"/>
+          <rect x="45" y="54" width="40" height="11" rx="5.5" style="fill:var(--island)"/>
+          <rect x="45" y="282" width="40" height="4" rx="2" style="fill:var(--line)"/>
+        </g>
+      </defs>
+
+      <line class="e2ee-wire" x1="170" y1="168" x2="530" y2="168"/>
+
+      <g class="e2ee-soft"><use href="#e2ee-phone" x="30" y="0"/></g>
+      <g class="e2ee-soft"><use href="#e2ee-phone" x="540" y="0"/></g>
+
+      <text class="e2ee-text" x="95" y="26" text-anchor="middle" font-size="16" font-weight="600" style="fill:var(--fg)">Mia</text>
+      <text class="e2ee-text" x="605" y="26" text-anchor="middle" font-size="16" font-weight="600" style="fill:var(--fg)">Sam</text>
+      <text class="e2ee-text" x="95" y="90" text-anchor="middle" font-size="12" style="fill:var(--muted)">Sam</text>
+      <text class="e2ee-text" x="605" y="90" text-anchor="middle" font-size="12" style="fill:var(--muted)">Mia</text>
+
+      <!-- earlier message in each chat -->
+      <rect x="46" y="104" width="58" height="24" rx="12" style="fill:var(--bubble-in)"/>
+      <text class="e2ee-text" x="75" y="120" text-anchor="middle" font-size="11" style="fill:var(--fg)">Dinner?</text>
+      <rect x="590" y="104" width="58" height="24" rx="12" fill="url(#e2ee-gBlue)"/>
+      <text class="e2ee-text" x="619" y="120" text-anchor="middle" font-size="11" fill="#fff">Dinner?</text>
+
+      <!-- server -->
+      <g transform="translate(0 8)">
+        <g class="e2ee-soft"><g id="e2ee-cloud">
+          <path d="M310 205 a32 32 0 0 1 -4 -63 a48 48 0 0 1 90 -10 a36 36 0 0 1 14 73 z" fill="url(#e2ee-gCloud)"/>
+        </g></g>
+        <text class="e2ee-text" x="355" y="236" text-anchor="middle" font-size="13" font-weight="600" style="fill:var(--muted)">Server</text>
+      </g>
+      <g id="e2ee-eye">
+        <circle r="18" style="fill:var(--red)"/>
+        <path d="M-9 0 q9 -10 18 0 q-9 10 -18 0z" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+        <circle r="2.6" fill="#fff"/>
+        <line x1="-9" y1="-9" x2="9" y2="9" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+      </g>
+
+      <!-- Mia's sent message -->
+      <g transform="translate(95 168)">
+        <rect x="-46" y="-20" width="92" height="40" rx="20" fill="url(#e2ee-gBlue)"/>
+        <text class="e2ee-text" x="0" y="5" text-anchor="middle" font-size="14" font-weight="500" fill="#fff">Meet at 6?</text>
+      </g>
+
+      <!-- Sam's incoming message: locked, then readable -->
+      <g transform="translate(605 168)">
+        <g id="e2ee-rp">
+          <rect x="-46" y="-20" width="92" height="40" rx="20" style="fill:var(--bubble-in)"/>
+          <text class="e2ee-text" x="0" y="5" text-anchor="middle" font-size="14" font-weight="500" style="fill:var(--fg)">Meet at 6?</text>
+        </g>
+        <g id="e2ee-rc">
+          <rect x="-46" y="-20" width="92" height="40" rx="20" fill="url(#e2ee-gIndigo)"/>
+          <g transform="translate(-27 -1)">
+            <g class="e2ee-shackle"><path d="M-4.5 -2 v-3.5 a4.5 4.5 0 0 1 9 0 v3.5" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></g>
+            <rect x="-7" y="-2" width="14" height="11" rx="3" fill="#fff"/>
+          </g>
+          <text class="e2ee-mono e2ee-cipher" x="-10" y="5" font-size="13" fill="#fff">x9#Kq2</text>
+        </g>
+      </g>
+
+      <!-- the traveling, locked message -->
+      <g id="e2ee-packet">
+        <g class="e2ee-soft">
+          <rect x="-48" y="-20" width="96" height="40" rx="20" fill="url(#e2ee-gIndigo)"/>
+        </g>
+        <g transform="translate(-27 -1)">
+          <g class="e2ee-shackle"><path d="M-4.5 -2 v-3.5 a4.5 4.5 0 0 1 9 0 v3.5" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></g>
+          <rect x="-7" y="-2" width="14" height="11" rx="3" fill="#fff"/>
+        </g>
+        <text class="e2ee-mono e2ee-cipher" x="-10" y="5" font-size="13" fill="#fff">x9#Kq2</text>
+      </g>
+
+      <!-- keys -->
+      <g id="e2ee-keyA" transform="translate(95 334)">
+        <circle class="e2ee-ring" r="15" fill="none" style="stroke:var(--green)" stroke-width="2"/>
+        <g class="e2ee-chip">
+          <circle r="15" style="fill:var(--green)"/>
+          <g fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
+            <circle cx="-4.5" cy="0" r="3.2"/>
+            <line x1="-1.3" y1="0" x2="7" y2="0"/>
+            <line x1="4" y1="0" x2="4" y2="3.5"/>
+            <line x1="7" y1="0" x2="7" y2="3"/>
+          </g>
+        </g>
+      </g>
+      <g id="e2ee-keyB" transform="translate(605 334)">
+        <circle class="e2ee-ring" r="15" fill="none" style="stroke:var(--green)" stroke-width="2"/>
+        <g class="e2ee-chip">
+          <circle r="15" style="fill:var(--green)"/>
+          <g fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round">
+            <circle cx="-4.5" cy="0" r="3.2"/>
+            <line x1="-1.3" y1="0" x2="7" y2="0"/>
+            <line x1="4" y1="0" x2="4" y2="3.5"/>
+            <line x1="7" y1="0" x2="7" y2="3"/>
+          </g>
+        </g>
+      </g>
+      <text class="e2ee-text" x="95" y="366" text-anchor="middle" font-size="12" style="fill:var(--muted)">Mia's key</text>
+      <text class="e2ee-text" x="605" y="366" text-anchor="middle" font-size="12" style="fill:var(--muted)">Sam's key</text>
+    </svg>
+      </div>
+      <div class="e2ee-panel" aria-live="polite">
+        <div class="e2ee-caption">
+          <p class="e2ee-step" id="e2ee-step-no">Step 1 of 6</p>
+          <h3 id="e2ee-caption-title">Write a message</h3>
+          <p id="e2ee-caption-text">Mia types a message. At this point it is readable text on her own phone.</p>
+        </div>
+        <div class="e2ee-controls">
+          <div class="e2ee-dots" id="e2ee-dots" aria-label="Animation steps"></div>
+          <button class="e2ee-play" id="e2ee-play" type="button">Pause</button>
+        </div>
+      </div>
+    </section>
   </section>
 </main>
 
@@ -1453,6 +1657,95 @@ if (driveNotice === "connected" || driveNotice === "error") {
   else suggestRememberedCode();
   setTimeout(() => toast(driveNotice === "connected" ? "Google Drive connected" : "Could not connect Google Drive"), 0);
 } else suggestRememberedCode();
+</script>
+<script>
+(() => {
+  const scene = document.getElementById("e2ee-scene");
+  if (!scene) return;
+  const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches || false;
+  const steps = [
+    { title: "Write a message", text: "Mia types a message. At this point it is readable text on her own phone.", ms: 2800, state: { px: "95px", pop: 0, pd: "0s", lk: 0, eye: 0, rc: 0, rp: 0, rd: "0s", lkr: 1, ka: 0, kb: 0 } },
+    { title: "Locked on Mia’s phone", text: "Before it leaves, her phone encrypts it with a key shared only with Sam.", ms: 3000, state: { px: "95px", pop: 1, pd: "0s", lk: 1, eye: 0, rc: 0, rp: 0, rd: "0s", lkr: 1, ka: 1, kb: 0 } },
+    { title: "Sent as scrambled data", text: "What travels across the network is unreadable without the chat key.", ms: 2400, state: { px: "215px", pop: 1, pd: "0s", lk: 1, eye: 0, rc: 0, rp: 0, rd: "0s", lkr: 1, ka: 0, kb: 0 } },
+    { title: "The server can’t read it", text: "The encrypted message passes through the server, which cannot decrypt its contents.", ms: 3400, state: { px: "350px", pop: 1, pd: "0s", lk: 1, eye: 1, rc: 0, rp: 0, rd: "0s", lkr: 1, ka: 0, kb: 0 } },
+    { title: "Delivered, still locked", text: "It reaches Sam’s device in the same encrypted form it left in.", ms: 2800, state: { px: "600px", pop: 0, pd: ".8s", lk: 1, eye: 0, rc: 1, rp: 0, rd: ".8s", lkr: 1, ka: 0, kb: 0 } },
+    { title: "Unlocked on Sam’s phone", text: "Sam’s key decrypts the message so it is readable again on his device.", ms: 4200, state: { px: "600px", pop: 0, pd: "0s", lk: 1, eye: 0, rc: 0, rp: 1, rd: ".7s", lkr: 0, ka: 0, kb: 1 } },
+  ];
+  const stepNo = document.getElementById("e2ee-step-no");
+  const title = document.getElementById("e2ee-caption-title");
+  const text = document.getElementById("e2ee-caption-text");
+  const dotsEl = document.getElementById("e2ee-dots");
+  const playButton = document.getElementById("e2ee-play");
+  const dots = steps.map((step, index) => {
+    const dot = document.createElement("button");
+    dot.type = "button";
+    dot.className = "e2ee-dot";
+    dot.setAttribute("aria-label", `Step ${index + 1}: ${step.title}`);
+    dot.addEventListener("click", () => {
+      playing = false;
+      window.clearTimeout(timer);
+      updatePlayButton();
+      applyStep(index);
+    });
+    dotsEl.append(dot);
+    return dot;
+  });
+  let currentStep = 0;
+  let playing = !reducedMotion;
+  let isInView = typeof IntersectionObserver === "undefined";
+  let timer = 0;
+
+  function applyStep(index) {
+    currentStep = index;
+    const step = steps[index];
+    for (const [key, value] of Object.entries(step.state)) scene.style.setProperty(`--${key}`, value);
+    stepNo.textContent = `Step ${index + 1} of ${steps.length}`;
+    title.textContent = step.title;
+    text.textContent = step.text;
+    dots.forEach((dot, dotIndex) => dot.setAttribute("aria-current", String(dotIndex === index)));
+  }
+  function updatePlayButton() {
+    playButton.textContent = playing ? "Pause" : "Play";
+    playButton.setAttribute("aria-pressed", String(playing));
+  }
+  function scheduleNext() {
+    window.clearTimeout(timer);
+    if (!playing || document.hidden || !isInView) return;
+    timer = window.setTimeout(() => {
+      applyStep((currentStep + 1) % steps.length);
+      scheduleNext();
+    }, steps[currentStep].ms);
+  }
+  playButton.addEventListener("click", () => {
+    playing = !playing;
+    updatePlayButton();
+    if (playing) scheduleNext();
+    else window.clearTimeout(timer);
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) window.clearTimeout(timer);
+    else scheduleNext();
+  });
+  if (typeof IntersectionObserver !== "undefined") {
+    const observer = new IntersectionObserver(([entry]) => {
+      isInView = entry.isIntersecting && !document.getElementById("landing").classList.contains("hidden");
+      if (isInView) scheduleNext();
+      else window.clearTimeout(timer);
+    }, { threshold: .12 });
+    observer.observe(scene);
+  }
+  const cipherNodes = scene.querySelectorAll(".e2ee-cipher");
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789#$%&@*+=?";
+  if (!reducedMotion) window.setInterval(() => {
+    if (document.hidden || !isInView) return;
+    let cipher = "";
+    for (let i = 0; i < 6; i++) cipher += alphabet[Math.floor(Math.random() * alphabet.length)];
+    cipherNodes.forEach((node) => { node.textContent = cipher; });
+  }, 140);
+  applyStep(0);
+  updatePlayButton();
+  scheduleNext();
+})();
 </script>
 <script src="/chat-crypto.js" defer></script>
 <script src="/chat.js" defer></script>
