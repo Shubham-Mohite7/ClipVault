@@ -451,10 +451,27 @@ async function createChatIdentity(code, value) {
   return result.changes > 0;
 }
 
+async function replaceChatIdentity(code, value) {
+  await ensureDatabase();
+  const values = [JSON.stringify(value.publicKey), value.wrappedPrivateKey, value.recoverySalt, value.recoveryIv, Date.now(), code];
+  if (databaseMode === "postgres") {
+    await pool.query(
+      `UPDATE chat_identities
+       SET public_key = $1, wrapped_private_key = $2, recovery_salt = $3, recovery_iv = $4, created_at = $5
+       WHERE vault_code = $6`,
+      values,
+    );
+    return;
+  }
+  db.prepare(
+    `UPDATE chat_identities
+     SET public_key = ?, wrapped_private_key = ?, recovery_salt = ?, recovery_iv = ?, created_at = ?
+     WHERE vault_code = ?`,
+  ).run(...values);
+}
+
 async function createChatRequest(senderCode, recipientCode) {
   await ensureDatabase();
-  const recipientIdentity = await getChatIdentity(recipientCode);
-  if (!recipientIdentity) return { missingIdentity: true };
   const existing = databaseMode === "postgres"
     ? await pool.query(
       "SELECT id FROM chat_requests WHERE sender_code = $1 AND recipient_code = $2 AND status = 'pending' ORDER BY id DESC LIMIT 1",
@@ -489,6 +506,24 @@ async function listChatRequests(recipientCode) {
   return result.rows.map((request) => ({
     id: String(request.id),
     senderCode: request.sender_code.toUpperCase(),
+    createdAt: Number(request.created_at),
+  }));
+}
+
+async function listSentChatRequests(senderCode) {
+  await ensureDatabase();
+  const result = databaseMode === "postgres"
+    ? await pool.query(
+      "SELECT id, recipient_code, status, created_at FROM chat_requests WHERE sender_code = $1 ORDER BY created_at DESC LIMIT 50",
+      [senderCode],
+    )
+    : { rows: db.prepare(
+      "SELECT id, recipient_code, status, created_at FROM chat_requests WHERE sender_code = ? ORDER BY created_at DESC LIMIT 50",
+    ).all(senderCode) };
+  return result.rows.map((request) => ({
+    id: String(request.id),
+    peerCode: request.recipient_code.toUpperCase(),
+    status: request.status,
     createdAt: Number(request.created_at),
   }));
 }
@@ -971,7 +1006,7 @@ function validateChatIdentity(body) {
   if (!isPublicChatKey(publicKey?.agreement) || !isPublicChatKey(publicKey?.signing)) {
     return { error: "Invalid chat public key" };
   }
-  if (!/^[A-Za-z0-9_-]{100,2000}$/.test(body.wrappedPrivateKey || "")
+  if (!/^(?:cv2\.)?[A-Za-z0-9_-]{100,2000}$/.test(body.wrappedPrivateKey || "")
     || !/^[A-Za-z0-9_-]{22}$/.test(body.recoverySalt || "")
     || !/^[A-Za-z0-9_-]{16}$/.test(body.recoveryIv || "")) {
     return { error: "Invalid encrypted chat key bundle" };
@@ -1058,13 +1093,27 @@ app.post("/api/vaults/:code/chat/identity", chatWriteLimit, requireVault, asyncH
   const identity = validateChatIdentity(req.body);
   if (identity.error) return res.status(400).json({ error: identity.error });
   if (!(await createChatIdentity(req.params.code, identity))) {
-    return res.status(409).json({ error: "Chat identity already exists. Recover it with your recovery phrase." });
+    return res.status(409).json({ error: "Chat identity already exists." });
   }
   res.status(201).json({ ok: true });
 }));
 
+app.put("/api/vaults/:code/chat/identity", chatWriteLimit, requireVault, asyncHandler(async (req, res) => {
+  const identity = validateChatIdentity(req.body);
+  if (identity.error) return res.status(400).json({ error: identity.error });
+  if (!identity.wrappedPrivateKey.startsWith("cv2.")) {
+    return res.status(400).json({ error: "Chat identity must be encrypted with the vault code." });
+  }
+  await replaceChatIdentity(req.params.code, identity);
+  res.json({ ok: true });
+}));
+
 app.get("/api/vaults/:code/chat/requests", chatReadLimit, requireVault, asyncHandler(async (req, res) => {
-  res.json({ requests: await listChatRequests(req.params.code) });
+  const [requests, sentRequests] = await Promise.all([
+    listChatRequests(req.params.code),
+    listSentChatRequests(req.params.code),
+  ]);
+  res.json({ requests, sentRequests });
 }));
 
 app.post("/api/vaults/:code/chat/requests", chatWriteLimit, requireVault, asyncHandler(async (req, res) => {
@@ -1075,16 +1124,10 @@ app.post("/api/vaults/:code/chat/requests", chatWriteLimit, requireVault, asyncH
   if (!(await getChatIdentity(req.params.code))) {
     return res.status(409).json({ error: "Set up secure chat before sending a request" });
   }
-  if (!(await getChatIdentity(recipientCode))) {
-    return res.status(404).json({ error: "No secure chat identity found for that code" });
-  }
   if (await chatConversationExists(req.params.code, recipientCode)) {
     return res.status(409).json({ error: "You already have a chat with that code" });
   }
   const request = await createChatRequest(req.params.code, recipientCode);
-  if (request.missingIdentity) {
-    return res.status(404).json({ error: "No secure chat identity found for that code" });
-  }
   res.status(request.existing ? 200 : 201).json({ id: request.id, status: "pending" });
 }));
 

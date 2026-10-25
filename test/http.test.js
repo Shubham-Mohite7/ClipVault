@@ -65,7 +65,7 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /id="chatPanel" class="hidden"/);
   assert.match(homeText, /Your messages are encrypted on this device/);
   assert.match(homeText, /Private chat/);
-  assert.match(homeText, /placeholder="Vault code" aria-label="Vault code"/);
+  assert.match(homeText, /id="chatCodeEntry" class="chat-code-entry" role="group" aria-label="Enter a vault code"/);
   assert.match(homeText, /id="chatBackButton"/);
   assert.match(homeText, /no-active-chat/);
   assert.match(homeText, /has-active-chat/);
@@ -177,7 +177,7 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(termsText, /moves its tracked ClipVault attachments to Google Drive Trash/);
   assert.match(termsText, /contact\.mohite@gmail\.com/);
   assert.match(termsText, /src="\/_vercel\/insights\/script\.js"/);
-  assert.match(termsText, /If you lose it, ClipVault cannot restore the identity/);
+  assert.match(termsText, /Older chat identities require their existing recovery phrase once to migrate/);
   assert.match(termsText, /does not provide forward secrecy/);
 
   const robots = await request("/robots.txt");
@@ -212,7 +212,7 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   const serviceWorkerText = await serviceWorker.text();
   assert.match(serviceWorkerText, /url\.pathname\.startsWith\("\/api\/"\)/);
   assert.match(serviceWorkerText, /url\.pathname\.startsWith\("\/_vercel\/"\)/);
-  assert.match(serviceWorkerText, /clipvault-shell-v5/);
+  assert.match(serviceWorkerText, /const CACHE_NAME = "clipvault-shell-v\d+";/);
   assert.match(serviceWorkerText, /"\/chat-crypto\.js"/);
   assert.match(serviceWorkerText, /"\/chat\.js"/);
   for (const scriptPath of ["/chat-crypto.js", "/chat.js"]) {
@@ -296,6 +296,10 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   });
   assert.equal(sentRequest.status, 201);
   const chatRequest = await sentRequest.json();
+  const outgoingPending = await request(`/api/vaults/${chatSender}/chat/requests`);
+  assert.deepEqual((await outgoingPending.json()).sentRequests.map(({ peerCode, status }) => ({ peerCode, status })), [
+    { peerCode: chatRecipient, status: "pending" },
+  ]);
   const incomingRequests = await request(`/api/vaults/${chatRecipient}/chat/requests`);
   assert.deepEqual((await incomingRequests.json()).requests.map((item) => item.senderCode), [chatSender]);
   const accepted = await request(`/api/vaults/${chatRecipient}/chat/requests/${chatRequest.id}/accept`, {
@@ -306,6 +310,23 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.equal(accepted.status, 200);
   const conversation = await accepted.json();
   assert.equal(conversation.peerCode, chatSender);
+  const outgoingAccepted = await request(`/api/vaults/${chatSender}/chat/requests`);
+  assert.equal((await outgoingAccepted.json()).sentRequests[0].status, "accepted");
+  const declinedRequestResponse = await request(`/api/vaults/${chatSender}/chat/requests`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ recipientCode: chatOutsider }),
+  });
+  const declinedRequest = await declinedRequestResponse.json();
+  assert.equal(declinedRequestResponse.status, 201);
+  const declined = await request(`/api/vaults/${chatOutsider}/chat/requests/${declinedRequest.id}/reject`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: "{}",
+  });
+  assert.equal(declined.status, 200);
+  const outgoingDeclined = await request(`/api/vaults/${chatSender}/chat/requests`);
+  assert.equal((await outgoingDeclined.json()).sentRequests[0].status, "rejected");
   const encryptedMessage = {
     iv: crypto.randomBytes(12).toString("base64url"),
     ciphertext: crypto.randomBytes(32).toString("base64url"),

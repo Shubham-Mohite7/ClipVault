@@ -117,6 +117,15 @@ try {
   nav .brand { display: inline-flex; align-items: center; gap: 6px; font-size: 18px; font-weight: 650; letter-spacing: -.025em; }
   nav .brand img { width: 38px; height: 38px; border-radius: 10px; }
   .nav-actions { display: inline-flex; align-items: center; gap: 8px; }
+  .chat-notification-control { position: relative; }
+  .chat-notification-button { position: relative; display: inline-grid; width: 42px; place-items: center; padding: 0 !important; }
+  .chat-notification-button svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .chat-notification-count { position: absolute; top: 2px; right: 1px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 99px; background: #0a84ff; color: white; font-size: 10px; line-height: 16px; text-align: center; }
+  .chat-notification-panel { position: absolute; z-index: 20; top: calc(100% + 8px); right: 0; width: min(320px, calc(100vw - 24px)); max-height: min(60vh, 380px); overflow: auto; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); box-shadow: 0 12px 32px rgba(0,0,0,.18); }
+  .chat-notification-heading { margin: 2px 4px 8px; color: var(--text-2); font-size: 12px; font-weight: 600; }
+  .chat-notification-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 7px; border-top: 1px solid color-mix(in srgb, var(--line) 65%, transparent); font-size: 13px; }
+  .chat-notification-item button { min-height: 32px; padding: 4px 8px; color: var(--text); font-size: 12px; }
+  .chat-notification-empty { padding: 10px 5px; color: var(--text-2); font-size: 13px; }
   nav button { min-height: 44px; padding: 0 10px; background: none; border: 0; border-radius: 10px; color: var(--text-2); cursor: pointer; font-size: 14px; transition: color var(--motion-fast), background var(--motion-fast); }
   nav button:hover { color: var(--text); background: var(--bg-2); }
   nav .install-app { padding-inline: 12px; color: var(--text); font-weight: 550; }
@@ -324,7 +333,119 @@ try {
   .chat-delete-icon:hover { background: color-mix(in srgb, #ff3b30 10%, transparent); color: #ff3b30; }
   .chat-delete-icon svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
   .chat-status:empty { display: none; }
+  .chat-notification-panel:not(.hidden) { transform-origin: top right; animation: chat-panel-in 180ms cubic-bezier(.2, .75, .3, 1) both; }
+  #chatPanel #chatActiveThread:not(.hidden) { animation: chat-thread-in 220ms cubic-bezier(.2, .75, .3, 1) both; }
+  #chatPanel .chat-incoming-card.is-new { animation: chat-request-in 260ms cubic-bezier(.2, .75, .3, 1) both; }
+  #chatPanel .chat-incoming-card { transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease; }
+  #chatPanel .chat-incoming-card:hover { border-color: color-mix(in srgb, var(--text) 28%, var(--line)); box-shadow: 0 5px 16px rgba(0,0,0,.08); }
+  #chatPanel .chat-request-actions button { transition: transform 140ms ease, background-color 140ms ease, color 140ms ease, opacity 140ms ease; }
+  #chatPanel .chat-request-actions button:hover:not(:disabled) { transform: translateY(-1px); }
+  #chatPanel .chat-request-actions button:active:not(:disabled) { transform: scale(.97); }
+  #chatPanel .chat-list-item { transition: background-color 150ms ease, transform 150ms ease; }
+  #chatPanel .chat-compose { transition: border-color 160ms ease; }
+  #chatPanel .chat-compose:focus-within { border-color: color-mix(in srgb, var(--text) 24%, var(--line)); }
+  #chatPanel .chat-message-input { transition: background-color 160ms ease, box-shadow 160ms ease; }
+  #chatPanel .chat-message-input:focus { outline: none; box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 20%, transparent); }
+  #chatPanel .chat-compose .btn { transition: transform 140ms ease, opacity 140ms ease, background-color 140ms ease; }
+  #chatPanel .chat-compose .btn:active:not(:disabled) { transform: scale(.96); }
+  @keyframes chat-panel-in { from { opacity: 0; transform: translateY(-5px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes chat-thread-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes chat-request-in { from { opacity: 0; transform: translateY(7px) scale(.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
   @keyframes chat-appear { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Chat layout only: size the workspace to the viewport and keep its regions contained. */
+  #app:has(#chatTab[aria-selected="true"]) { display: flex; flex-direction: column; min-height: 0; }
+  #app:has(#chatTab[aria-selected="true"]) .head { margin-bottom: 18px; }
+  #app:has(#chatTab[aria-selected="true"]) .head h2 { font-size: clamp(30px, 3.2vw, 38px); }
+  #app:has(#chatTab[aria-selected="true"]) > .wrap { display: flex; flex: 1 1 auto; flex-direction: column; width: 100%; min-width: 0; min-height: 0; }
+  #app:has(#chatTab[aria-selected="true"]) #chatPanel { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-workspace { flex: 1 1 auto; grid-template-rows: auto minmax(0, 1fr); min-height: 0; gap: 8px; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-trust-notice { min-height: 26px; gap: 6px; font-size: 11px; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-trust-notice > svg { width: 13px; height: 13px; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-trust-notice > span { color: #248a55; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-trust-notice details { margin-left: auto; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-columns { grid-template-columns: minmax(230px, 280px) minmax(0, 1fr); gap: 0; align-items: stretch; flex: 1 1 auto; width: 100%; min-width: 0; min-height: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--bg); }
+  #app:has(#chatTab[aria-selected="true"]) .chat-columns.no-active-chat .chat-thread { display: flex; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-columns.has-active-chat { grid-template-columns: minmax(0, 1fr); }
+  #app:has(#chatTab[aria-selected="true"]) .chat-columns.has-active-chat .chat-sidebar { display: none; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-columns.has-active-chat .chat-back-button { display: inline-grid; place-items: center; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-setup { border: 1px solid var(--line); border-radius: 16px; background: var(--bg-2); }
+  #app:has(#chatTab[aria-selected="true"]) .chat-sidebar { min-width: 0; overflow-y: auto; padding: 14px; border: 0; border-right: 1px solid var(--line); border-radius: 0; background: var(--bg-2); }
+  #app:has(#chatTab[aria-selected="true"]) .chat-sidebar form { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px; padding: 0; border: 0; background: transparent; box-shadow: none; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-recipient-input { width: 100%; min-width: 0; min-height: 38px; padding: 8px 10px; border-radius: 10px; font-size: 13px; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-code-entry { display: flex; align-items: center; gap: 5px; min-width: 0; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-code-slot { flex: 1 1 20px; width: 20px; min-width: 0; height: 38px; padding: 0; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--text); font: 600 13px/1 ui-monospace, "SF Mono", Menlo, monospace; text-align: center; text-transform: uppercase; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-code-slot:focus { outline: 2px solid color-mix(in srgb, var(--text) 35%, transparent); outline-offset: 1px; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-code-separator { color: var(--text-2); font-size: 14px; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-code-entry.is-numeric .chat-code-separator, #app:has(#chatTab[aria-selected="true"]) .chat-code-entry.is-numeric .chat-code-slot:nth-of-type(n+6) { display: none; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-recipient-input.chat-code-value { position: absolute; width: 1px; height: 1px; min-height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-sidebar form { position: relative; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-sidebar form .btn { min-height: 38px; padding: 8px 10px; font-size: 12px; white-space: nowrap; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-inline-status { min-height: 0; margin: 4px 1px 0; color: var(--text-2); font-size: 11px; line-height: 1.4; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-request-status { color: var(--text-2); font-size: 11px; font-weight: 500; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-sidebar h3 { margin: 20px 0 6px !important; color: var(--text-2); font-size: 11px; font-weight: 600; letter-spacing: .02em; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-list { gap: 2px; margin: 0 0 10px; }
+  #chatPanel #chatRequests { display: grid; gap: 9px; margin: 0 0 14px; }
+  #chatPanel .chat-incoming-card { display: grid; gap: 10px; width: 100%; min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
+  #chatPanel .chat-request-copy { display: grid; gap: 3px; min-width: 0; }
+  #chatPanel .chat-request-copy strong { font-size: 13px; font-weight: 600; }
+  #chatPanel .chat-request-copy small { color: var(--text-2); font-size: 11px; }
+  #chatPanel .chat-request-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 100%; }
+  #chatPanel .chat-request-actions button { display: inline-flex; align-items: center; justify-content: center; width: 100%; min-width: 0; min-height: 34px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--text-2); font-size: 12px; font-weight: 550; cursor: pointer; }
+  #chatPanel .chat-request-actions .chat-request-accept { border-color: var(--accent); background: var(--accent); color: var(--accent-text); }
+  #chatPanel .chat-request-actions button:hover:not(:disabled) { filter: brightness(.92); }
+  #chatPanel .chat-request-actions button:disabled { cursor: wait; opacity: .6; }
+  #chatPanel .chat-request-status { padding: 4px 7px; border-radius: 99px; background: color-mix(in srgb, var(--text) 6%, transparent); white-space: nowrap; }
+  #chatPanel .chat-request-status[data-status="accepted"] { color: #248a55; background: color-mix(in srgb, #30a46c 10%, transparent); }
+  #chatPanel .chat-request-status[data-status="rejected"] { color: var(--text-2); }
+  #app:has(#chatTab[aria-selected="true"]) .chat-list-item { min-height: 38px; padding: 8px 9px; border: 0; border-radius: 8px; background: transparent; font-size: 13px; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-list-item:hover, #app:has(#chatTab[aria-selected="true"]) .chat-list-item[aria-current="page"] { background: color-mix(in srgb, var(--bg) 75%, transparent); }
+  #app:has(#chatTab[aria-selected="true"]) .chat-outgoing-request { cursor: default; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-request-status[data-status="accepted"] { color: #248a55; background: color-mix(in srgb, #30a46c 10%, transparent); }
+  #app:has(#chatTab[aria-selected="true"]) .chat-thread { display: flex; min-width: 0; min-height: 0; height: 100%; overflow: hidden; padding: 0; border: 0; border-radius: 0; background: var(--bg); }
+  #app:has(#chatTab[aria-selected="true"]) .chat-thread-empty { flex: 1 1 auto; min-height: 0; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-empty-art { display: none; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-empty-title { color: var(--text-2); font-size: 13px; font-weight: 450; }
+  #app:has(#chatTab[aria-selected="true"]) #chatActiveThread { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; min-height: 0; height: 100%; padding: 14px 18px 12px; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-thread-head { min-height: 38px; flex: 0 0 auto; margin: 0; padding: 0 0 10px; border-bottom: 1px solid color-mix(in srgb, var(--line) 75%, transparent); }
+  #app:has(#chatTab[aria-selected="true"]) .chat-thread-head h3 { flex: 1; margin: 0; font-size: 14px; font-weight: 600; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-peer-safety summary, #app:has(#chatTab[aria-selected="true"]) .chat-trust-notice summary { display: inline-flex; align-items: center; padding: 4px 6px; border: 0; border-radius: 6px; background: transparent; color: var(--text-2); font-size: 11px; list-style: none; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-peer-safety summary::-webkit-details-marker, #app:has(#chatTab[aria-selected="true"]) .chat-trust-notice summary::-webkit-details-marker { display: none; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-peer-safety summary:hover, #app:has(#chatTab[aria-selected="true"]) .chat-trust-notice summary:hover { background: color-mix(in srgb, var(--text) 6%, transparent); color: var(--text); }
+  #app:has(#chatTab[aria-selected="true"]) .chat-delete-icon { width: 32px; height: 32px; border-radius: 8px; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-messages { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; overscroll-behavior: contain; gap: 6px; padding: 14px 0; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-message { max-width: min(74%, 440px); padding: 8px 11px; border-radius: 16px; background: color-mix(in srgb, var(--text) 7%, var(--bg)); font-size: 13px; line-height: 1.45; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-message.mine { border-bottom-right-radius: 5px; background: #0a84ff; color: white; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-message:not(.mine) { border-bottom-left-radius: 5px; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-message time { margin-top: 3px; font-size: 10px; opacity: .72; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-message.mine time { color: white; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-compose { flex: 0 0 auto; align-items: center; gap: 7px; margin-top: auto; padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--line) 75%, transparent); }
+  #app:has(#chatTab[aria-selected="true"]) .chat-message-input { flex: 1 1 auto; min-width: 0; min-height: 34px; max-height: 96px; padding: 7px 11px; border: 0; border-radius: 11px; background: var(--bg-2); font-size: 13px; line-height: 1.35; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-compose .btn { min-height: 38px; padding: 8px 13px; background: #0a84ff; color: white; font-size: 13px; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-status { margin-top: 2px; font-size: 11px; }
+  .chat-thread-head { flex: 0 0 auto; }
+  .chat-messages { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; overscroll-behavior: contain; }
+  .chat-compose { flex: 0 0 auto; margin-top: auto; }
+  .chat-message-input { min-width: 0; }
+  .chat-thread-empty { flex: 1 1 auto; min-height: 0; }
+  @media (max-width: 760px) {
+    #app:has(#chatTab[aria-selected="true"]) .head h2 { font-size: 30px; }
+    #app:has(#chatTab[aria-selected="true"]) .chat-columns { grid-template-columns: minmax(0, 1fr); gap: 0; min-height: 0; border-radius: 14px; }
+    #app:has(#chatTab[aria-selected="true"]) .chat-columns.no-active-chat .chat-thread { display: none; }
+    #app:has(#chatTab[aria-selected="true"]) .chat-columns.has-active-chat .chat-sidebar { display: none; }
+    #app:has(#chatTab[aria-selected="true"]) .chat-columns.has-active-chat .chat-thread { display: flex; min-height: 0; }
+    #app:has(#chatTab[aria-selected="true"]) .chat-columns.has-active-chat .chat-back-button { display: inline-grid; place-items: center; }
+    #app:has(#chatTab[aria-selected="true"]) .chat-sidebar { padding: 12px; border-right: 0; }
+    #app:has(#chatTab[aria-selected="true"]) #chatActiveThread { min-height: 0; padding: 12px 14px max(12px, env(safe-area-inset-bottom)); }
+    #app:has(#chatTab[aria-selected="true"]) #chatMessages { min-height: 0; max-height: none; }
+    #app:has(#chatTab[aria-selected="true"]) .chat-message { max-width: 84%; }
+  }
+  @media (max-width: 380px) {
+    #app:has(#chatTab[aria-selected="true"]) .chat-sidebar form { grid-template-columns: minmax(0, 1fr) auto; gap: 5px; }
+    #app:has(#chatTab[aria-selected="true"]) .chat-sidebar form .btn { padding-inline: 8px; font-size: 11px; }
+    #app:has(#chatTab[aria-selected="true"]) .chat-peer-safety summary { font-size: 10px; }
+    #app:has(#chatTab[aria-selected="true"]) .chat-message { max-width: 92%; }
+  }
 
   /* Modal */
   .overlay {
@@ -367,18 +488,6 @@ try {
     .enter { margin-top: 28px; }
     .reveal { width: calc(100% - 28px); margin-top: 36px; padding: 40px 20px 36px; border-radius: 28px; }
     .reveal .big { font-size: clamp(36px, 11.5vw, 52px); letter-spacing: .12em; margin-left: .12em; }
-    .chat-columns { grid-template-columns: 1fr; gap: 10px; }
-    .chat-sidebar, .chat-thread { padding: 16px; }
-    .chat-columns.no-active-chat .chat-thread { display: none; }
-    .chat-columns.has-active-chat .chat-sidebar { display: none; }
-    .chat-columns.has-active-chat .chat-thread { min-height: min(68vh, 620px); }
-    .chat-columns.has-active-chat .chat-back-button { display: inline-grid; place-items: center; }
-    .chat-columns.has-active-chat #chatActiveThread { min-height: calc(min(68vh, 620px) - 32px); display: flex; flex-direction: column; }
-    .chat-columns.has-active-chat #chatMessages { flex: 1; min-height: 180px; max-height: none; }
-    .chat-sidebar h3 { margin-top: 14px !important; }
-    .chat-sidebar form { display: flex; align-items: center; gap: 8px; }
-    .chat-sidebar form .chat-recipient-input { min-width: 0; flex: 1; }
-    .chat-sidebar form .btn { flex: 0 0 auto; min-height: 44px; margin-top: 0 !important; padding: 9px 16px; font-size: 14px; }
     .wrap { padding: 32px 18px max(56px, env(safe-area-inset-bottom)); }
     .head { align-items: center; margin-bottom: 22px; }
     .head h2 { font-size: 36px; }
@@ -392,7 +501,6 @@ try {
   @media (max-width: 360px) {
     .reveal { width: calc(100% - 24px); padding-inline: 16px; }
     .reveal .big { font-size: clamp(34px, 11vw, 42px); }
-    .chat-message { max-width: 94%; }
     .wrap { padding-inline: 14px; }
     .file-grid { grid-template-columns: 1fr; }
     .head > .btn { min-width: 0; padding-inline: 16px; }
@@ -408,6 +516,16 @@ try {
   <span class="brand"><img src="/favicon.svg" alt="">ClipVault</span>
   <div class="nav-actions">
     <button id="installApp" class="install-app" type="button">Install app</button>
+    <div id="chatNotificationControl" class="chat-notification-control hidden">
+      <button id="chatNotificationButton" class="chat-notification-button" type="button" aria-label="Chat notifications" aria-expanded="false" aria-controls="chatNotificationPanel" title="Chat notifications">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M10 21h4"></path></svg>
+        <span id="chatNotificationCount" class="chat-notification-count hidden"></span>
+      </button>
+      <div id="chatNotificationPanel" class="chat-notification-panel hidden" role="region" aria-label="Chat notifications">
+        <h2 class="chat-notification-heading">Chat requests</h2>
+        <div id="chatNotificationList"></div>
+      </div>
+    </div>
     <button id="themeToggle" class="theme-toggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode" aria-pressed="false">
       <svg id="moonIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.3A8.6 8.6 0 0 1 8.7 3.8 8.7 8.7 0 1 0 20.2 15.3Z"></path></svg>
       <svg id="sunIcon" viewBox="0 0 24 24" aria-hidden="true" hidden><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path></svg>
@@ -528,30 +646,21 @@ try {
         <p id="chatSetupMessage">Your messages are encrypted on this device.</p>
         <button id="chatCreateIdentity" class="btn" type="button">Set up chat</button>
       </div>
-      <div id="chatRecoverySetup" class="chat-setup hidden">
-        <h3>Save your recovery phrase</h3>
-        <p>This phrase cannot be restored.</p>
-        <code id="chatRecoveryPhrase" class="chat-recovery-phrase"></code>
-        <button id="chatCopyRecovery" class="btn secondary small" type="button">Copy phrase</button>
-        <label for="chatRecoveryConfirm">Confirm phrase</label>
-        <input id="chatRecoveryConfirm" class="chat-recovery-input" type="text" autocomplete="off" spellcheck="false">
-        <button id="chatConfirmRecovery" class="btn" type="button">Continue</button>
-      </div>
       <div id="chatUnlock" class="chat-setup hidden">
         <div class="chat-lock-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="3"></rect><path d="M8 10V7a4 4 0 1 1 8 0v3m-4 5v2"></path></svg></div>
         <h3>Unlock chat</h3>
-        <p>Enter your recovery phrase.</p>
+        <p>Unlock chat with your vault code.</p>
         <input id="chatRecoveryInput" class="chat-recovery-input" type="password" autocomplete="off" spellcheck="false">
         <button id="chatUnlockButton" class="btn" type="button">Unlock</button>
       </div>
       <div id="chatWorkspace" class="chat-workspace hidden">
         <div class="chat-trust-notice">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="3"></rect><path d="M8 10V7a4 4 0 1 1 8 0v3"></path></svg>
-          <span>End-to-end encrypted</span>
+          <span>Encrypted in your browser</span>
           <details>
-            <summary>Verify</summary>
+            <summary>Security</summary>
             <div class="chat-trust-copy">
-              <p>Compare with your contact through another trusted channel.</p>
+              <p>Chat keys are protected by your vault code. Anyone with the code can access this chat. Compare safety codes with your contact through another trusted channel.</p>
               <code id="chatOwnFingerprint" class="chat-fingerprint"></code>
             </div>
           </details>
@@ -559,9 +668,19 @@ try {
         <div id="chatColumns" class="chat-columns no-active-chat">
           <aside class="chat-sidebar">
             <form id="chatStartForm">
-              <input id="chatRecipientCode" class="chat-recipient-input" type="text" maxlength="7" placeholder="Vault code" aria-label="Vault code" autocomplete="off" autocapitalize="characters" spellcheck="false" required>
+              <div id="chatCodeEntry" class="chat-code-entry" role="group" aria-label="Enter a vault code">
+                <input class="chat-code-slot" type="text" maxlength="1" aria-label="Code character 1" autocomplete="off" autocapitalize="characters" spellcheck="false">
+                <input class="chat-code-slot" type="text" maxlength="1" aria-label="Code character 2" autocomplete="off" autocapitalize="characters" spellcheck="false">
+                <input class="chat-code-slot" type="text" maxlength="1" aria-label="Code character 3" autocomplete="off" autocapitalize="characters" spellcheck="false">
+                <span class="chat-code-separator" aria-hidden="true">-</span>
+                <input class="chat-code-slot" type="text" maxlength="1" aria-label="Code character 4" autocomplete="off" inputmode="numeric">
+                <input class="chat-code-slot" type="text" maxlength="1" aria-label="Code character 5" autocomplete="off" inputmode="numeric">
+                <input class="chat-code-slot" type="text" maxlength="1" aria-label="Code character 6" autocomplete="off" inputmode="numeric">
+                <input class="chat-recipient-input chat-code-value" id="chatRecipientCode" type="text" tabindex="-1" aria-hidden="true" autocomplete="off" pattern="(?:[A-Za-z]{3}-[0-9]{3}|[0-9]{5})">
+              </div>
               <button class="btn small" type="submit" style="margin-top:0">Start chat</button>
             </form>
+            <p id="chatStartStatus" class="chat-inline-status" role="status" aria-live="polite"></p>
             <div id="chatRequestsSection">
               <h3 style="margin-top:22px">Requests</h3>
               <div id="chatRequests" class="chat-list"></div>
@@ -570,6 +689,7 @@ try {
               <h3>Recent</h3>
               <div id="chatConversations" class="chat-list"></div>
             </div>
+            <div id="chatSentRequestsSection" hidden aria-hidden="true"><div id="chatSentRequests"></div></div>
           </aside>
           <section class="chat-thread" aria-label="Conversation">
             <div id="chatThreadEmpty" class="chat-thread-empty">
@@ -854,6 +974,7 @@ function showApp(loading = false) {
   $("landing").classList.add("hidden"); $("app").classList.remove("hidden");
   $("installApp").classList.add("hidden");
   $("logout").classList.remove("hidden"); $("codeChip").textContent = code;
+  window.initChatNotifications?.(code);
   if (loading) renderSnippetSkeleton();
   else render();
   setActiveTab(activeTab);

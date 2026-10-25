@@ -46,7 +46,7 @@
     );
   }
 
-  async function createIdentity() {
+  async function createIdentity(vaultCode) {
     const agreementPair = await cryptoApi.subtle.generateKey(
       { name: "ECDH", namedCurve: "P-256" },
       true,
@@ -63,10 +63,11 @@
       agreement: await cryptoApi.subtle.exportKey("jwk", agreementPair.privateKey),
       signing: await cryptoApi.subtle.exportKey("jwk", signingPair.privateKey),
     };
-    const recoveryPhrase = randomBase64Url(32);
+    const recoveryPhrase = vaultCode ? null : randomBase64Url(32);
     const salt = cryptoApi.getRandomValues(new Uint8Array(16));
     const iv = cryptoApi.getRandomValues(new Uint8Array(12));
-    const wrappingKey = await deriveWrappingKey(recoveryPhrase, salt);
+    const wrappingSecret = vaultCode ? vaultCode.trim().toUpperCase() : recoveryPhrase;
+    const wrappingKey = await deriveWrappingKey(wrappingSecret, salt);
     const wrapped = await cryptoApi.subtle.encrypt(
       { name: "AES-GCM", iv },
       wrappingKey,
@@ -77,7 +78,7 @@
         agreement: { kty: agreementPublicKey.kty, crv: agreementPublicKey.crv, x: agreementPublicKey.x, y: agreementPublicKey.y, ext: true, key_ops: [] },
         signing: { kty: signingPublicKey.kty, crv: signingPublicKey.crv, x: signingPublicKey.x, y: signingPublicKey.y, ext: true, key_ops: ["verify"] },
       },
-      wrappedPrivateKey: bytesToBase64Url(new Uint8Array(wrapped)),
+      wrappedPrivateKey: `${vaultCode ? "cv2." : ""}${bytesToBase64Url(new Uint8Array(wrapped))}`,
       recoverySalt: bytesToBase64Url(salt),
       recoveryIv: bytesToBase64Url(iv),
       recoveryPhrase,
@@ -87,8 +88,11 @@
   async function unlockPrivateKey(identity, recoveryPhrase) {
     const salt = base64UrlToBytes(identity.recoverySalt);
     const iv = base64UrlToBytes(identity.recoveryIv);
-    const wrapped = base64UrlToBytes(identity.wrappedPrivateKey);
-    const wrappingKey = await deriveWrappingKey(recoveryPhrase.trim(), salt);
+    const codeWrapped = identity.wrappedPrivateKey.startsWith("cv2.");
+    const wrappedValue = codeWrapped ? identity.wrappedPrivateKey.slice(4) : identity.wrappedPrivateKey;
+    const wrapped = base64UrlToBytes(wrappedValue);
+    const wrappingSecret = codeWrapped ? recoveryPhrase.trim().toUpperCase() : recoveryPhrase.trim();
+    const wrappingKey = await deriveWrappingKey(wrappingSecret, salt);
     const plaintext = await cryptoApi.subtle.decrypt({ name: "AES-GCM", iv }, wrappingKey, wrapped);
     const privateJwks = JSON.parse(decoder.decode(plaintext));
     const [agreement, signing] = await Promise.all([
@@ -108,6 +112,25 @@
       ),
     ]);
     return { agreement, signing };
+  }
+
+  async function migrateIdentityToCode(identity, recoveryPhrase, vaultCode) {
+    const salt = cryptoApi.getRandomValues(new Uint8Array(16));
+    const iv = cryptoApi.getRandomValues(new Uint8Array(12));
+    const wrapped = base64UrlToBytes(identity.wrappedPrivateKey);
+    const oldKey = await deriveWrappingKey(recoveryPhrase.trim(), base64UrlToBytes(identity.recoverySalt));
+    const plaintext = await cryptoApi.subtle.decrypt(
+      { name: "AES-GCM", iv: base64UrlToBytes(identity.recoveryIv) },
+      oldKey,
+      wrapped,
+    );
+    const nextKey = await deriveWrappingKey(vaultCode.trim().toUpperCase(), salt);
+    const nextWrapped = await cryptoApi.subtle.encrypt({ name: "AES-GCM", iv }, nextKey, plaintext);
+    return {
+      wrappedPrivateKey: `cv2.${bytesToBase64Url(new Uint8Array(nextWrapped))}`,
+      recoverySalt: bytesToBase64Url(salt),
+      recoveryIv: bytesToBase64Url(iv),
+    };
   }
 
   async function deriveConversationKey(privateKey, peerPublicKey, ownCode, peerCode) {
@@ -212,6 +235,7 @@
     deriveConversationKey,
     encryptMessage,
     fingerprint,
+    migrateIdentityToCode,
     unlockPrivateKey,
   };
 });

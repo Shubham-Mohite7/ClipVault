@@ -36,7 +36,7 @@ The Postgres schema is created lazily once per server instance. SQLite creates i
 | `snippets` | `id`, `vault_code` (foreign key with cascade delete), `title`, `content`, `created_at`, `updated_at` |
 | `rate_limits` (Postgres) | `key`, `window_start`, `count` (composite primary key on `key`, `window_start`) |
 | `files` (Postgres) | `id`, `vault_code`, `drive_file_id`, `name`, `mime`, `size`, `created_at` |
-| `chat_identities` | A vault's public ECDH/signing keys and recovery-phrase-encrypted private keys |
+| `chat_identities` | A vault's public ECDH/signing keys and encrypted private-key bundle |
 | `chat_requests` | Pending, accepted, and declined chat invitations |
 | `chat_conversations` | The two vaults participating in a chat |
 | `chat_messages` | Encrypted message body, IV, signature, sender, and timestamp |
@@ -77,11 +77,11 @@ Snippets are limited to 20,000 characters and 200 per vault; JSON request bodies
 
 ## End-to-end encrypted chat
 
-Each vault can create a chat identity in the browser. The browser generates separate P-256 ECDH and ECDSA key pairs. A random 256-bit recovery phrase encrypts the private keys with PBKDF2-SHA-256 and AES-256-GCM before the encrypted bundle is stored. The recovery phrase is shown once, is never sent to the server, and is required to unlock the chat on another browser or after reloading. Keep it private and safe; ClipVault cannot recover it.
+Each vault can create a chat identity in the browser. The browser generates separate P-256 ECDH and ECDSA key pairs. The private-key bundle is encrypted with a key derived from the vault code using PBKDF2-SHA-256 and AES-256-GCM. This lets the code unlock chat on another browser without a separate recovery phrase. Vault codes have low entropy, so anyone who knows or guesses a code can recover that vault's private chat keys and read its chats. Do not use this design for sensitive conversations. Existing identities created before this change require the old recovery phrase once to migrate.
 
 The vault code is used to find a contact, not as an encryption key. The other person must also set up chat and accept the request before messaging starts. A shared ECDH secret is expanded with HKDF-SHA-256 into an AES-256-GCM message key. Messages are encrypted before upload and signed with the sender's ECDSA key. The server stores ciphertext, signatures, public keys, vault codes, and timing/relationship metadata. It does not receive message plaintext or private keys.
 
-Compare the full safety codes shown in a conversation through a separate trusted channel. This helps detect a substituted public key. The server can still see participant codes and message timing. A compromised device or recovery phrase can expose chats; this design does not provide forward secrecy for previously stored messages. Anyone who knows a vault code can access that vault, so protect the code and recovery phrase. Deleting a conversation removes its encrypted history for both participants. Inactive vault cleanup also deletes associated chats.
+Compare the full safety codes shown in a conversation through a separate trusted channel. This helps detect a substituted public key. The server can still see participant codes and message timing. Anyone who knows a vault code can access the vault and derive its chat private keys. A compromised device can expose chats; this design does not provide forward secrecy for previously stored messages. Deleting a conversation removes its encrypted history for both participants. Inactive vault cleanup also deletes associated chats.
 
 ## Security notes
 

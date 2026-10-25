@@ -1,4 +1,4 @@
-const CACHE_NAME = "clipvault-shell-v5";
+const CACHE_NAME = "clipvault-shell-v26";
 const SHELL_URLS = [
   "/",
   "/privacy.html",
