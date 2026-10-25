@@ -76,7 +76,7 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /src="\/chat-crypto\.js" defer/);
   assert.match(homeText, /src="\/chat\.js" defer/);
   assert.match(homeText, /Save text snippets for later/);
-  assert.match(homeText, /no ClipVault account needed/);
+  assert.match(homeText, /No ClipVault account is needed/);
   assert.match(homeText, /Images and PDFs stay in your Google Drive/);
   assert.match(homeText, /\"description\": \"Save and search text snippets in a vault you can open on any device with a code/);
   assert.match(homeText, /rel="canonical" href="https:\/\/www\.clipvault\.lol\/"/);
