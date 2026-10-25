@@ -585,9 +585,9 @@ try {
 
   /* Chat layout only: size the workspace to the viewport and keep its regions contained. */
   #app:has(#chatTab[aria-selected="true"]) { display: flex; flex-direction: column; min-height: 0; }
-  #app:has(#chatTab[aria-selected="true"]) .head { margin-bottom: 18px; }
-  #app:has(#chatTab[aria-selected="true"]) .head h2 { font-size: clamp(30px, 3.2vw, 38px); }
+  #app:has(#chatTab[aria-selected="true"]) .head { margin-bottom: 28px; }
   #app:has(#chatTab[aria-selected="true"]) > .wrap { display: flex; flex: 1 1 auto; flex-direction: column; width: 100%; min-width: 0; min-height: 0; }
+  #app:has(#chatTab[aria-selected="true"]) .segmented { align-self: flex-start; width: max-content; }
   #app:has(#chatTab[aria-selected="true"]) #chatPanel { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; }
   #app:has(#chatTab[aria-selected="true"]) .chat-workspace { flex: 1 1 auto; grid-template-rows: auto minmax(0, 1fr); min-height: 0; gap: 8px; }
   #app:has(#chatTab[aria-selected="true"]) .chat-trust-notice { min-height: 26px; gap: 6px; font-size: 11px; }
@@ -599,7 +599,7 @@ try {
   #app:has(#chatTab[aria-selected="true"]) .chat-columns.has-active-chat { grid-template-columns: minmax(0, 1fr); }
   #app:has(#chatTab[aria-selected="true"]) .chat-columns.has-active-chat .chat-sidebar { display: none; }
   #app:has(#chatTab[aria-selected="true"]) .chat-columns.has-active-chat .chat-back-button { display: inline-grid; place-items: center; }
-  #app:has(#chatTab[aria-selected="true"]) .chat-setup { border: 1px solid var(--line); border-radius: 16px; background: var(--bg-2); }
+  #app:has(#chatTab[aria-selected="true"]) .chat-setup { width: 100%; max-width: none; border: 1px solid var(--line); border-radius: 16px; background: var(--bg-2); }
   #app:has(#chatTab[aria-selected="true"]) .chat-sidebar { min-width: 0; overflow-y: auto; padding: 14px; border: 0; border-right: 1px solid var(--line); border-radius: 0; background: var(--bg-2); }
   #app:has(#chatTab[aria-selected="true"]) .chat-sidebar form { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px; padding: 0; border: 0; background: transparent; box-shadow: none; }
   #app:has(#chatTab[aria-selected="true"]) .chat-recipient-input { width: 100%; min-width: 0; min-height: 38px; padding: 8px 10px; border-radius: 10px; font-size: 13px; }
@@ -659,7 +659,6 @@ try {
   .chat-message-input { min-width: 0; }
   .chat-thread-empty { flex: 1 1 auto; min-height: 0; }
   @media (max-width: 760px) {
-    #app:has(#chatTab[aria-selected="true"]) .head h2 { font-size: 30px; }
     #app:has(#chatTab[aria-selected="true"]) .chat-columns { grid-template-columns: minmax(0, 1fr); gap: 0; min-height: 0; border-radius: 14px; }
     #app:has(#chatTab[aria-selected="true"]) .chat-columns.no-active-chat .chat-thread { display: none; }
     #app:has(#chatTab[aria-selected="true"]) .chat-columns.has-active-chat .chat-sidebar { display: none; }
