@@ -481,6 +481,60 @@ try {
   @keyframes skeleton-shimmer { to { background-position: -150% 0; } }
   .drive-connect { max-width: 560px; margin: 32px auto; text-align: center; padding: clamp(22px, 5vw, 36px); }
   .drive-connect p { color: var(--text-2); line-height: 1.5; margin-bottom: 22px; }
+  .drive-process-guide { width: 100%; margin: 10px auto 28px; }
+  .drive-process-animation { width: min(100%, 720px); margin: 0 auto; }
+  .drive-process-animation svg { display: block; width: 100%; height: auto; max-height: min(58vh, 460px); margin: 0 auto; }
+  .drive-process-animation .dp-phone { fill: var(--bg-2); stroke: var(--line); stroke-width: 2; }
+  .drive-process-animation .dp-screen { fill: var(--bg); stroke: var(--line); stroke-width: 1; }
+  .drive-process-animation .dp-text { fill: var(--text); font-family: inherit; }
+  .drive-process-animation .dp-muted { fill: var(--text-2); font-family: inherit; }
+  .drive-process-animation .dp-blue { fill: #0a84ff; }
+  .drive-process-animation .dp-white { fill: #fff; font-family: inherit; }
+  .drive-process-animation .dp-box { fill: var(--bg-2); stroke: var(--line); stroke-width: 1; }
+  .drive-process-animation .dp-line { stroke: var(--line); stroke-width: 1; }
+  .drive-process-animation .dp-green { fill: #30b06b; }
+  .drive-process-animation .dp-guide-line { fill: none; stroke: var(--line); stroke-width: 2; stroke-dasharray: 2 9; stroke-linecap: round; }
+  .drive-process-animation .dp-head, .drive-process-animation .dp-scene, .drive-process-animation .dp-chip { opacity: 0; animation-duration: 22s; animation-iteration-count: infinite; animation-timing-function: ease-in-out; }
+  .drive-process-animation .dp-head-1 { animation-name: dp-head-1; }
+  .drive-process-animation .dp-head-2 { animation-name: dp-head-2; }
+  .drive-process-animation .dp-head-3 { animation-name: dp-head-3; }
+  .drive-process-animation .dp-connect { animation-name: dp-connect; }
+  .drive-process-animation .dp-left-files { animation-name: dp-left-files; }
+  .drive-process-animation .dp-drive { animation-name: dp-drive; }
+  .drive-process-animation .dp-code { animation-name: dp-code; }
+  .drive-process-animation .dp-right-files { animation-name: dp-right-files; }
+  .drive-process-animation .dp-chip-one { animation-name: dp-chip-one; }
+  .drive-process-animation .dp-chip-two { animation-name: dp-chip-two; }
+  .drive-process-animation .dp-chip-three { animation-name: dp-chip-three; }
+  .drive-process-animation .dp-char { opacity: 0; animation: dp-char 22s ease-out infinite; }
+  .drive-process-animation .dp-char:nth-of-type(2) { animation-delay: .4s; }
+  .drive-process-animation .dp-char:nth-of-type(3) { animation-delay: .8s; }
+  .drive-process-animation .dp-char:nth-of-type(4) { animation-delay: 1.2s; }
+  .drive-process-animation .dp-char:nth-of-type(5) { animation-delay: 1.6s; }
+  .drive-process-animation .dp-char:nth-of-type(6) { animation-delay: 2s; }
+  .drive-process-animation .dp-dot-one { animation: dp-dot-one 22s ease-in-out infinite; }
+  .drive-process-animation .dp-dot-two { animation: dp-dot-two 22s ease-in-out infinite; opacity: .25; }
+  .drive-process-animation .dp-dot-three { animation: dp-dot-three 22s ease-in-out infinite; opacity: .25; }
+  @keyframes dp-head-1 { 0%, 27% { opacity: 1; } 31%, 100% { opacity: 0; } }
+  @keyframes dp-head-2 { 0%, 30% { opacity: 0; } 34%, 61% { opacity: 1; } 65%, 100% { opacity: 0; } }
+  @keyframes dp-head-3 { 0%, 64% { opacity: 0; } 68%, 95% { opacity: 1; } 99%, 100% { opacity: 0; } }
+  @keyframes dp-connect { 0%, 3% { opacity: 0; transform: translateY(6px); } 7%, 31% { opacity: 1; transform: translateY(0); } 35%, 100% { opacity: 0; } }
+  @keyframes dp-left-files { 0%, 31% { opacity: 0; transform: translateY(6px); } 36%, 96% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; } }
+  @keyframes dp-drive { 0%, 16% { opacity: .35; } 20%, 95% { opacity: 1; } 99%, 100% { opacity: .35; } }
+  @keyframes dp-code { 0%, 62% { opacity: 0; transform: translateY(6px); } 67%, 85% { opacity: 1; transform: translateY(0); } 89%, 100% { opacity: 0; } }
+  @keyframes dp-right-files { 0%, 85% { opacity: 0; transform: translateY(6px); } 90%, 96% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; } }
+  @keyframes dp-char { 0%, 67% { opacity: 0; transform: translateY(4px); } 74%, 85% { opacity: 1; transform: translateY(0); } 89%, 100% { opacity: 0; } }
+  @keyframes dp-chip-one { 0%, 38% { opacity: 0; transform: translateX(0); } 40% { opacity: 1; } 50% { opacity: 1; transform: translateX(70px); } 53%, 100% { opacity: 0; transform: translateX(70px); } }
+  @keyframes dp-chip-two { 0%, 46% { opacity: 0; transform: translateX(0); } 48% { opacity: 1; } 58% { opacity: 1; transform: translateX(70px); } 61%, 100% { opacity: 0; transform: translateX(70px); } }
+  @keyframes dp-chip-three { 0%, 86% { opacity: 0; transform: translateX(0); } 88% { opacity: 1; } 94% { opacity: 1; transform: translateX(74px); } 97%, 100% { opacity: 0; transform: translateX(74px); } }
+  @keyframes dp-dot-one { 0%, 28% { opacity: 1; } 32%, 96% { opacity: .25; } 100% { opacity: 1; } }
+  @keyframes dp-dot-two { 0%, 31% { opacity: .25; } 35%, 63% { opacity: 1; } 67%, 100% { opacity: .25; } }
+  @keyframes dp-dot-three { 0%, 66% { opacity: .25; } 70%, 95% { opacity: 1; } 99%, 100% { opacity: .25; } }
+  @media (prefers-reduced-motion: reduce) {
+    .drive-process-animation .dp-head, .drive-process-animation .dp-scene, .drive-process-animation .dp-chip, .drive-process-animation .dp-char, .drive-process-animation .dp-dot-one, .drive-process-animation .dp-dot-two, .drive-process-animation .dp-dot-three { animation: none !important; }
+    .drive-process-animation .dp-head-1, .drive-process-animation .dp-head-2, .drive-process-animation .dp-connect, .drive-process-animation .dp-code { display: none; }
+    .drive-process-animation .dp-head-3, .drive-process-animation .dp-left-files, .drive-process-animation .dp-drive, .drive-process-animation .dp-right-files { opacity: 1; }
+  }
   .drive-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0 18px; }
   .drive-email { color: var(--text-2); font-size: 14px; overflow-wrap: anywhere; }
   .drop-area { border: 1.5px dashed var(--line); border-radius: var(--radius); padding: 28px 18px; text-align: center; cursor: pointer; background: var(--bg-2); transition: background-color var(--motion), border-color var(--motion); }
@@ -787,6 +841,10 @@ try {
     .head > .btn { min-width: 132px; }
     .file-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 155px), 1fr)); gap: 10px; }
     .file-preview { height: clamp(120px, 42vw, 170px); }
+    .drive-process-animation { width: min(100%, 660px); }
+    .drive-process-animation svg { max-height: min(58vh, 420px); }
+    .drive-process-animation .dp-head { font-size: 34px; }
+    .drive-process-animation .dp-subtitle { font-size: 18px; }
     .card { padding: 18px; }
     .card .row { gap: 12px; }
     .drop-area { padding: 22px 14px; }
@@ -1275,6 +1333,169 @@ try {
         <div id="uploadStatus" class="upload-status" aria-live="polite"></div>
         <div id="fileGrid" class="file-grid"></div>
       </div>
+      <div id="driveProcessGuide" class="drive-process-guide hidden">
+        <div class="drive-process-animation">
+          <svg viewBox="50 0 660 490" role="img" aria-label="Connect Google Drive, save files there, then open your vault on another device with your code.">
+            <g text-anchor="middle">
+              <text class="dp-text dp-head dp-head-1" x="380" y="34" font-size="30" font-weight="600">Connect your Google Drive</text>
+              <text class="dp-muted dp-head dp-head-2" x="380" y="34" font-size="30" font-weight="600">Your files stay in your Drive</text>
+              <text class="dp-text dp-head dp-head-3" x="380" y="34" font-size="30" font-weight="600">Open them anywhere with a code</text>
+              <text class="dp-muted dp-subtitle" x="380" y="59" font-size="16">Images and PDFs, saved to your own Google Drive</text>
+            </g>
+            <path class="dp-guide-line" d="M250 270 H300" />
+            <path class="dp-guide-line" d="M460 270 H510" />
+            <g transform="translate(55 105)">
+              <rect class="dp-phone" width="190" height="320" rx="30" />
+              <rect class="dp-screen" x="7" y="7" width="176" height="306" rx="24" />
+              <rect x="66" y="13" width="58" height="13" rx="7" fill="var(--line)" />
+              <path d="M20 62 29 46l9 16h-7l-2-4-2 4z" fill="#0f9d58" />
+              <path d="m29 46 8 0 9 16h-9z" fill="#ffcd40" />
+              <path d="M29 62h17l-4 7H33z" fill="#4285f4" />
+              <text class="dp-text" x="54" y="61" font-size="13" font-weight="600">My vault</text>
+              <rect class="dp-box" x="119" y="48" width="57" height="20" rx="10" />
+              <text class="dp-text" x="147" y="62" font-size="9" font-weight="600" letter-spacing="1">ABC-123</text>
+              <line class="dp-line" x1="16" y1="82" x2="174" y2="82" />
+              <g class="dp-scene dp-connect">
+                <circle cx="95" cy="128" r="26" fill="var(--bg-2)" stroke="var(--line)" />
+                <path d="M81 132a8 8 0 0 1 2-15 11 11 0 0 1 21-1 8 8 0 0 1 3 16z" fill="none" stroke="var(--text-2)" stroke-width="2" stroke-linecap="round" />
+                <text class="dp-text" x="95" y="179" text-anchor="middle" font-size="13" font-weight="600">Add files to your vault</text>
+                <text class="dp-muted" x="95" y="198" text-anchor="middle" font-size="10">Connect Google Drive to store</text>
+                <text class="dp-muted" x="95" y="212" text-anchor="middle" font-size="10">images and PDFs.</text>
+                <rect x="20" y="231" width="150" height="38" rx="19" fill="var(--bg)" stroke="var(--line)" stroke-width="1.5" />
+                <path d="m34 240 6 0 6 11h-6z" fill="#ffcd40" />
+                <path d="m34 240-6 11 4 6 6-11z" fill="#0f9d58" />
+                <path d="M32 257h12l2-6H36z" fill="#4285f4" />
+                <text class="dp-text" x="100" y="254" text-anchor="middle" font-size="12" font-weight="600">Connect Google Drive</text>
+              </g>
+              <g class="dp-scene dp-left-files">
+                <text class="dp-muted" x="18" y="105" font-size="9" font-weight="600" letter-spacing="1">FILES</text>
+                <rect x="18" y="116" width="27" height="27" rx="7" fill="#ff453a" />
+                <text class="dp-white" x="31.5" y="133" text-anchor="middle" font-size="8" font-weight="700">PDF</text>
+                <text class="dp-text" x="53" y="128" font-size="11" font-weight="600">Receipt.pdf</text>
+                <text class="dp-muted" x="53" y="140" font-size="9">PDF · 240 KB</text>
+                <circle class="dp-green" cx="165" cy="130" r="7" />
+                <path d="m162 130 2 2 4-5" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                <rect x="18" y="153" width="27" height="27" rx="7" fill="#5e5ce6" />
+                <circle cx="36" cy="161" r="2" fill="#fff" />
+                <path d="m21 176 8-10 5 6 4-4 5 8z" fill="#fff" />
+                <text class="dp-text" x="53" y="165" font-size="11" font-weight="600">Photo.jpg</text>
+                <text class="dp-muted" x="53" y="177" font-size="9">JPG · 1.2 MB</text>
+                <circle class="dp-green" cx="165" cy="167" r="7" />
+                <path d="m162 167 2 2 4-5" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                <rect class="dp-box" x="23" y="209" width="144" height="29" rx="14" />
+                <text class="dp-muted" x="95" y="228" text-anchor="middle" font-size="9">Stored in your Google Drive</text>
+              </g>
+              <rect x="65" y="306" width="60" height="4" rx="2" fill="var(--line)" />
+            </g>
+            <g class="dp-scene dp-drive">
+              <rect x="300" y="170" width="160" height="204" rx="24" fill="var(--bg)" stroke="var(--line)" stroke-width="2" />
+              <path d="m352 194 15-27 15 27h-12l-3-6-3 6z" fill="#0f9d58" />
+              <path d="m367 167 15 0 15 27h-15z" fill="#ffcd40" />
+              <path d="M355 194h27l-7 12h-13z" fill="#4285f4" />
+              <text class="dp-text" x="380" y="226" text-anchor="middle" font-size="14" font-weight="600">Google Drive</text>
+              <rect x="315" y="238" width="130" height="26" rx="8" fill="var(--bg-2)" />
+              <path d="M325 245h9l4 4h12v9h-25z" fill="#0a84ff" />
+              <text class="dp-text" x="380" y="255" text-anchor="middle" font-size="11" font-weight="600">ClipVault</text>
+              <g class="dp-drive-files">
+                <rect x="318" y="275" width="23" height="23" rx="6" fill="#ff453a" />
+                <text class="dp-white" x="329.5" y="290" text-anchor="middle" font-size="7" font-weight="700">PDF</text>
+                <text class="dp-text" x="349" y="290" font-size="10">Receipt.pdf</text>
+                <rect x="318" y="307" width="23" height="23" rx="6" fill="#5e5ce6" />
+                <circle cx="334" cy="314" r="1.8" fill="#fff" />
+                <path d="m321 326 7-9 4 5 4-4 4 8z" fill="#fff" />
+                <text class="dp-text" x="349" y="322" font-size="10">Photo.jpg</text>
+              </g>
+            </g>
+            <g transform="translate(253 270)">
+              <g class="dp-chip dp-chip-one">
+                <rect x="-48" y="-13" width="96" height="26" rx="13" fill="var(--bg)" stroke="var(--line)" />
+                <rect x="-42" y="-8" width="16" height="16" rx="4" fill="#ff453a" />
+                <text class="dp-white" x="-34" y="3" text-anchor="middle" font-size="5" font-weight="700">PDF</text>
+                <text class="dp-text" x="4" y="4" text-anchor="middle" font-size="9">Receipt.pdf</text>
+              </g>
+            </g>
+            <g transform="translate(253 270)">
+              <g class="dp-chip dp-chip-two">
+                <rect x="-48" y="-13" width="96" height="26" rx="13" fill="var(--bg)" stroke="var(--line)" />
+                <rect x="-42" y="-8" width="16" height="16" rx="4" fill="#5e5ce6" />
+                <path d="m-39 5 4-6 3 3 2-2 4 5z" fill="#fff" />
+                <text class="dp-text" x="5" y="4" text-anchor="middle" font-size="9">Photo.jpg</text>
+              </g>
+            </g>
+            <g transform="translate(460 270)">
+              <g class="dp-chip dp-chip-three">
+                <rect x="-48" y="-13" width="96" height="26" rx="13" fill="var(--bg)" stroke="var(--line)" />
+                <rect x="-42" y="-8" width="16" height="16" rx="4" fill="#ff453a" />
+                <text class="dp-white" x="-34" y="3" text-anchor="middle" font-size="5" font-weight="700">PDF</text>
+                <text class="dp-text" x="4" y="4" text-anchor="middle" font-size="9">Receipt.pdf</text>
+              </g>
+            </g>
+            <g transform="translate(505 105)">
+              <rect class="dp-phone" width="190" height="320" rx="30" />
+              <rect class="dp-screen" x="7" y="7" width="176" height="306" rx="24" />
+              <rect x="66" y="13" width="58" height="13" rx="7" fill="var(--line)" />
+              <rect x="32" y="45" width="126" height="22" rx="11" fill="var(--bg-2)" />
+              <path d="M49 54v4a4 4 0 0 0 8 0v-4a3 3 0 0 0-6 0v4a1 1 0 0 0 2 0v-3" fill="none" stroke="var(--text-2)" stroke-width="1.5" stroke-linecap="round" />
+              <text class="dp-muted" x="102" y="60" text-anchor="middle" font-size="9">clipvault.app</text>
+              <g class="dp-scene dp-code">
+                <circle cx="95" cy="100" r="19" fill="var(--bg-2)" />
+                <path d="M95 89v13m-6-6 6-7 6 7" fill="none" stroke="var(--text-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                <text class="dp-text" x="95" y="139" text-anchor="middle" font-size="14" font-weight="600">Enter code</text>
+                <text class="dp-muted" x="95" y="155" text-anchor="middle" font-size="9">No account or login needed</text>
+                <g>
+                  <rect class="dp-box" x="14" y="169" width="23" height="34" rx="7" />
+                  <rect class="dp-box" x="40" y="169" width="23" height="34" rx="7" />
+                  <rect class="dp-box" x="66" y="169" width="23" height="34" rx="7" />
+                  <text class="dp-muted" x="100" y="191" text-anchor="middle" font-size="12">-</text>
+                  <rect class="dp-box" x="111" y="169" width="23" height="34" rx="7" />
+                  <rect class="dp-box" x="137" y="169" width="23" height="34" rx="7" />
+                  <rect class="dp-box" x="163" y="169" width="15" height="34" rx="7" />
+                  <text class="dp-text dp-char" x="25.5" y="191" text-anchor="middle" font-size="12" font-weight="700">A</text>
+                  <text class="dp-text dp-char" x="51.5" y="191" text-anchor="middle" font-size="12" font-weight="700">B</text>
+                  <text class="dp-text dp-char" x="77.5" y="191" text-anchor="middle" font-size="12" font-weight="700">C</text>
+                  <text class="dp-text dp-char" x="122.5" y="191" text-anchor="middle" font-size="12" font-weight="700">1</text>
+                  <text class="dp-text dp-char" x="148.5" y="191" text-anchor="middle" font-size="12" font-weight="700">2</text>
+                  <text class="dp-text dp-char" x="170.5" y="191" text-anchor="middle" font-size="12" font-weight="700">3</text>
+                </g>
+                <rect x="32" y="219" width="126" height="36" rx="18" fill="#0a84ff" />
+                <text class="dp-white" x="95" y="242" text-anchor="middle" font-size="12" font-weight="600">Open vault</text>
+              </g>
+              <g class="dp-scene dp-right-files">
+                <path d="M20 55 28 41l8 14h-6l-2-4-2 4z" fill="#0f9d58" />
+                <path d="m28 41 8 0 8 14h-8z" fill="#ffcd40" />
+                <path d="M28 55h16l-4 7H32z" fill="#4285f4" />
+                <text class="dp-text" x="52" y="55" font-size="12" font-weight="600">My vault</text>
+                <rect class="dp-box" x="119" y="42" width="57" height="20" rx="10" />
+                <text class="dp-text" x="147" y="56" font-size="9" font-weight="600" letter-spacing="1">ABC-123</text>
+                <line class="dp-line" x1="16" y1="74" x2="174" y2="74" />
+                <text class="dp-muted" x="18" y="96" font-size="9" font-weight="600" letter-spacing="1">FILES</text>
+                <rect x="18" y="106" width="27" height="27" rx="7" fill="#ff453a" />
+                <text class="dp-white" x="31.5" y="123" text-anchor="middle" font-size="8" font-weight="700">PDF</text>
+                <text class="dp-text" x="52" y="118" font-size="10" font-weight="600">Receipt.pdf</text>
+                <rect x="143" y="110" width="36" height="20" rx="10" fill="var(--bg-2)" />
+                <text class="dp-text" x="161" y="123" text-anchor="middle" font-size="8">Open</text>
+                <rect x="18" y="143" width="27" height="27" rx="7" fill="#5e5ce6" />
+                <circle cx="36" cy="151" r="2" fill="#fff" />
+                <path d="m21 166 8-10 5 6 4-4 5 8z" fill="#fff" />
+                <text class="dp-text" x="52" y="155" font-size="10" font-weight="600">Photo.jpg</text>
+                <rect x="143" y="147" width="36" height="20" rx="10" fill="var(--bg-2)" />
+                <text class="dp-text" x="161" y="160" text-anchor="middle" font-size="8">Open</text>
+                <rect x="24" y="190" width="142" height="26" rx="13" fill="var(--bg-2)" />
+                <path d="m36 198 4 0 4 7h-4z" fill="#ffcd40" />
+                <path d="m36 198-4 7 2 3 4-7z" fill="#0f9d58" />
+                <path d="M34 208h10l1-3h-9z" fill="#4285f4" />
+                <text class="dp-muted" x="105" y="207" text-anchor="middle" font-size="8">From your Google Drive</text>
+              </g>
+              <rect x="65" y="306" width="60" height="4" rx="2" fill="var(--line)" />
+            </g>
+            <g fill="var(--text-2)">
+              <circle class="dp-dot-one" cx="360" cy="465" r="3.5" />
+              <circle class="dp-dot-two" cx="380" cy="465" r="3.5" />
+              <circle class="dp-dot-three" cx="400" cy="465" r="3.5" />
+            </g>
+          </svg>
+        </div>
+      </div>
     </section>
     <section id="chatPanel" class="hidden" role="tabpanel" aria-label="End-to-end encrypted chat">
       <div id="chatSetup" class="chat-setup">
@@ -1738,6 +1959,7 @@ $("chatTab").onclick = () => setActiveTab("chat");
 async function loadDrivePanel() {
   if (drivePanelLoaded || drivePanelLoading) return;
   drivePanelLoading = true;
+  $("driveProcessGuide").classList.add("hidden");
   $("driveConnectCard").classList.remove("hidden");
   $("driveStatusSkeleton").classList.remove("hidden");
   $("driveConnectContent").classList.add("hidden");
@@ -1756,12 +1978,14 @@ async function loadDrivePanel() {
     $("driveStatusSkeleton").classList.add("hidden");
     $("driveConnectContent").classList.remove("hidden");
     $("driveMessage").textContent = "";
+    $("driveProcessGuide").classList.remove("hidden");
     drivePanelLoaded = true;
     drivePanelLoading = false;
     return;
   }
   $("driveConnectCard").classList.add("hidden");
   $("driveConnectedPanel").classList.remove("hidden");
+  $("driveProcessGuide").classList.add("hidden");
   $("driveEmail").textContent = status.email || "";
   try {
     await loadDriveFiles();
@@ -1787,6 +2011,7 @@ function renderDriveFiles(files) {
   const grid = $("fileGrid");
   grid.replaceChildren();
   grid.removeAttribute("aria-busy");
+  $("driveProcessGuide").classList.toggle("hidden", files.length > 0);
   if (!files.length) {
     const empty = document.createElement("div");
     empty.className = "empty";
