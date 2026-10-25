@@ -52,9 +52,10 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.equal(home.status, 200);
   const homeText = await home.text();
   assert.match(homeText, /ClipVault/);
-  assert.match(homeText, /<title>ClipVault: Free Online Clipboard/);
+  assert.match(homeText, /<title>ClipVault \| Save snippets and open them anywhere<\/title>/);
   assert.match(homeText, /name="description"/);
   assert.match(homeText, /rel="manifest" href="\/manifest\.webmanifest"/);
+
   assert.match(homeText, /apple-mobile-web-app-capable/);
   assert.match(homeText, /id="installApp"/);
   assert.match(homeText, /function showApp\(loading = false\)[\s\S]*?\$\("installApp"\)\.classList\.add\("hidden"\)/);
@@ -74,19 +75,20 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.doesNotMatch(homeText, /Deleting removes this chat and its history for both people/);
   assert.match(homeText, /src="\/chat-crypto\.js" defer/);
   assert.match(homeText, /src="\/chat\.js" defer/);
-  assert.match(homeText, /Save text, images, and PDFs/);
-  assert.match(homeText, /No account needed/);
-  assert.match(homeText, /Attachments stay in Google Drive/);
-  assert.match(homeText, /Save text, images, and PDFs\. Open your vault anywhere with a code\. No account needed\./);
+  assert.match(homeText, /Save text snippets for later/);
+  assert.match(homeText, /no ClipVault account needed/);
   assert.match(homeText, /Images and PDFs stay in your Google Drive/);
-  assert.match(homeText, /\"description\": \"A free online clipboard for saving text snippets and attaching images and PDFs in Google Drive/);
+  assert.match(homeText, /\"description\": \"Save and search text snippets in a vault you can open on any device with a code/);
   assert.match(homeText, /rel="canonical" href="https:\/\/www\.clipvault\.lol\/"/);
   assert.match(homeText, /property="og:title"/);
-  assert.match(homeText, /A simple online clipboard for your snippets/);
-  assert.match(homeText, /Save snippets and open them on any device with your code\. No account required\./);
+  assert.match(homeText, /A simple clipboard for the things you reuse/);
+  assert.match(homeText, /Keep useful text snippets together in a vault you can open with a code/);
   const structuredData = homeText.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
   assert.ok(structuredData, "homepage should include WebApplication structured data");
   assert.equal(JSON.parse(structuredData[1])["@type"], "WebApplication");
+  const faqStructuredData = homeText.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>[\s\S]*?<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+  assert.ok(faqStructuredData, "homepage should include FAQ structured data");
+  assert.equal(JSON.parse(faqStructuredData[2])["@type"], "FAQPage");
   assert.match(homeText, /href="\/privacy\.html"/);
   assert.match(homeText, /href="\/terms\.html"/);
   assert.match(homeText, /id="themeToggle"/);
@@ -182,16 +184,19 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
 
   const robots = await request("/robots.txt");
   assert.equal(robots.status, 200);
+  assert.match(robots.headers.get("content-type") || "", /text\/plain/i);
   const robotsText = await robots.text();
   assert.match(robotsText, /Disallow: \/api\//);
   assert.match(robotsText, /Sitemap: https:\/\/www\.clipvault\.lol\/sitemap\.xml/);
 
   const sitemap = await request("/sitemap.xml");
   assert.equal(sitemap.status, 200);
+  assert.match(sitemap.headers.get("content-type") || "", /application\/xml/i);
   const sitemapText = await sitemap.text();
-  assert.match(sitemapText, /https:\/\/www\.clipvault\.lol\//);
-  assert.match(sitemapText, /https:\/\/www\.clipvault\.lol\/privacy\.html/);
-  assert.match(sitemapText, /https:\/\/www\.clipvault\.lol\/terms\.html/);
+  assert.match(sitemapText, /^<\?xml version="1\.0" encoding="UTF-8"\?>/);
+  assert.match(sitemapText, /<loc>https:\/\/www\.clipvault\.lol\/<\/loc>/);
+  assert.match(sitemapText, /<loc>https:\/\/www\.clipvault\.lol\/privacy\.html<\/loc>/);
+  assert.match(sitemapText, /<loc>https:\/\/www\.clipvault\.lol\/terms\.html<\/loc>/);
 
   const manifestResponse = await request("/manifest.webmanifest");
   assert.equal(manifestResponse.status, 200);
