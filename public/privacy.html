@@ -68,7 +68,7 @@
 <nav><a href="/">ClipVault</a></nav>
 <main>
   <h1>Privacy Policy</h1>
-  <p class="updated">Effective date: October 24, 2026</p>
+  <p class="updated">Effective date: October 25, 2026</p>
 
   <p>ClipVault lets you save text snippets in a vault that you access with a code in the format <code>ABC-123</code>. Existing five-digit codes continue to work. You may also connect your Google Account to attach images and PDFs stored in your own Google Drive. This policy explains what ClipVault processes when you use the service.</p>
 
@@ -77,6 +77,7 @@
     <li><strong>Vault and snippet data:</strong> your vault code, snippets and their titles, and timestamps needed to provide the service.</li>
     <li><strong>Drive file information:</strong> when you connect Drive, ClipVault stores your Google account email, the identifier of the app-created Drive folder and files, and each attached file's name, type, size, and timestamp. The file contents are stored in your Google Drive, not ClipVault's database.</li>
     <li><strong>Google authorization:</strong> ClipVault stores an encrypted Google refresh token so it can access the files created for ClipVault after you leave the site. The token is encrypted at rest. Short-lived Google access tokens are held in server memory when needed.</li>
+    <li><strong>Chat data:</strong> if you set up chat, ClipVault stores public encryption keys, recovery-phrase-encrypted private key bundles, chat requests, and encrypted message contents with signatures and timestamps. Your recovery phrase and message plaintext are not sent to ClipVault.</li>
     <li><strong>Technical information:</strong> ClipVault processes your IP address for abuse prevention and rate limiting. Rate-limit counters are temporary. Your browser may store your vault code locally when you select “Remember me on this device.” While connecting Google Drive, ClipVault temporarily stores a hashed, single-use return ticket linked to the vault in its database. The ticket expires after five minutes and is deleted when used.</li>
   </ul>
 
@@ -89,10 +90,12 @@
 
   <h2>Sharing and security</h2>
   <p>ClipVault does not sell your personal information. Snippets and attached file references are provided to people who enter the corresponding vault code. Anyone who knows the code can access that vault, so do not store sensitive information there. Drive file contents remain in your Google Drive and are accessed by ClipVault through Google's API.</p>
-  <p>ClipVault uses access controls, rate limits, HTTPS in production, and encryption for stored Google refresh tokens. No method of storage or transmission can be guaranteed completely secure.</p>
+  <p>Chat messages are encrypted in your browser using ECDH, HKDF, and AES-GCM, then signed with a client-held signing key. ClipVault stores only encrypted message bodies, public keys, signatures, and delivery metadata. Compare a contact's safety code through another trusted channel to help detect a replaced key. Vault codes remain bearer access codes. A compromised device or recovery phrase can expose stored chats, and chat does not provide forward secrecy for previously stored messages.</p>
+  <p>ClipVault uses access controls, rate limits, HTTPS in production, and encryption for stored Google refresh tokens and chat private-key bundles. No method of storage or transmission can be guaranteed completely secure.</p>
 
   <h2>Retention and deletion</h2>
   <p>You can delete individual snippets and attachments from a vault. Deleting an attachment in ClipVault moves that file to the trash in your Google Drive. Disconnecting Google Drive first moves all tracked ClipVault attachments for that vault to Google Drive Trash, then removes ClipVault's stored token and file references. Files outside ClipVault are not affected. If any attachment cannot be moved to Trash, the connection remains active so you can retry.</p>
+  <p>Either chat participant can delete a conversation, which removes its encrypted message history for both participants. A vault and its associated chat data are purged after one year without activity.</p>
   <p>Vaults that have not been used for one year are purged from ClipVault. This removes the vault, its snippets, stored Drive token, and file references from the app database. It does not delete files from your Google Drive. Temporary rate-limit records are also periodically removed.</p>
   <p>You can clear a remembered vault code by signing out in the app or clearing this site's local storage in your browser.</p>
 

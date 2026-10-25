@@ -271,6 +271,33 @@ try {
   .file-actions a { color: var(--text-2); font-size: 14px; text-decoration: none; }
   .file-actions button.link { margin-left: auto; padding-inline: 4px; }
   .file-actions a:hover { color: var(--text); }
+  .chat-intro, .chat-trust-notice { color: var(--text-2); font-size: 14px; line-height: 1.55; }
+  .chat-intro { max-width: 680px; margin: 0 0 20px; }
+  .chat-setup, .chat-sidebar, .chat-thread { min-width: 0; padding: 20px; border-radius: var(--radius); background: var(--bg-2); }
+  .chat-setup { max-width: 620px; }
+  .chat-setup p { margin-bottom: 14px; color: var(--text-2); line-height: 1.5; }
+  .chat-recovery-phrase { display: block; overflow-wrap: anywhere; padding: 14px; margin: 12px 0; border: 1px solid var(--line); border-radius: 12px; color: var(--text); font: 600 14px/1.5 ui-monospace, "SF Mono", Menlo, monospace; user-select: all; }
+  .chat-recovery-input, .chat-recipient-input, .chat-message-input { width: 100%; min-height: 46px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); font-size: 16px; }
+  .chat-setup label, .chat-sidebar label { display: block; margin: 14px 0 8px; font-size: 14px; }
+  .chat-workspace { display: grid; gap: 16px; }
+  .chat-trust-notice { padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; }
+  .chat-fingerprint { display: block; margin-top: 6px; color: var(--text); font: 600 12px/1.6 ui-monospace, "SF Mono", Menlo, monospace; overflow-wrap: anywhere; }
+  .chat-columns { display: grid; grid-template-columns: minmax(220px, .8fr) minmax(0, 1.6fr); gap: 16px; align-items: start; }
+  .chat-sidebar h3, .chat-thread h3 { margin: 0 0 12px; font-size: 16px; }
+  .chat-list { display: grid; gap: 8px; margin: 10px 0 20px; }
+  .chat-list-item { display: flex; width: 100%; justify-content: space-between; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--text); text-align: left; cursor: pointer; }
+  .chat-list-item small { color: var(--text-2); }
+  .chat-thread-empty { min-height: 240px; display: grid; place-items: center; color: var(--text-2); text-align: center; }
+  .chat-messages { display: flex; flex-direction: column; gap: 10px; min-height: 180px; max-height: 50vh; overflow-y: auto; padding: 10px 2px; }
+  .chat-message { max-width: min(88%, 520px); padding: 10px 14px; border-radius: 16px; background: var(--bg); overflow-wrap: anywhere; white-space: pre-wrap; }
+  .chat-message.mine { align-self: flex-end; background: var(--accent); color: var(--accent-text); }
+  .chat-message time { display: block; margin-top: 5px; color: var(--text-2); font-size: 11px; }
+  .chat-message.mine time { color: color-mix(in srgb, var(--accent-text) 70%, transparent); }
+  .chat-compose { display: flex; align-items: end; gap: 10px; margin-top: 12px; }
+  .chat-message-input { min-height: 72px; max-height: 180px; resize: vertical; }
+  .chat-thread-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; }
+  .chat-status { min-height: 22px; margin-top: 12px; color: var(--text-2); font-size: 14px; }
+  .chat-status.error { color: #ff3b30; }
 
   /* Modal */
   .overlay {
@@ -313,6 +340,10 @@ try {
     .enter { margin-top: 28px; }
     .reveal { width: calc(100% - 28px); margin-top: 36px; padding: 40px 20px 36px; border-radius: 28px; }
     .reveal .big { font-size: clamp(36px, 11.5vw, 52px); letter-spacing: .12em; margin-left: .12em; }
+    .chat-columns { grid-template-columns: 1fr; }
+    .chat-sidebar, .chat-thread { padding: 16px; }
+    .chat-compose { align-items: stretch; flex-direction: column; }
+    .chat-compose .btn { align-self: flex-end; }
     .wrap { padding: 32px 18px max(56px, env(safe-area-inset-bottom)); }
     .head { align-items: center; margin-bottom: 22px; }
     .head h2 { font-size: 36px; }
@@ -326,6 +357,7 @@ try {
   @media (max-width: 360px) {
     .reveal { width: calc(100% - 24px); padding-inline: 16px; }
     .reveal .big { font-size: clamp(34px, 11vw, 42px); }
+    .chat-message { max-width: 94%; }
     .wrap { padding-inline: 14px; }
     .file-grid { grid-template-columns: 1fr; }
     .head > .btn { min-width: 0; padding-inline: 16px; }
@@ -414,6 +446,7 @@ try {
     <div class="segmented" role="tablist" aria-label="Vault content">
       <button id="textTab" role="tab" aria-selected="true">Text</button>
       <button id="filesTab" role="tab" aria-selected="false">Files</button>
+      <button id="chatTab" role="tab" aria-selected="false">Chat</button>
     </div>
     <section id="textPanel" role="tabpanel">
       <input class="search" id="search" placeholder="Search" type="search">
@@ -452,6 +485,63 @@ try {
         <div id="uploadStatus" class="upload-status" aria-live="polite"></div>
         <div id="fileGrid" class="file-grid"></div>
       </div>
+    </section>
+    <section id="chatPanel" class="hidden" role="tabpanel" aria-label="End-to-end encrypted chat">
+      <p class="chat-intro">Chat privately using another vault code. Messages are encrypted on your device before they reach the server. Save your recovery phrase to unlock chat on another device.</p>
+      <div id="chatSetup" class="chat-setup">
+        <p id="chatSetupMessage">Set up a secure chat identity for this vault. You will only need to do this once.</p>
+        <button id="chatCreateIdentity" class="btn" type="button">Set up secure chat</button>
+      </div>
+      <div id="chatRecoverySetup" class="chat-setup hidden">
+        <p>Save this recovery phrase somewhere private. Anyone with it and your vault code can access your chat identity.</p>
+        <code id="chatRecoveryPhrase" class="chat-recovery-phrase"></code>
+        <button id="chatCopyRecovery" class="btn secondary small" type="button">Copy recovery phrase</button>
+        <label for="chatRecoveryConfirm">Enter the recovery phrase to confirm you saved it</label>
+        <input id="chatRecoveryConfirm" class="chat-recovery-input" type="text" autocomplete="off" spellcheck="false">
+        <button id="chatConfirmRecovery" class="btn" type="button">I saved my recovery phrase</button>
+      </div>
+      <div id="chatUnlock" class="chat-setup hidden">
+        <p>Enter your recovery phrase to unlock your encrypted chat identity on this device.</p>
+        <label for="chatRecoveryInput">Recovery phrase</label>
+        <input id="chatRecoveryInput" class="chat-recovery-input" type="password" autocomplete="off" spellcheck="false">
+        <button id="chatUnlockButton" class="btn" type="button">Unlock chat</button>
+      </div>
+      <div id="chatWorkspace" class="chat-workspace hidden">
+        <div class="chat-trust-notice">
+          Messages are end-to-end encrypted. The server can still see vault codes, participants, and message timing. Compare safety codes with your contact through another trusted channel to detect a substituted encryption key.
+          <span>Your safety code</span><code id="chatOwnFingerprint" class="chat-fingerprint"></code>
+        </div>
+        <div class="chat-columns">
+          <aside class="chat-sidebar">
+            <form id="chatStartForm">
+              <label for="chatRecipientCode">Start a chat with a vault code</label>
+              <input id="chatRecipientCode" class="chat-recipient-input" type="text" maxlength="7" placeholder="ABC-123" autocomplete="off" autocapitalize="characters" spellcheck="false" required>
+              <button class="btn small" type="submit" style="margin-top:10px">Send chat request</button>
+            </form>
+            <h3 style="margin-top:24px">Chat requests</h3>
+            <div id="chatRequests" class="chat-list"></div>
+            <h3>Your chats</h3>
+            <div id="chatConversations" class="chat-list"></div>
+          </aside>
+          <section class="chat-thread" aria-label="Conversation">
+            <div id="chatThreadEmpty" class="chat-thread-empty">Choose a chat or enter a vault code to start one.</div>
+            <div id="chatActiveThread" class="hidden">
+              <h3>Chat with <span id="chatPeerCode"></span></h3>
+              <div>Safety code <code id="chatPeerFingerprint" class="chat-fingerprint"></code></div>
+              <div id="chatMessages" class="chat-messages" role="log" aria-live="polite"></div>
+              <form id="chatComposeForm" class="chat-compose">
+                <textarea id="chatMessageInput" class="chat-message-input" maxlength="10000" placeholder="Write an encrypted message" required></textarea>
+                <button id="chatSendButton" class="btn" type="submit">Send</button>
+              </form>
+              <div class="chat-thread-actions">
+                <span class="file-size">Deleting removes this chat and its history for both people.</span>
+                <button id="chatDeleteButton" class="link danger" type="button">Delete chat</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+      <div id="chatStatus" class="chat-status" role="status" aria-live="polite"></div>
     </section>
   </div>
 </main>
@@ -716,14 +806,18 @@ function setActiveTab(tab) {
   activeTab = tab;
   $("textTab").setAttribute("aria-selected", String(tab === "text"));
   $("filesTab").setAttribute("aria-selected", String(tab === "files"));
+  $("chatTab").setAttribute("aria-selected", String(tab === "chat"));
   $("textPanel").classList.toggle("hidden", tab !== "text");
   $("filesPanel").classList.toggle("hidden", tab !== "files");
+  $("chatPanel").classList.toggle("hidden", tab !== "chat");
   $("add").classList.toggle("hidden", tab !== "text");
   if (tab === "files" && code) loadDrivePanel();
+  if (tab === "chat" && code) window.initEncryptedChat?.(code);
 }
 
 $("textTab").onclick = () => setActiveTab("text");
 $("filesTab").onclick = () => setActiveTab("files");
+$("chatTab").onclick = () => setActiveTab("chat");
 
 async function loadDrivePanel() {
   if (drivePanelLoaded || drivePanelLoading) return;
@@ -1178,5 +1272,7 @@ if (driveNotice === "connected" || driveNotice === "error") {
   setTimeout(() => toast(driveNotice === "connected" ? "Google Drive connected" : "Could not connect Google Drive"), 0);
 } else suggestRememberedCode();
 </script>
+<script src="/chat-crypto.js" defer></script>
+<script src="/chat.js" defer></script>
 </body>
 </html>

@@ -73,6 +73,41 @@ if (databaseMode === "postgres") {
       updated_at  INTEGER NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_snippets_vault ON snippets(vault_code);
+    CREATE TABLE IF NOT EXISTS chat_identities (
+      vault_code TEXT PRIMARY KEY REFERENCES vaults(code) ON DELETE CASCADE,
+      public_key TEXT NOT NULL,
+      wrapped_private_key TEXT NOT NULL,
+      recovery_salt TEXT NOT NULL,
+      recovery_iv TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS chat_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      sender_code TEXT NOT NULL REFERENCES vaults(code) ON DELETE CASCADE,
+      recipient_code TEXT NOT NULL REFERENCES vaults(code) ON DELETE CASCADE,
+      status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected')),
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_chat_requests_recipient ON chat_requests(recipient_code, status, created_at);
+    CREATE TABLE IF NOT EXISTS chat_conversations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      code_a TEXT NOT NULL REFERENCES vaults(code) ON DELETE CASCADE,
+      code_b TEXT NOT NULL REFERENCES vaults(code) ON DELETE CASCADE,
+      created_at INTEGER NOT NULL,
+      UNIQUE (code_a, code_b),
+      CHECK (code_a < code_b)
+    );
+    CREATE INDEX IF NOT EXISTS idx_chat_conversations_participants ON chat_conversations(code_a, code_b);
+    CREATE TABLE IF NOT EXISTS chat_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      conversation_id INTEGER NOT NULL REFERENCES chat_conversations(id) ON DELETE CASCADE,
+      sender_code TEXT NOT NULL REFERENCES vaults(code) ON DELETE CASCADE,
+      iv TEXT NOT NULL,
+      ciphertext TEXT NOT NULL,
+      signature TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation ON chat_messages(conversation_id, id);
   `);
   const vaultSchema = db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'vaults'").get().sql;
   if (!vaultSchema.includes("GLOB")) {
@@ -172,10 +207,60 @@ async function ensureDatabase() {
           expires_at BIGINT NOT NULL
         )
       `);
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS chat_identities (
+          vault_code TEXT PRIMARY KEY,
+          public_key TEXT NOT NULL,
+          wrapped_private_key TEXT NOT NULL,
+          recovery_salt TEXT NOT NULL,
+          recovery_iv TEXT NOT NULL,
+          created_at BIGINT NOT NULL
+        )
+      `);
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS chat_requests (
+          id BIGSERIAL PRIMARY KEY,
+          sender_code TEXT NOT NULL,
+          recipient_code TEXT NOT NULL,
+          status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected')),
+          created_at BIGINT NOT NULL
+        )
+      `);
+      await pool.query("CREATE INDEX IF NOT EXISTS idx_chat_requests_recipient ON chat_requests(recipient_code, status, created_at)");
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS chat_conversations (
+          id BIGSERIAL PRIMARY KEY,
+          code_a TEXT NOT NULL,
+          code_b TEXT NOT NULL,
+          created_at BIGINT NOT NULL,
+          UNIQUE (code_a, code_b),
+          CHECK (code_a < code_b)
+        )
+      `);
+      await pool.query("CREATE INDEX IF NOT EXISTS idx_chat_conversations_participants ON chat_conversations(code_a, code_b)");
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS chat_messages (
+          id BIGSERIAL PRIMARY KEY,
+          conversation_id BIGINT NOT NULL,
+          sender_code TEXT NOT NULL,
+          iv TEXT NOT NULL,
+          ciphertext TEXT NOT NULL,
+          signature TEXT NOT NULL,
+          created_at BIGINT NOT NULL
+        )
+      `);
+      await pool.query("CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation ON chat_messages(conversation_id, id)");
       await pool.query("CREATE INDEX IF NOT EXISTS idx_oauth_return_tickets_expiry ON oauth_return_tickets(expires_at)");
       await pool.query("CREATE INDEX IF NOT EXISTS idx_files_vault ON files(vault_code)");
       await pool.query("ALTER TABLE snippets DROP CONSTRAINT IF EXISTS snippets_vault_code_fkey");
       await pool.query("ALTER TABLE files DROP CONSTRAINT IF EXISTS files_vault_code_fkey");
+      await pool.query("ALTER TABLE chat_identities DROP CONSTRAINT IF EXISTS chat_identities_vault_code_fkey");
+      await pool.query("ALTER TABLE chat_requests DROP CONSTRAINT IF EXISTS chat_requests_sender_code_fkey");
+      await pool.query("ALTER TABLE chat_requests DROP CONSTRAINT IF EXISTS chat_requests_recipient_code_fkey");
+      await pool.query("ALTER TABLE chat_conversations DROP CONSTRAINT IF EXISTS chat_conversations_code_a_fkey");
+      await pool.query("ALTER TABLE chat_conversations DROP CONSTRAINT IF EXISTS chat_conversations_code_b_fkey");
+      await pool.query("ALTER TABLE chat_messages DROP CONSTRAINT IF EXISTS chat_messages_conversation_id_fkey");
+      await pool.query("ALTER TABLE chat_messages DROP CONSTRAINT IF EXISTS chat_messages_sender_code_fkey");
       await pool.query("ALTER TABLE vaults DROP CONSTRAINT IF EXISTS vaults_code_check");
       await pool.query("ALTER TABLE vaults ALTER COLUMN code TYPE TEXT USING rtrim(code)");
       await pool.query("ALTER TABLE snippets ALTER COLUMN vault_code TYPE TEXT USING rtrim(vault_code)");
@@ -189,11 +274,36 @@ async function ensureDatabase() {
       await pool.query(
         "ALTER TABLE files ADD CONSTRAINT files_vault_code_fkey FOREIGN KEY (vault_code) REFERENCES vaults(code) ON DELETE CASCADE",
       );
+      await pool.query(
+        "ALTER TABLE chat_identities ADD CONSTRAINT chat_identities_vault_code_fkey FOREIGN KEY (vault_code) REFERENCES vaults(code) ON DELETE CASCADE",
+      );
+      await pool.query(
+        "ALTER TABLE chat_requests ADD CONSTRAINT chat_requests_sender_code_fkey FOREIGN KEY (sender_code) REFERENCES vaults(code) ON DELETE CASCADE",
+      );
+      await pool.query(
+        "ALTER TABLE chat_requests ADD CONSTRAINT chat_requests_recipient_code_fkey FOREIGN KEY (recipient_code) REFERENCES vaults(code) ON DELETE CASCADE",
+      );
+      await pool.query(
+        "ALTER TABLE chat_conversations ADD CONSTRAINT chat_conversations_code_a_fkey FOREIGN KEY (code_a) REFERENCES vaults(code) ON DELETE CASCADE",
+      );
+      await pool.query(
+        "ALTER TABLE chat_conversations ADD CONSTRAINT chat_conversations_code_b_fkey FOREIGN KEY (code_b) REFERENCES vaults(code) ON DELETE CASCADE",
+      );
+      await pool.query(
+        "ALTER TABLE chat_messages ADD CONSTRAINT chat_messages_conversation_id_fkey FOREIGN KEY (conversation_id) REFERENCES chat_conversations(id) ON DELETE CASCADE",
+      );
+      await pool.query(
+        "ALTER TABLE chat_messages ADD CONSTRAINT chat_messages_sender_code_fkey FOREIGN KEY (sender_code) REFERENCES vaults(code) ON DELETE CASCADE",
+      );
       await pool.query("ALTER TABLE vaults ENABLE ROW LEVEL SECURITY");
       await pool.query("ALTER TABLE snippets ENABLE ROW LEVEL SECURITY");
       await pool.query("ALTER TABLE rate_limits ENABLE ROW LEVEL SECURITY");
       await pool.query("ALTER TABLE files ENABLE ROW LEVEL SECURITY");
       await pool.query("ALTER TABLE oauth_return_tickets ENABLE ROW LEVEL SECURITY");
+      await pool.query("ALTER TABLE chat_identities ENABLE ROW LEVEL SECURITY");
+      await pool.query("ALTER TABLE chat_requests ENABLE ROW LEVEL SECURITY");
+      await pool.query("ALTER TABLE chat_conversations ENABLE ROW LEVEL SECURITY");
+      await pool.query("ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY");
     })();
   }
   await postgresSchemaPromise;
@@ -306,6 +416,246 @@ async function deleteSnippet(code, id) {
     return;
   }
   db.prepare("DELETE FROM snippets WHERE id = ? AND vault_code = ?").run(id, code);
+}
+
+async function getChatIdentity(code) {
+  await ensureDatabase();
+  const result = databaseMode === "postgres"
+    ? await pool.query(
+      "SELECT public_key, wrapped_private_key, recovery_salt, recovery_iv FROM chat_identities WHERE vault_code = $1",
+      [code],
+    )
+    : { rows: [db.prepare(
+      "SELECT public_key, wrapped_private_key, recovery_salt, recovery_iv FROM chat_identities WHERE vault_code = ?",
+    ).get(code)].filter(Boolean) };
+  return result.rows[0] || null;
+}
+
+async function createChatIdentity(code, value) {
+  await ensureDatabase();
+  const values = [code, JSON.stringify(value.publicKey), value.wrappedPrivateKey, value.recoverySalt, value.recoveryIv, Date.now()];
+  if (databaseMode === "postgres") {
+    const result = await pool.query(
+      `INSERT INTO chat_identities
+        (vault_code, public_key, wrapped_private_key, recovery_salt, recovery_iv, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (vault_code) DO NOTHING RETURNING vault_code`,
+      values,
+    );
+    return result.rowCount > 0;
+  }
+  const result = db.prepare(
+    `INSERT OR IGNORE INTO chat_identities
+      (vault_code, public_key, wrapped_private_key, recovery_salt, recovery_iv, created_at)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+  ).run(...values);
+  return result.changes > 0;
+}
+
+async function createChatRequest(senderCode, recipientCode) {
+  await ensureDatabase();
+  const recipientIdentity = await getChatIdentity(recipientCode);
+  if (!recipientIdentity) return { missingIdentity: true };
+  const existing = databaseMode === "postgres"
+    ? await pool.query(
+      "SELECT id FROM chat_requests WHERE sender_code = $1 AND recipient_code = $2 AND status = 'pending' ORDER BY id DESC LIMIT 1",
+      [senderCode, recipientCode],
+    )
+    : { rows: db.prepare(
+      "SELECT id FROM chat_requests WHERE sender_code = ? AND recipient_code = ? AND status = 'pending' ORDER BY id DESC LIMIT 1",
+    ).all(senderCode, recipientCode) };
+  if (existing.rows[0]) return { id: String(existing.rows[0].id), existing: true };
+  const now = Date.now();
+  const created = databaseMode === "postgres"
+    ? await pool.query(
+      "INSERT INTO chat_requests (sender_code, recipient_code, status, created_at) VALUES ($1, $2, 'pending', $3) RETURNING id",
+      [senderCode, recipientCode, now],
+    )
+    : { rows: [{ id: db.prepare(
+      "INSERT INTO chat_requests (sender_code, recipient_code, status, created_at) VALUES (?, ?, 'pending', ?)",
+    ).run(senderCode, recipientCode, now).lastInsertRowid }] };
+  return { id: String(created.rows[0].id), existing: false };
+}
+
+async function listChatRequests(recipientCode) {
+  await ensureDatabase();
+  const result = databaseMode === "postgres"
+    ? await pool.query(
+      "SELECT id, sender_code, created_at FROM chat_requests WHERE recipient_code = $1 AND status = 'pending' ORDER BY created_at DESC LIMIT 50",
+      [recipientCode],
+    )
+    : { rows: db.prepare(
+      "SELECT id, sender_code, created_at FROM chat_requests WHERE recipient_code = ? AND status = 'pending' ORDER BY created_at DESC LIMIT 50",
+    ).all(recipientCode) };
+  return result.rows.map((request) => ({
+    id: String(request.id),
+    senderCode: request.sender_code.toUpperCase(),
+    createdAt: Number(request.created_at),
+  }));
+}
+
+async function acceptChatRequest(recipientCode, requestId) {
+  await ensureDatabase();
+  if (databaseMode === "postgres") {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const request = await client.query(
+        "SELECT sender_code FROM chat_requests WHERE id = $1 AND recipient_code = $2 AND status = 'pending' FOR UPDATE",
+        [requestId, recipientCode],
+      );
+      if (!request.rowCount) {
+        await client.query("ROLLBACK");
+        return null;
+      }
+      const senderCode = request.rows[0].sender_code;
+      const [codeA, codeB] = [senderCode, recipientCode].sort();
+      await client.query("UPDATE chat_requests SET status = 'accepted' WHERE id = $1", [requestId]);
+      const conversation = await client.query(
+        `INSERT INTO chat_conversations (code_a, code_b, created_at) VALUES ($1, $2, $3)
+         ON CONFLICT (code_a, code_b) DO UPDATE SET code_a = EXCLUDED.code_a RETURNING id`,
+        [codeA, codeB, Date.now()],
+      );
+      await client.query("COMMIT");
+      return { id: String(conversation.rows[0].id), peerCode: senderCode.toUpperCase() };
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+  const accept = db.transaction(() => {
+    const request = db.prepare(
+      "SELECT sender_code FROM chat_requests WHERE id = ? AND recipient_code = ? AND status = 'pending'",
+    ).get(requestId, recipientCode);
+    if (!request) return null;
+    const [codeA, codeB] = [request.sender_code, recipientCode].sort();
+    db.prepare("UPDATE chat_requests SET status = 'accepted' WHERE id = ?").run(requestId);
+    db.prepare(
+      "INSERT OR IGNORE INTO chat_conversations (code_a, code_b, created_at) VALUES (?, ?, ?)",
+    ).run(codeA, codeB, Date.now());
+    const conversation = db.prepare(
+      "SELECT id FROM chat_conversations WHERE code_a = ? AND code_b = ?",
+    ).get(codeA, codeB);
+    return { id: String(conversation.id), peerCode: request.sender_code.toUpperCase() };
+  });
+  return accept();
+}
+
+async function rejectChatRequest(recipientCode, requestId) {
+  await ensureDatabase();
+  if (databaseMode === "postgres") {
+    const result = await pool.query(
+      "UPDATE chat_requests SET status = 'rejected' WHERE id = $1 AND recipient_code = $2 AND status = 'pending'",
+      [requestId, recipientCode],
+    );
+    return result.rowCount > 0;
+  }
+  const result = db.prepare(
+    "UPDATE chat_requests SET status = 'rejected' WHERE id = ? AND recipient_code = ? AND status = 'pending'",
+  ).run(requestId, recipientCode);
+  return result.changes > 0;
+}
+
+async function listChatConversations(code) {
+  await ensureDatabase();
+  const result = databaseMode === "postgres"
+    ? await pool.query(
+      "SELECT id, code_a, code_b, created_at FROM chat_conversations WHERE code_a = $1 OR code_b = $1 ORDER BY id DESC LIMIT 100",
+      [code],
+    )
+    : { rows: db.prepare(
+      "SELECT id, code_a, code_b, created_at FROM chat_conversations WHERE code_a = ? OR code_b = ? ORDER BY id DESC LIMIT 100",
+    ).all(code, code) };
+  const conversations = [];
+  for (const conversation of result.rows) {
+    const peerCode = conversation.code_a === code ? conversation.code_b : conversation.code_a;
+    const identity = await getChatIdentity(peerCode);
+    if (!identity) continue;
+    conversations.push({
+      id: String(conversation.id),
+      peerCode: peerCode.toUpperCase(),
+      peerPublicKey: JSON.parse(identity.public_key),
+      createdAt: Number(conversation.created_at),
+    });
+  }
+  return conversations;
+}
+
+async function getChatConversation(code, conversationId) {
+  await ensureDatabase();
+  const result = databaseMode === "postgres"
+    ? await pool.query(
+      "SELECT id FROM chat_conversations WHERE id = $1 AND (code_a = $2 OR code_b = $2)",
+      [conversationId, code],
+    )
+    : { rows: [db.prepare(
+      "SELECT id FROM chat_conversations WHERE id = ? AND (code_a = ? OR code_b = ?)",
+    ).get(conversationId, code, code)].filter(Boolean) };
+  return result.rows[0] || null;
+}
+
+async function chatConversationExists(code, peerCode) {
+  await ensureDatabase();
+  const [codeA, codeB] = [code, peerCode].sort();
+  const result = databaseMode === "postgres"
+    ? await pool.query(
+      "SELECT 1 FROM chat_conversations WHERE code_a = $1 AND code_b = $2",
+      [codeA, codeB],
+    )
+    : { rows: [db.prepare(
+      "SELECT 1 FROM chat_conversations WHERE code_a = ? AND code_b = ?",
+    ).get(codeA, codeB)].filter(Boolean) };
+  return result.rows.length > 0;
+}
+
+async function listChatMessages(conversationId, afterId) {
+  await ensureDatabase();
+  const result = databaseMode === "postgres"
+    ? await pool.query(
+      "SELECT id, sender_code, iv, ciphertext, signature, created_at FROM chat_messages WHERE conversation_id = $1 AND id > $2 ORDER BY id ASC LIMIT 100",
+      [conversationId, afterId],
+    )
+    : { rows: db.prepare(
+      "SELECT id, sender_code, iv, ciphertext, signature, created_at FROM chat_messages WHERE conversation_id = ? AND id > ? ORDER BY id ASC LIMIT 100",
+    ).all(conversationId, afterId) };
+  return result.rows.map((message) => ({
+    id: String(message.id),
+    senderCode: message.sender_code.toUpperCase(),
+    iv: message.iv,
+    ciphertext: message.ciphertext,
+    signature: message.signature,
+    createdAt: Number(message.created_at),
+  }));
+}
+
+async function insertChatMessage(conversationId, senderCode, iv, ciphertext, signature) {
+  await ensureDatabase();
+  const values = [conversationId, senderCode, iv, ciphertext, signature, Date.now()];
+  const result = databaseMode === "postgres"
+    ? await pool.query(
+      "INSERT INTO chat_messages (conversation_id, sender_code, iv, ciphertext, signature, created_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at",
+      values,
+    )
+    : { rows: [db.prepare(
+      "INSERT INTO chat_messages (conversation_id, sender_code, iv, ciphertext, signature, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+    ).run(...values)].map((inserted) => ({ id: inserted.lastInsertRowid, created_at: values[5] })) };
+  return { id: String(result.rows[0].id), createdAt: Number(result.rows[0].created_at) };
+}
+
+async function deleteChatConversation(code, conversationId) {
+  await ensureDatabase();
+  if (databaseMode === "postgres") {
+    const result = await pool.query(
+      "DELETE FROM chat_conversations WHERE id = $1 AND (code_a = $2 OR code_b = $2)",
+      [conversationId, code],
+    );
+    return result.rowCount > 0;
+  }
+  const result = db.prepare(
+    "DELETE FROM chat_conversations WHERE id = ? AND (code_a = ? OR code_b = ?)",
+  ).run(conversationId, code, code);
+  return result.changes > 0;
 }
 
 async function purgeOldVaults() {
@@ -582,6 +932,8 @@ const oauthReturnLimit = limiter({ name: "oauth-return", windowMs: 60 * 1000, ma
 const uploadLimit = limiter({ name: "upload", windowMs: 60 * 60 * 1000, max: 30 });
 // Supports lazy thumbnails for a full 50-file vault without changing the 20/min code-lookup limit.
 const fileContentLimit = limiter({ name: "file-content", windowMs: 60 * 1000, max: 60 });
+const chatReadLimit = limiter({ name: "chat-read", windowMs: 60 * 1000, max: 120 });
+const chatWriteLimit = limiter({ name: "chat-write", windowMs: 60 * 1000, max: 30 });
 
 async function requireVault(req, res, next) {
   try {
@@ -605,6 +957,42 @@ function validate(body) {
   if (!content.trim()) return { error: "Text can't be empty" };
   if (content.length > 20000) return { error: "Text is too long (max 20,000 characters)" };
   return { title: title || "Untitled", content };
+}
+
+function isPublicChatKey(key) {
+  return key?.kty === "EC" && key.crv === "P-256"
+    && /^[A-Za-z0-9_-]{43}$/.test(key.x || "")
+    && /^[A-Za-z0-9_-]{43}$/.test(key.y || "")
+    && !Object.hasOwn(key, "d");
+}
+
+function validateChatIdentity(body) {
+  const publicKey = body?.publicKey;
+  if (!isPublicChatKey(publicKey?.agreement) || !isPublicChatKey(publicKey?.signing)) {
+    return { error: "Invalid chat public key" };
+  }
+  if (!/^[A-Za-z0-9_-]{100,2000}$/.test(body.wrappedPrivateKey || "")
+    || !/^[A-Za-z0-9_-]{22}$/.test(body.recoverySalt || "")
+    || !/^[A-Za-z0-9_-]{16}$/.test(body.recoveryIv || "")) {
+    return { error: "Invalid encrypted chat key bundle" };
+  }
+  return {
+    publicKey: {
+      agreement: {
+        kty: "EC", crv: "P-256", x: publicKey.agreement.x, y: publicKey.agreement.y, ext: true, key_ops: [],
+      },
+      signing: {
+        kty: "EC", crv: "P-256", x: publicKey.signing.x, y: publicKey.signing.y, ext: true, key_ops: ["verify"],
+      },
+    },
+    wrappedPrivateKey: body.wrappedPrivateKey,
+    recoverySalt: body.recoverySalt,
+    recoveryIv: body.recoveryIv,
+  };
+}
+
+function validChatRequestId(value) {
+  return typeof value === "string" && /^\d{1,20}$/.test(value);
 }
 
 app.get("/healthz", asyncHandler(async (_req, res) => {
@@ -651,6 +1039,104 @@ app.put("/api/vaults/:code/snippets/:id", lookupLimit, requireVault, asyncHandle
 
 app.delete("/api/vaults/:code/snippets/:id", lookupLimit, requireVault, asyncHandler(async (req, res) => {
   await deleteSnippet(req.params.code, Number(req.params.id));
+  res.json({ ok: true });
+}));
+
+app.get("/api/vaults/:code/chat/identity", chatReadLimit, requireVault, asyncHandler(async (req, res) => {
+  const identity = await getChatIdentity(req.params.code);
+  if (!identity) return res.json({ registered: false });
+  res.json({
+    registered: true,
+    publicKey: JSON.parse(identity.public_key),
+    wrappedPrivateKey: identity.wrapped_private_key,
+    recoverySalt: identity.recovery_salt,
+    recoveryIv: identity.recovery_iv,
+  });
+}));
+
+app.post("/api/vaults/:code/chat/identity", chatWriteLimit, requireVault, asyncHandler(async (req, res) => {
+  const identity = validateChatIdentity(req.body);
+  if (identity.error) return res.status(400).json({ error: identity.error });
+  if (!(await createChatIdentity(req.params.code, identity))) {
+    return res.status(409).json({ error: "Chat identity already exists. Recover it with your recovery phrase." });
+  }
+  res.status(201).json({ ok: true });
+}));
+
+app.get("/api/vaults/:code/chat/requests", chatReadLimit, requireVault, asyncHandler(async (req, res) => {
+  res.json({ requests: await listChatRequests(req.params.code) });
+}));
+
+app.post("/api/vaults/:code/chat/requests", chatWriteLimit, requireVault, asyncHandler(async (req, res) => {
+  const recipientCode = normalizeVaultCode(req.body?.recipientCode);
+  if (!isValidVaultCode(recipientCode) || recipientCode === req.params.code) {
+    return res.status(400).json({ error: "Enter a different, valid vault code" });
+  }
+  if (!(await getChatIdentity(req.params.code))) {
+    return res.status(409).json({ error: "Set up secure chat before sending a request" });
+  }
+  if (!(await getChatIdentity(recipientCode))) {
+    return res.status(404).json({ error: "No secure chat identity found for that code" });
+  }
+  if (await chatConversationExists(req.params.code, recipientCode)) {
+    return res.status(409).json({ error: "You already have a chat with that code" });
+  }
+  const request = await createChatRequest(req.params.code, recipientCode);
+  if (request.missingIdentity) {
+    return res.status(404).json({ error: "No secure chat identity found for that code" });
+  }
+  res.status(request.existing ? 200 : 201).json({ id: request.id, status: "pending" });
+}));
+
+app.post("/api/vaults/:code/chat/requests/:requestId/accept", chatWriteLimit, requireVault, asyncHandler(async (req, res) => {
+  if (!validChatRequestId(req.params.requestId)) return res.status(400).json({ error: "Invalid request" });
+  const conversation = await acceptChatRequest(req.params.code, req.params.requestId);
+  if (!conversation) return res.status(404).json({ error: "Chat request not found" });
+  res.json({ id: conversation.id, peerCode: conversation.peerCode });
+}));
+
+app.post("/api/vaults/:code/chat/requests/:requestId/reject", chatWriteLimit, requireVault, asyncHandler(async (req, res) => {
+  if (!validChatRequestId(req.params.requestId)) return res.status(400).json({ error: "Invalid request" });
+  if (!(await rejectChatRequest(req.params.code, req.params.requestId))) {
+    return res.status(404).json({ error: "Chat request not found" });
+  }
+  res.json({ ok: true });
+}));
+
+app.get("/api/vaults/:code/chat/conversations", chatReadLimit, requireVault, asyncHandler(async (req, res) => {
+  res.json({ conversations: await listChatConversations(req.params.code) });
+}));
+
+app.get("/api/vaults/:code/chat/conversations/:id/messages", chatReadLimit, requireVault, asyncHandler(async (req, res) => {
+  if (!validChatRequestId(req.params.id)) return res.status(400).json({ error: "Invalid conversation" });
+  const afterId = req.query.after === undefined ? "0" : String(req.query.after);
+  if (!/^\d{1,20}$/.test(afterId)) return res.status(400).json({ error: "Invalid message cursor" });
+  if (!(await getChatConversation(req.params.code, req.params.id))) {
+    return res.status(404).json({ error: "Chat not found" });
+  }
+  res.json({ messages: await listChatMessages(req.params.id, afterId) });
+}));
+
+app.post("/api/vaults/:code/chat/conversations/:id/messages", chatWriteLimit, requireVault, asyncHandler(async (req, res) => {
+  if (!validChatRequestId(req.params.id)) return res.status(400).json({ error: "Invalid conversation" });
+  if (!(await getChatConversation(req.params.code, req.params.id))) {
+    return res.status(404).json({ error: "Chat not found" });
+  }
+  const { iv, ciphertext, signature } = req.body || {};
+  if (!/^[A-Za-z0-9_-]{16}$/.test(iv || "")
+    || !/^[A-Za-z0-9_-]{22,30000}$/.test(ciphertext || "")
+    || !/^[A-Za-z0-9_-]{86}$/.test(signature || "")) {
+    return res.status(400).json({ error: "Invalid encrypted message" });
+  }
+  const message = await insertChatMessage(req.params.id, req.params.code, iv, ciphertext, signature);
+  res.status(201).json(message);
+}));
+
+app.delete("/api/vaults/:code/chat/conversations/:id", chatWriteLimit, requireVault, asyncHandler(async (req, res) => {
+  if (!validChatRequestId(req.params.id)) return res.status(400).json({ error: "Invalid conversation" });
+  if (!(await deleteChatConversation(req.params.code, req.params.id))) {
+    return res.status(404).json({ error: "Chat not found" });
+  }
   res.json({ ok: true });
 }));
 

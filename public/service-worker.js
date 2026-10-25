@@ -1,4 +1,4 @@
-const CACHE_NAME = "clipvault-shell-v1";
+const CACHE_NAME = "clipvault-shell-v3";
 const SHELL_URLS = [
   "/",
   "/privacy.html",
@@ -8,6 +8,8 @@ const SHELL_URLS = [
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/apple-touch-icon.png",
+  "/chat-crypto.js",
+  "/chat.js",
 ];
 
 self.addEventListener("install", (event) => {

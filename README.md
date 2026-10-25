@@ -36,6 +36,10 @@ The Postgres schema is created lazily once per server instance. SQLite creates i
 | `snippets` | `id`, `vault_code` (foreign key with cascade delete), `title`, `content`, `created_at`, `updated_at` |
 | `rate_limits` (Postgres) | `key`, `window_start`, `count` (composite primary key on `key`, `window_start`) |
 | `files` (Postgres) | `id`, `vault_code`, `drive_file_id`, `name`, `mime`, `size`, `created_at` |
+| `chat_identities` | A vault's public ECDH/signing keys and recovery-phrase-encrypted private keys |
+| `chat_requests` | Pending, accepted, and declined chat invitations |
+| `chat_conversations` | The two vaults participating in a chat |
+| `chat_messages` | Encrypted message body, IV, signature, sender, and timestamp |
 
 Postgres enables row-level security on all tables and creates no policies. Use the server's database-owner connection for app access; the Supabase public API has no policies to grant it access. SQLite's rate limiter is in-memory.
 
@@ -49,6 +53,16 @@ Postgres enables row-level security on all tables and creates no policies. Use t
 | `POST` | `/api/vaults/:code/snippets` | Add a snippet from `{ "title": "...", "content": "..." }`; returns `{ "id": ... }` |
 | `PUT` | `/api/vaults/:code/snippets/:id` | Update a snippet |
 | `DELETE` | `/api/vaults/:code/snippets/:id` | Delete a snippet |
+| `GET` | `/api/vaults/:code/chat/identity` | Read the vault's public key and encrypted recovery bundle |
+| `POST` | `/api/vaults/:code/chat/identity` | Register a client-generated chat identity |
+| `GET` | `/api/vaults/:code/chat/requests` | List incoming pending chat requests |
+| `POST` | `/api/vaults/:code/chat/requests` | Request a chat with another vault code |
+| `POST` | `/api/vaults/:code/chat/requests/:id/accept` | Accept a chat request |
+| `POST` | `/api/vaults/:code/chat/requests/:id/reject` | Decline a chat request |
+| `GET` | `/api/vaults/:code/chat/conversations` | List accepted chats |
+| `GET` | `/api/vaults/:code/chat/conversations/:id/messages` | Read encrypted messages after an optional cursor |
+| `POST` | `/api/vaults/:code/chat/conversations/:id/messages` | Store an encrypted, signed message |
+| `DELETE` | `/api/vaults/:code/chat/conversations/:id` | Delete the conversation and its history for both participants |
 | `GET` | `/api/vaults/:code/drive/connect` | Get the Google consent URL |
 | `GET` | `/api/vaults/:code/drive/status` | Check Drive connection |
 | `POST` | `/api/vaults/:code/drive/disconnect` | Move tracked ClipVault attachments to Google Drive Trash, then disconnect Drive |
@@ -60,6 +74,14 @@ Postgres enables row-level security on all tables and creates no policies. Use t
 | `GET` | `/api/cron/purge` | Delete old vaults and rate-limit windows; requires `Authorization: Bearer <CRON_SECRET>` |
 
 Snippets are limited to 20,000 characters and 200 per vault; JSON request bodies are limited to 100 KB. The daily Vercel cron removes vaults unused for one year and Postgres rate-limit windows older than two days.
+
+## End-to-end encrypted chat
+
+Each vault can create a chat identity in the browser. The browser generates separate P-256 ECDH and ECDSA key pairs. A random 256-bit recovery phrase encrypts the private keys with PBKDF2-SHA-256 and AES-256-GCM before the encrypted bundle is stored. The recovery phrase is shown once, is never sent to the server, and is required to unlock the chat on another browser or after reloading. Keep it private and safe; ClipVault cannot recover it.
+
+The vault code is used to find a contact, not as an encryption key. The other person must also set up chat and accept the request before messaging starts. A shared ECDH secret is expanded with HKDF-SHA-256 into an AES-256-GCM message key. Messages are encrypted before upload and signed with the sender's ECDSA key. The server stores ciphertext, signatures, public keys, vault codes, and timing/relationship metadata. It does not receive message plaintext or private keys.
+
+Compare the full safety codes shown in a conversation through a separate trusted channel. This helps detect a substituted public key. The server can still see participant codes and message timing. A compromised device or recovery phrase can expose chats; this design does not provide forward secrecy for previously stored messages. Anyone who knows a vault code can access that vault, so protect the code and recovery phrase. Deleting a conversation removes its encrypted history for both participants. Inactive vault cleanup also deletes associated chats.
 
 ## Security notes
 

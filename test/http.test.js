@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
+const crypto = require("node:crypto");
 const Database = require("better-sqlite3");
 
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "clipvault-drive-test-"));
@@ -60,6 +61,12 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(homeText, /beforeinstallprompt/);
   assert.match(homeText, /Add to Home Screen/);
   assert.match(homeText, /serviceWorker\.register\("\/service-worker\.js"\)/);
+  assert.match(homeText, /id="chatTab" role="tab"/);
+  assert.match(homeText, /id="chatPanel" class="hidden"/);
+  assert.match(homeText, /Messages are encrypted on your device before they reach the server/);
+  assert.match(homeText, /Compare safety codes with your contact through another trusted channel/);
+  assert.match(homeText, /src="\/chat-crypto\.js" defer/);
+  assert.match(homeText, /src="\/chat\.js" defer/);
   assert.match(homeText, /Save text, images, and PDFs/);
   assert.match(homeText, /No account needed/);
   assert.match(homeText, /Attachments stay in Google Drive/);
@@ -149,6 +156,8 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(privacyText, /expires after five minutes and is deleted when used/);
   assert.match(privacyText, /connection remains active so you can retry/);
   assert.match(privacyText, /src="\/_vercel\/insights\/script\.js"/);
+  assert.match(privacyText, /Your recovery phrase and message plaintext are not sent to ClipVault/);
+  assert.match(privacyText, /does not provide forward secrecy/);
 
   const terms = await request("/terms.html");
   assert.equal(terms.status, 200);
@@ -161,6 +170,8 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.match(termsText, /moves its tracked ClipVault attachments to Google Drive Trash/);
   assert.match(termsText, /contact\.mohite@gmail\.com/);
   assert.match(termsText, /src="\/_vercel\/insights\/script\.js"/);
+  assert.match(termsText, /If you lose it, ClipVault cannot restore the identity/);
+  assert.match(termsText, /does not provide forward secrecy/);
 
   const robots = await request("/robots.txt");
   assert.equal(robots.status, 200);
@@ -194,6 +205,14 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   const serviceWorkerText = await serviceWorker.text();
   assert.match(serviceWorkerText, /url\.pathname\.startsWith\("\/api\/"\)/);
   assert.match(serviceWorkerText, /url\.pathname\.startsWith\("\/_vercel\/"\)/);
+  assert.match(serviceWorkerText, /clipvault-shell-v3/);
+  assert.match(serviceWorkerText, /"\/chat-crypto\.js"/);
+  assert.match(serviceWorkerText, /"\/chat\.js"/);
+  for (const scriptPath of ["/chat-crypto.js", "/chat.js"]) {
+    const script = await request(scriptPath);
+    assert.equal(script.status, 200, scriptPath);
+    assert.match(script.headers.get("content-type"), /javascript/);
+  }
 
   const health = await request("/healthz");
   assert.equal(health.status, 200);
@@ -215,6 +234,95 @@ test("SQLite APIs work and Drive routes and upload validation are safe", async (
   assert.deepEqual(await validCodeCheck.json(), { valid: true });
   assert.equal((await request("/api/vaults/99999x/check")).status, 404);
   assert.equal((await request("/api/vaults/abc-999/check")).status, 404);
+
+  const makeChatVault = async () => {
+    const response = await request("/api/vaults", { method: "POST" });
+    assert.equal(response.status, 201);
+    return (await response.json()).code;
+  };
+  const [chatSender, chatRecipient, chatOutsider] = await Promise.all([
+    makeChatVault(), makeChatVault(), makeChatVault(),
+  ]);
+  const makeChatIdentity = () => {
+    const agreementPair = crypto.generateKeyPairSync("ec", { namedCurve: "prime256v1" });
+    const signingPair = crypto.generateKeyPairSync("ec", { namedCurve: "prime256v1" });
+    return {
+      publicKey: {
+        agreement: agreementPair.publicKey.export({ format: "jwk" }),
+        signing: signingPair.publicKey.export({ format: "jwk" }),
+      },
+      wrappedPrivateKey: crypto.randomBytes(192).toString("base64url"),
+      recoverySalt: crypto.randomBytes(16).toString("base64url"),
+      recoveryIv: crypto.randomBytes(12).toString("base64url"),
+    };
+  };
+  for (const chatCode of [chatSender, chatRecipient, chatOutsider]) {
+    const registration = await request(`/api/vaults/${chatCode}/chat/identity`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(makeChatIdentity()),
+    });
+    assert.equal(registration.status, 201);
+  }
+  const senderIdentity = await request(`/api/vaults/${chatSender}/chat/identity`);
+  assert.equal((await senderIdentity.json()).registered, true);
+  const duplicateIdentity = await request(`/api/vaults/${chatSender}/chat/identity`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(makeChatIdentity()),
+  });
+  assert.equal(duplicateIdentity.status, 409);
+  const invalidChatCode = await makeChatVault();
+  const malformedIdentity = makeChatIdentity();
+  malformedIdentity.publicKey.agreement.d = "private-material";
+  const rejectedPrivateKey = await request(`/api/vaults/${invalidChatCode}/chat/identity`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(malformedIdentity),
+  });
+  assert.equal(rejectedPrivateKey.status, 400);
+
+  const sentRequest = await request(`/api/vaults/${chatSender}/chat/requests`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ recipientCode: chatRecipient.toLowerCase() }),
+  });
+  assert.equal(sentRequest.status, 201);
+  const chatRequest = await sentRequest.json();
+  const incomingRequests = await request(`/api/vaults/${chatRecipient}/chat/requests`);
+  assert.deepEqual((await incomingRequests.json()).requests.map((item) => item.senderCode), [chatSender]);
+  const accepted = await request(`/api/vaults/${chatRecipient}/chat/requests/${chatRequest.id}/accept`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: "{}",
+  });
+  assert.equal(accepted.status, 200);
+  const conversation = await accepted.json();
+  assert.equal(conversation.peerCode, chatSender);
+  const encryptedMessage = {
+    iv: crypto.randomBytes(12).toString("base64url"),
+    ciphertext: crypto.randomBytes(32).toString("base64url"),
+    signature: crypto.randomBytes(64).toString("base64url"),
+  };
+  const sentMessage = await request(
+    `/api/vaults/${chatSender}/chat/conversations/${conversation.id}/messages`,
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(encryptedMessage) },
+  );
+  assert.equal(sentMessage.status, 201);
+  const senderMessages = await request(`/api/vaults/${chatSender}/chat/conversations/${conversation.id}/messages`);
+  const messageList = await senderMessages.json();
+  assert.equal(messageList.messages.length, 1);
+  assert.equal(messageList.messages[0].ciphertext, encryptedMessage.ciphertext);
+  assert.equal(messageList.messages[0].content, undefined);
+  assert.equal((await request(`/api/vaults/${chatOutsider}/chat/conversations/${conversation.id}/messages`)).status, 404);
+  assert.equal((await request(`/api/vaults/${chatRecipient}/chat/conversations`)).status, 200);
+  const deletedConversation = await request(
+    `/api/vaults/${chatSender}/chat/conversations/${conversation.id}`,
+    { method: "DELETE" },
+  );
+  assert.equal(deletedConversation.status, 200);
+  assert.deepEqual((await (await request(`/api/vaults/${chatRecipient}/chat/conversations`)).json()).conversations, []);
+
   const added = await request(`/api/vaults/${code}/snippets`, {
     method: "POST",
     headers: { "content-type": "application/json" },
