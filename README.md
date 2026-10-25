@@ -1,137 +1,141 @@
-# ClipVault
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/header-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/header-light.svg">
+    <img alt="ClipVault. Your clipboard. Anywhere." src="assets/header-light.svg" width="100%">
+  </picture>
+</p>
 
-ClipVault stores ready-to-paste text snippets behind a random code in the format `ABC-123`. No account is required. Existing five-digit vault codes remain supported. Local development uses SQLite; deployments can use Supabase Postgres.
+<p align="center">
+  <a href="https://your-clipvault-url"><b>Open ClipVault</b></a>
+  &nbsp;·&nbsp;
+  <a href="#how-it-works">How it works</a>
+  &nbsp;·&nbsp;
+  <a href="#private-from-end-to-end">Private chat</a>
+  &nbsp;·&nbsp;
+  <a href="#getting-started">Get started</a>
+</p>
 
-## Run locally
+<p align="center">
+  <img alt="No account needed" src="https://img.shields.io/badge/account-not%20required-1d1d1f?style=flat-square">
+  <img alt="End-to-end encrypted chat" src="https://img.shields.io/badge/chat-end--to--end%20encrypted-2fa36b?style=flat-square">
+  <img alt="Installable app" src="https://img.shields.io/badge/app-installable-1a8cff?style=flat-square">
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-6e6e73?style=flat-square">
+</p>
 
-Requires Node.js 18 or newer.
+<br>
 
-```bash
-npm install
-npm start
-```
+## A simple online clipboard for your snippets
 
-Open <http://localhost:3000>. Without `DATABASE_URL`, the app uses `clipvault.db` beside `server.js`. If you want to develop against Postgres, copy `.env.example` to `.env`, fill in the values, then load it into the shell before starting:
+Save text, images, and PDFs. Open your vault on any device with a short code. No account, no sign-up, no password to remember.
 
-```bash
-set -a
-. ./.env
-set +a
-npm start
-```
+<br>
 
-The server listens on `PORT` if set, or port 3000 otherwise.
+## How it works
 
-## Install as an app
-
-ClipVault is a Progressive Web App and can be installed from its header's **Install app** button in browsers that support the install prompt. On iPhone or iPad, use Safari's **Share > Add to Home Screen**. The service worker caches the app shell for opening it offline, but vault data and Google Drive features still need a network connection.
-
-## Database schema
-
-The Postgres schema is created lazily once per server instance. SQLite creates its equivalent tables when the local server starts.
-
-| Table | Columns |
+| | |
 |---|---|
-| `vaults` | `code` (`ABC-123` format, or a legacy five-digit code), `created_at`, `last_used` |
-| `snippets` | `id`, `vault_code` (foreign key with cascade delete), `title`, `content`, `created_at`, `updated_at` |
-| `rate_limits` (Postgres) | `key`, `window_start`, `count` (composite primary key on `key`, `window_start`) |
-| `files` (Postgres) | `id`, `vault_code`, `drive_file_id`, `name`, `mime`, `size`, `created_at` |
-| `chat_identities` | A vault's public ECDH/signing keys and encrypted private-key bundle |
-| `chat_requests` | Pending, accepted, and declined chat invitations |
-| `chat_conversations` | The two vaults participating in a chat |
-| `chat_messages` | Encrypted message body, IV, signature, sender, and timestamp |
+| **1. Get your code** | Tap *Get my code* and you get a vault code like `AAA-000`. |
+| **2. Save anything** | Drop in snippets of text, images, or PDFs. Search them and copy with one tap. |
+| **3. Open it anywhere** | Enter the same code on any device to open the same vault. Tick *Remember me on this device* to skip it next time. |
 
-Postgres enables row-level security on all tables and creates no policies. Use the server's database-owner connection for app access; the Supabase public API has no policies to grant it access. SQLite's rate limiter is in-memory.
+> [!NOTE]
+> Anyone with your code can open your vault, so keep it private and don't store passwords or other sensitive information in it.
 
-## API
+<br>
 
-| Method | Path | Purpose |
-|---|---|---|
-| `POST` | `/api/vaults` | Create a vault; returns `{ "code": "ABC-123" }` |
-| `GET` | `/api/vaults/:code/check` | Quickly verify a code exists before loading its snippets |
-| `GET` | `/api/vaults/:code/snippets` | List snippets; returns `{ "snippets": [...] }` |
-| `POST` | `/api/vaults/:code/snippets` | Add a snippet from `{ "title": "...", "content": "..." }`; returns `{ "id": ... }` |
-| `PUT` | `/api/vaults/:code/snippets/:id` | Update a snippet |
-| `DELETE` | `/api/vaults/:code/snippets/:id` | Delete a snippet |
-| `GET` | `/api/vaults/:code/chat/identity` | Read the vault's public key and encrypted recovery bundle |
-| `POST` | `/api/vaults/:code/chat/identity` | Register a client-generated chat identity |
-| `GET` | `/api/vaults/:code/chat/requests` | List incoming pending chat requests |
-| `POST` | `/api/vaults/:code/chat/requests` | Request a chat with another vault code |
-| `POST` | `/api/vaults/:code/chat/requests/:id/accept` | Accept a chat request |
-| `POST` | `/api/vaults/:code/chat/requests/:id/reject` | Decline a chat request |
-| `GET` | `/api/vaults/:code/chat/conversations` | List accepted chats |
-| `GET` | `/api/vaults/:code/chat/conversations/:id/messages` | Read encrypted messages after an optional cursor |
-| `POST` | `/api/vaults/:code/chat/conversations/:id/messages` | Store an encrypted, signed message |
-| `DELETE` | `/api/vaults/:code/chat/conversations/:id` | Delete the conversation and its history for both participants |
-| `GET` | `/api/vaults/:code/drive/connect` | Get the Google consent URL |
-| `GET` | `/api/vaults/:code/drive/status` | Check Drive connection |
-| `POST` | `/api/vaults/:code/drive/disconnect` | Move tracked ClipVault attachments to Google Drive Trash, then disconnect Drive |
-| `GET` | `/api/vaults/:code/files` | List attached file metadata |
-| `POST` | `/api/vaults/:code/files?name=<filename>` | Upload a raw image/PDF body |
-| `GET` | `/api/vaults/:code/files/:id/content` | View or download a file (`?download=1`) |
-| `DELETE` | `/api/vaults/:code/files/:id` | Move a file to the user's Drive trash |
-| `GET` | `/healthz` | Health check; verifies the Postgres connection when configured |
-| `GET` | `/api/cron/purge` | Delete old vaults and rate-limit windows; requires `Authorization: Bearer <CRON_SECRET>` |
+## Made for everyday sharing
 
-Snippets are limited to 20,000 characters and 200 per vault; JSON request bodies are limited to 100 KB. The daily Vercel cron removes vaults unused for one year and Postgres rate-limit windows older than two days.
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>01 &nbsp;Google Drive attachments</h3>
+      Connect your own Google Drive to attach images and PDFs. ClipVault saves them in its own Drive folder and only manages files it created.
+    </td>
+    <td width="50%" valign="top">
+      <h3>02 &nbsp;Open your vault with a code</h3>
+      Use the same vault code on another device without creating an account.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>03 &nbsp;Private, end-to-end chat</h3>
+      Messages are encrypted in your browser before upload. The server stores ciphertext and message metadata. Both people must set up chat and accept the request.
+    </td>
+    <td width="50%" valign="top">
+      <h3>04 &nbsp;Save and reuse snippets</h3>
+      Keep small pieces of text, search your vault, and copy them when you need them.
+    </td>
+  </tr>
+</table>
 
-## End-to-end encrypted chat
+<br>
 
-Each vault can create a chat identity in the browser. The browser generates separate P-256 ECDH and ECDSA key pairs. The private-key bundle is encrypted with a key derived from the vault code using PBKDF2-SHA-256 and AES-256-GCM. This lets the code unlock chat on another browser without a separate recovery phrase. Vault codes have low entropy, so anyone who knows or guesses a code can recover that vault's private chat keys and read its chats. Do not use this design for sensitive conversations. Existing identities created before this change require the old recovery phrase once to migrate.
+## Private from end to end
 
-The vault code is used to find a contact, not as an encryption key. The other person must also set up chat and accept the request before messaging starts. A shared ECDH secret is expanded with HKDF-SHA-256 into an AES-256-GCM message key. Messages are encrypted before upload and signed with the sender's ECDSA key. The server stores ciphertext, signatures, public keys, vault codes, and timing/relationship metadata. It does not receive message plaintext or private keys.
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/flow-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="assets/flow-light.svg">
+    <img alt="Mia encrypts a message on her device, the server relays unreadable ciphertext, and Sam opens it on his device." src="assets/flow-light.svg" width="100%">
+  </picture>
+</p>
 
-Compare the full safety codes shown in a conversation through a separate trusted channel. This helps detect a substituted public key. The server can still see participant codes and message timing. Anyone who knows a vault code can access the vault and derive its chat private keys. A compromised device can expose chats; this design does not provide forward secrecy for previously stored messages. Deleting a conversation removes its encrypted history for both participants. Inactive vault cleanup also deletes associated chats.
+A message is encrypted on one device, relayed unreadable by the server, and opened only by its recipient.
 
-## Security notes
+1. **Write a message.** It's readable text on the sender's own device.
+2. **Encrypt on device.** The message is locked with a key before it leaves the browser.
+3. **Relay.** The server only handles ciphertext and metadata.
+4. **Open.** Only the recipient's key can unlock it.
 
-Vault codes are access identifiers, not account passwords, and do not provide strong security. Anyone who knows a code can access that vault. Do not store passwords, API keys, or other sensitive data. Use HTTPS in production. Rate limits allow 10 new vaults per hour per IP and 20 code lookups per minute per IP; Postgres deployments store these limits in the database, while local SQLite development uses an in-memory limiter. Postgres errors are returned as generic server errors rather than exposing database details.
+<br>
 
-## Deploy to Vercel + Supabase
+## Privacy
 
-1. Go to <https://supabase.com> and create a new project. Choose a region close to your users and a strong database password; save the password.
-2. Click **Connect** and copy the **Transaction pooler** connection string (port `6543`). Replace `[YOUR-PASSWORD]` with the password; URL-encode special characters in it.
-3. Create a GitHub repository and push this folder.
-4. At <https://vercel.com>, choose **Add New > Project**, import the repository, and select **Other** as the Framework Preset.
-5. In **Settings > Environment Variables**, add `DATABASE_URL` and `CRON_SECRET` for Production, Preview, and Development. Generate the cron secret with:
+- Images and PDFs stay in **your** Google Drive. ClipVault only accesses files it created.
+- Chat messages are encrypted in the browser before upload.
+- Vaults are opened with a code, not an account.
 
-   ```bash
-   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-   ```
+See the in-app Privacy Policy and Terms of Service for details.
 
-   Redeploy after adding the variables.
-6. Open the live URL, create a code, add a snippet, and verify the rows in Supabase's Table Editor. Row-level security should show as enabled.
+<br>
 
-The Vercel rewrite sends API paths and `/healthz` to the Express function while `/` and other static files are served from `public/`. No region is pinned in `vercel.json`; choose one in Vercel if needed.
-
-To collect page views, enable **Web Analytics** in the Vercel project dashboard and redeploy. The static HTML pages include Vercel's `/_vercel/insights/script.js` integration; the React component and npm package are not needed for this project.
-
-The public privacy policy and Terms of Service are served at `/privacy.html` and `/terms.html`, and linked from the homepage. If “Remember me on this device” is selected, the last successfully opened vault code is saved in that browser and prefilled on the next visit; use **Open vault** to reopen that suggestion. Newly typed codes still open automatically when complete. Signing out returns to the code-entry page without deleting the remembered code. For Google OAuth branding, configure the production homepage, privacy-policy, and terms URLs on your verified custom domain.
-
-The public pages include canonical URLs for `https://www.clipvault.lol`, social sharing metadata, WebApplication structured data on the homepage, and a sitemap at `/sitemap.xml`. After deployment, add the sitemap in Google Search Console and request indexing for the homepage. A sitemap and metadata help search engines understand the site but do not guarantee rankings or indexing.
-
-## Google Drive files
-
-Users can connect their own Google Drive and attach images or PDFs to a vault. ClipVault requests only the `drive.file` and `email` scopes, creates a `ClipVault` folder, and uploads files there. Refresh tokens are encrypted at rest with AES-256-GCM; access tokens are kept only in a short-lived per-instance memory cache. The app can access only files created by ClipVault through the granted `drive.file` scope. Disconnecting first moves all tracked ClipVault attachments to Google Drive Trash; if any move fails, the connection remains active for retry. Files elsewhere in the user's Drive are unaffected.
-
-Drive attachments require Postgres and the Google environment variables below. Set `PUBLIC_APP_URL` to the public site origin (for example, `https://www.clipvault.lol`) so Google OAuth returns to the canonical site. In local development, set `GOOGLE_REDIRECT_URI=http://localhost:3000/api/drive/callback`; in production, use the registered callback such as `https://YOUR-APP.vercel.app/api/drive/callback`. OAuth return uses a hashed, single-use Postgres ticket that expires after five minutes, so it also works when the callback and public site use different domains. Generate a 32-byte encryption key with:
+## Getting started
 
 ```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+git clone https://github.com/your-username/clipvault.git
+cd clipvault
+npm install
+npm run dev
 ```
 
-Configure `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `TOKEN_ENC_KEY`, and `PUBLIC_APP_URL` locally and in Vercel. Never commit real values. A Google client ID/secret is not a substitute for keeping `TOKEN_ENC_KEY` private.
+Then open the local URL printed in your terminal.
 
-### Google Cloud setup
+<!-- Add environment variables here if your app needs them, e.g. a Google OAuth client ID for Drive attachments. -->
 
-1. Go to <https://console.cloud.google.com> and create a project.
-2. Open **APIs & Services > Library** and enable **Google Drive API**.
-3. Open **APIs & Services > OAuth consent screen** (Google Auth Platform), choose **External**, and fill in the app name, support email, and developer email. Add the `drive.file` and `email` scopes. Set the publishing status to **In production**; in Testing mode, refresh tokens expire after 7 days and only listed test users can sign in.
-4. Under **Credentials**, choose **Create credentials > OAuth client ID > Web application**. Add these Authorized redirect URIs:
-   - `http://localhost:3000/api/drive/callback`
-   - `https://YOUR-APP.vercel.app/api/drive/callback`
-5. Copy the Client ID and Client secret into `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. In Vercel, configure all four Google Drive variables, along with the existing `DATABASE_URL` and `CRON_SECRET`, then redeploy.
+<br>
 
-Files are limited to 4 MB each and 50 per vault. Supported formats are PNG, JPEG, GIF, WebP, and PDF; file contents are checked against their signatures, and SVG is not accepted. Rate limiting allows 30 uploads per hour per IP and 60 file-content requests per minute per IP, in addition to the existing 20 code lookups per minute.
+## Built with
 
-The vault code is the only app-level access control: anyone who knows it can view that vault's file list and files. New codes use the `ABC-123` format, while existing five-digit codes continue to work. Do not use codes for sensitive material.
+<p>
+  <img alt="React" src="https://img.shields.io/badge/React-1d1d1f?style=flat-square&logo=react&logoColor=61dafb">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-1d1d1f?style=flat-square&logo=typescript&logoColor=3178c6">
+  <img alt="Tailwind CSS" src="https://img.shields.io/badge/Tailwind_CSS-1d1d1f?style=flat-square&logo=tailwindcss&logoColor=38bdf8">
+  <img alt="Google Drive API" src="https://img.shields.io/badge/Google_Drive_API-1d1d1f?style=flat-square&logo=googledrive&logoColor=white">
+</p>
+
+<br>
+
+## Contributing
+
+Issues and pull requests are welcome. For larger changes, open an issue first so we can talk it through.
+
+## License
+
+[MIT](LICENSE)
+
+<br>
+
+<p align="center">
+  <sub>Built by Shubham</sub>
+</p>
