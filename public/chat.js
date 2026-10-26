@@ -11,13 +11,17 @@
   let activeMessageKey = null;
   let messageCursor = "0";
   let pollTimer = 0;
+  let messagePollTimer = 0;
   let polling = false;
+  let messageLoading = false;
   let statusTimer = 0;
   let joiningChat = false;
   let sendingMessage = false;
   let typingHeartbeat = 0;
   let typingPollTimer = 0;
   let lastTypingSentAt = 0;
+  let renderedMessageIds = new Set();
+  let pendingMessagesByCiphertext = new Map();
   let qrCameraStream = null;
   let qrCameraFrame = 0;
   let knownIncomingRequestIds = null;
@@ -129,49 +133,84 @@
   function appendMessage(message, plaintext) {
     const element = document.createElement("div");
     element.className = `chat-message${message.senderId === identity.peerId ? " mine" : ""}`;
+    if (message.id) {
+      element.dataset.messageId = String(message.id);
+      renderedMessageIds.add(String(message.id));
+    }
     const content = document.createElement("span");
     content.textContent = plaintext;
     const time = document.createElement("time");
-    time.dateTime = new Date(message.createdAt).toISOString();
-    time.textContent = new Date(message.createdAt).toLocaleTimeString(undefined, {
-      hour: "numeric",
-      minute: "2-digit",
-    });
-    time.title = new Date(message.createdAt).toLocaleString();
+    if (message.pending) {
+      time.textContent = "Sending…";
+      element.classList.add("pending");
+    } else {
+      setMessageTime(time, message.createdAt);
+    }
     element.append(content, time);
     $("chatMessages").append(element);
+    return element;
+  }
+
+  function setMessageTime(time, createdAt) {
+    time.dateTime = new Date(createdAt).toISOString();
+    time.textContent = new Date(createdAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+    time.title = new Date(createdAt).toLocaleString();
+  }
+
+  function reconcilePendingMessage(element, message) {
+    if (!element) return;
+    renderedMessageIds.delete(element.dataset.messageId || "");
+    element.dataset.messageId = String(message.id);
+    renderedMessageIds.add(String(message.id));
+    element.classList.remove("pending");
+    setMessageTime(element.querySelector("time"), message.createdAt);
   }
 
   async function loadMessages() {
-    if (!activeConversation || !activeMessageKey) return;
-    const result = await api(
-      "GET",
-      `/chat/conversations/${encodeURIComponent(activeConversation.id)}/messages?after=${encodeURIComponent(messageCursor)}`,
-    );
-    for (const message of result.messages) {
-      messageCursor = message.id;
-      try {
-        appendMessage(
-          message,
-          await crypto.decryptMessage(
-            activeMessageKey,
+    if (messageLoading || !activeConversation || !activeMessageKey) return;
+    messageLoading = true;
+    const conversation = activeConversation;
+    const messageKey = activeMessageKey;
+    try {
+      const result = await api(
+        "GET",
+        `/chat/conversations/${encodeURIComponent(conversation.id)}/messages?after=${encodeURIComponent(messageCursor)}`,
+      );
+      if (activeConversation?.id !== conversation.id) return;
+      const unread = [];
+      for (const message of result.messages) {
+        messageCursor = message.id;
+        const pending = pendingMessagesByCiphertext.get(message.ciphertext);
+        if (pending) {
+          reconcilePendingMessage(pending, message);
+          pendingMessagesByCiphertext.delete(message.ciphertext);
+        } else if (!renderedMessageIds.has(String(message.id))) unread.push(message);
+      }
+      const plaintexts = await Promise.all(unread.map(async (message) => {
+        try {
+          return await crypto.decryptMessage(
+            messageKey,
             message,
-            activeConversation.id,
+            conversation.id,
             message.senderId === identity.peerId
               ? identity.publicKey.signing
-              : activeConversation.peerPublicKey.signing,
-          ),
-        );
-      } catch {
-        appendMessage(message, "Could not decrypt this message. Check the safety code with your contact.");
+              : conversation.peerPublicKey.signing,
+          );
+        } catch {
+          return "Could not decrypt this message. Check the safety code with your contact.";
+        }
+      }));
+      if (activeConversation?.id !== conversation.id) return;
+      unread.forEach((message, index) => appendMessage(message, plaintexts[index]));
+      if (result.messages.length) {
+        const messageList = $("chatMessages");
+        messageList.scrollTo({
+          top: messageList.scrollHeight,
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        });
       }
-    }
-    if (result.messages.length) {
-      const messageList = $("chatMessages");
-      messageList.scrollTo({
-        top: messageList.scrollHeight,
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-      });
+    } finally {
+      messageLoading = false;
     }
   }
 
@@ -248,6 +287,8 @@
       $("chatPeerCode").textContent = contactLabel(conversation.peerId);
       $("chatPeerFingerprint").textContent = peerFingerprint;
       $("chatMessages").replaceChildren();
+      renderedMessageIds = new Set();
+      pendingMessagesByCiphertext.clear();
       $("chatThreadEmpty").classList.add("hidden");
       $("chatActiveThread").classList.remove("hidden");
       $("chatColumns").classList.remove("no-active-chat");
@@ -428,11 +469,11 @@
     }
   }
 
-  async function refreshChatData() {
+  async function refreshChatData(includeMessages = true) {
     if (!privateKeys) return;
     await loadRequests();
     await loadConversations();
-    if (!$("chatPanel").classList.contains("hidden")) await loadMessages();
+    if (includeMessages && !$("chatPanel").classList.contains("hidden")) await loadMessages();
   }
 
   function contactLabel(peerId) {
@@ -634,21 +675,33 @@
     const input = $("chatMessageInput");
     const content = input.value.trim();
     if (!content) return;
+    const conversation = activeConversation;
+    const messageKey = activeMessageKey;
+    const pendingId = `pending-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const pendingElement = appendMessage({ id: pendingId, senderId: identity.peerId, createdAt: Date.now(), pending: true }, content);
+    input.value = "";
+    $("chatMessages").scrollTo({ top: $("chatMessages").scrollHeight, behavior: "smooth" });
     sendingMessage = true;
     stopTyping();
     $("chatSendButton").disabled = true;
     try {
       const encrypted = await crypto.encryptMessage(
-        activeMessageKey,
+        messageKey,
         content,
-        activeConversation.id,
+        conversation.id,
         identity.peerId,
         privateKeys.signing,
       );
-      await api("POST", `/chat/conversations/${encodeURIComponent(activeConversation.id)}/messages`, encrypted);
-      input.value = "";
-      await loadMessages();
+      pendingMessagesByCiphertext.set(encrypted.ciphertext, pendingElement);
+      const sent = await api("POST", `/chat/conversations/${encodeURIComponent(conversation.id)}/messages`, encrypted);
+      if (pendingMessagesByCiphertext.get(encrypted.ciphertext) === pendingElement) {
+        reconcilePendingMessage(pendingElement, sent);
+        pendingMessagesByCiphertext.delete(encrypted.ciphertext);
+      }
     } catch (error) {
+      renderedMessageIds.delete(pendingId);
+      pendingElement.remove();
+      if (!input.value) input.value = content;
       setStatus(error.message, true);
     } finally {
       sendingMessage = false;
@@ -703,7 +756,7 @@
         if (!vaultCode || polling) return;
         polling = true;
         try {
-          if (privateKeys) await refreshChatData();
+          if (privateKeys) await refreshChatData(false);
           else await loadRequests();
         } catch (error) {
           if (!$("chatPanel").classList.contains("hidden")) setStatus(error.message, true);
@@ -711,6 +764,17 @@
           polling = false;
         }
       }, 5000);
+    }
+    if (!messagePollTimer) {
+      messagePollTimer = window.setInterval(async () => {
+        if (!activeConversation || messageLoading || document.visibilityState === "hidden"
+          || $("chatPanel").classList.contains("hidden")) return;
+        try {
+          await loadMessages();
+        } catch (error) {
+          if (!$("chatPanel").classList.contains("hidden")) setStatus(error.message, true);
+        }
+      }, 750);
     }
   }
 

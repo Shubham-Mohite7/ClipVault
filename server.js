@@ -738,14 +738,16 @@ async function listChatMessages(conversationId, afterId) {
     : { rows: db.prepare(
       "SELECT id, sender_code, iv, ciphertext, signature, created_at FROM chat_messages WHERE conversation_id = ? AND id > ? ORDER BY id ASC LIMIT 100",
     ).all(conversationId, afterId) };
-  return Promise.all(result.rows.map(async (message) => ({
+  const senderCodes = [...new Set(result.rows.map((message) => message.sender_code))];
+  const senderIdentities = new Map(await Promise.all(senderCodes.map(async (code) => [code, await getChatIdentity(code)])));
+  return result.rows.map((message) => ({
     id: String(message.id),
-    senderId: chatPeerId(await getChatIdentity(message.sender_code)),
+    senderId: chatPeerId(senderIdentities.get(message.sender_code)),
     iv: message.iv,
     ciphertext: message.ciphertext,
     signature: message.signature,
     createdAt: Number(message.created_at),
-  })));
+  }));
 }
 
 async function insertChatMessage(conversationId, senderCode, iv, ciphertext, signature) {
@@ -1052,6 +1054,7 @@ const uploadLimit = limiter({ name: "upload", windowMs: 60 * 60 * 1000, max: 30 
 // Supports lazy thumbnails for a full 50-file vault without changing the 20/min code-lookup limit.
 const fileContentLimit = limiter({ name: "file-content", windowMs: 60 * 1000, max: 60 });
 const chatReadLimit = limiter({ name: "chat-read", windowMs: 60 * 1000, max: 120 });
+const chatMessageReadLimit = limiter({ name: "chat-message-read", windowMs: 60 * 1000, max: 240 });
 const chatWriteLimit = limiter({ name: "chat-write", windowMs: 60 * 1000, max: 30 });
 const chatTypingLimit = limiter({ name: "chat-typing", windowMs: 60 * 1000, max: 60 });
 const chatTypingStates = new Map();
@@ -1243,7 +1246,7 @@ app.get("/api/vaults/:code/chat/conversations", chatReadLimit, requireVault, asy
   res.json({ conversations: await listChatConversations(req.params.code) });
 }));
 
-app.get("/api/vaults/:code/chat/conversations/:id/messages", chatReadLimit, requireVault, asyncHandler(async (req, res) => {
+app.get("/api/vaults/:code/chat/conversations/:id/messages", chatMessageReadLimit, requireVault, asyncHandler(async (req, res) => {
   if (!validChatRequestId(req.params.id)) return res.status(400).json({ error: "Invalid conversation" });
   const afterId = req.query.after === undefined ? "0" : String(req.query.after);
   if (!/^\d{1,20}$/.test(afterId)) return res.status(400).json({ error: "Invalid message cursor" });
