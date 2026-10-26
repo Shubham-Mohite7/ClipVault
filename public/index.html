@@ -296,7 +296,8 @@ try {
   .developer-card-link { display: block; border-radius: 12px; }
   .developer-card-link:focus-visible { outline: 3px solid var(--text-2); outline-offset: 5px; }
   .coffee-support { display: grid; justify-items: center; gap: 9px; margin-top: 18px; text-align: center; }
-  .coffee-button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line)); box-shadow: 0 8px 24px -17px color-mix(in srgb, var(--text) 58%, transparent); text-decoration: none; }
+  .coffee-button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 1px solid color-mix(in srgb, var(--line) 78%, transparent); background: color-mix(in srgb, var(--bg-2) 72%, transparent); color: var(--text); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); box-shadow: 0 8px 24px -17px color-mix(in srgb, var(--text) 58%, transparent); text-decoration: none; }
+  .coffee-button:hover { background: color-mix(in srgb, var(--bg-2) 88%, transparent); }
   .coffee-button:focus-visible { outline: 3px solid var(--text-2); outline-offset: 4px; }
   .coffee-icon { display: inline-block; transform-origin: 50% 70%; transition: transform 220ms cubic-bezier(.22, 1, .36, 1); }
   .coffee-button:hover .coffee-icon { transform: rotate(-10deg) translateY(-1px) scale(1.08); }
