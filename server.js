@@ -705,11 +705,11 @@ async function getChatConversation(code, conversationId) {
   await ensureDatabase();
   const result = databaseMode === "postgres"
     ? await pool.query(
-      "SELECT id FROM chat_conversations WHERE id = $1 AND (code_a = $2 OR code_b = $2)",
+      "SELECT id, code_a, code_b FROM chat_conversations WHERE id = $1 AND (code_a = $2 OR code_b = $2)",
       [conversationId, code],
     )
     : { rows: [db.prepare(
-      "SELECT id FROM chat_conversations WHERE id = ? AND (code_a = ? OR code_b = ?)",
+      "SELECT id, code_a, code_b FROM chat_conversations WHERE id = ? AND (code_a = ? OR code_b = ?)",
     ).get(conversationId, code, code)].filter(Boolean) };
   return result.rows[0] || null;
 }
@@ -1053,6 +1053,8 @@ const uploadLimit = limiter({ name: "upload", windowMs: 60 * 60 * 1000, max: 30 
 const fileContentLimit = limiter({ name: "file-content", windowMs: 60 * 1000, max: 60 });
 const chatReadLimit = limiter({ name: "chat-read", windowMs: 60 * 1000, max: 120 });
 const chatWriteLimit = limiter({ name: "chat-write", windowMs: 60 * 1000, max: 30 });
+const chatTypingLimit = limiter({ name: "chat-typing", windowMs: 60 * 1000, max: 60 });
+const chatTypingStates = new Map();
 
 async function requireVault(req, res, next) {
   try {
@@ -1249,6 +1251,30 @@ app.get("/api/vaults/:code/chat/conversations/:id/messages", chatReadLimit, requ
     return res.status(404).json({ error: "Chat not found" });
   }
   res.json({ messages: await listChatMessages(req.params.id, afterId) });
+}));
+
+app.post("/api/vaults/:code/chat/conversations/:id/typing", chatTypingLimit, requireVault, asyncHandler(async (req, res) => {
+  if (!validChatRequestId(req.params.id) || typeof req.body?.typing !== "boolean") {
+    return res.status(400).json({ error: "Invalid typing status" });
+  }
+  if (!(await getChatConversation(req.params.code, req.params.id))) {
+    return res.status(404).json({ error: "Chat not found" });
+  }
+  const key = `${req.params.id}:${req.params.code}`;
+  if (req.body.typing) chatTypingStates.set(key, Date.now() + 7000);
+  else chatTypingStates.delete(key);
+  res.json({ ok: true });
+}));
+
+app.get("/api/vaults/:code/chat/conversations/:id/typing", chatReadLimit, requireVault, asyncHandler(async (req, res) => {
+  if (!validChatRequestId(req.params.id)) return res.status(400).json({ error: "Invalid conversation" });
+  const conversation = await getChatConversation(req.params.code, req.params.id);
+  if (!conversation) return res.status(404).json({ error: "Chat not found" });
+  const peerCode = conversation.code_a === req.params.code ? conversation.code_b : conversation.code_a;
+  const key = `${req.params.id}:${peerCode}`;
+  const expiresAt = chatTypingStates.get(key) || 0;
+  if (expiresAt <= Date.now()) chatTypingStates.delete(key);
+  res.json({ typing: expiresAt > Date.now() });
 }));
 
 app.post("/api/vaults/:code/chat/conversations/:id/messages", chatWriteLimit, requireVault, asyncHandler(async (req, res) => {

@@ -14,6 +14,10 @@
   let polling = false;
   let statusTimer = 0;
   let joiningChat = false;
+  let sendingMessage = false;
+  let typingHeartbeat = 0;
+  let typingPollTimer = 0;
+  let lastTypingSentAt = 0;
   let qrCameraStream = null;
   let qrCameraFrame = 0;
   let knownIncomingRequestIds = null;
@@ -171,7 +175,49 @@
     }
   }
 
+  async function updateTypingStatus(isTyping) {
+    if (!activeConversation || !vaultCode) return;
+    try {
+      await api("POST", `/chat/conversations/${encodeURIComponent(activeConversation.id)}/typing`, { typing: isTyping });
+    } catch { /* Typing status is best-effort and must not interrupt chat. */ }
+  }
+
+  async function refreshTypingStatus() {
+    if (!activeConversation || $("chatPanel").classList.contains("hidden")) return;
+    try {
+      const result = await api("GET", `/chat/conversations/${encodeURIComponent(activeConversation.id)}/typing`);
+      const indicator = $("chatTypingIndicator");
+      indicator.classList.toggle("hidden", !result.typing);
+      indicator.setAttribute("aria-hidden", String(!result.typing));
+    } catch {
+      $("chatTypingIndicator").classList.add("hidden");
+    }
+  }
+
+  function stopTyping() {
+    window.clearInterval(typingHeartbeat);
+    typingHeartbeat = 0;
+    if (lastTypingSentAt) void updateTypingStatus(false);
+    lastTypingSentAt = 0;
+  }
+
+  function startTyping() {
+    if (!activeConversation || !$("chatMessageInput").value.trim()) return;
+    if (!typingHeartbeat) {
+      void updateTypingStatus(true);
+      lastTypingSentAt = Date.now();
+      typingHeartbeat = window.setInterval(() => {
+        if (!$("chatMessageInput").value.trim()) return stopTyping();
+        if (Date.now() - lastTypingSentAt >= 4000) {
+          void updateTypingStatus(true);
+          lastTypingSentAt = Date.now();
+        }
+      }, 1000);
+    }
+  }
+
   async function selectConversation(conversation) {
+    stopTyping();
     try {
       const peerFingerprint = await crypto.fingerprint(conversation.peerPublicKey);
       const pinKey = `clipvault-chat-peer:${vaultCode}:${conversation.peerId}`;
@@ -208,6 +254,8 @@
       $("chatColumns").classList.add("has-active-chat");
       setStatus("");
       await loadMessages();
+      void refreshTypingStatus();
+      if (!typingPollTimer) typingPollTimer = window.setInterval(() => void refreshTypingStatus(), 2000);
     } catch (error) {
       setStatus(error.message, true);
     }
@@ -582,10 +630,12 @@
 
   async function sendMessage(event) {
     event.preventDefault();
-    if (!activeConversation || !activeMessageKey) return;
+    if (sendingMessage || !activeConversation || !activeMessageKey) return;
     const input = $("chatMessageInput");
     const content = input.value.trim();
     if (!content) return;
+    sendingMessage = true;
+    stopTyping();
     $("chatSendButton").disabled = true;
     try {
       const encrypted = await crypto.encryptMessage(
@@ -601,6 +651,7 @@
     } catch (error) {
       setStatus(error.message, true);
     } finally {
+      sendingMessage = false;
       $("chatSendButton").disabled = false;
       input.focus();
     }
@@ -740,6 +791,8 @@
     window.history.replaceState(null, "", window.location.pathname + window.location.search);
   }
   $("chatComposeForm").addEventListener("submit", sendMessage);
+  $("chatMessageInput").addEventListener("input", startTyping);
+  $("chatMessageInput").addEventListener("blur", stopTyping);
   $("chatMessageInput").addEventListener("keydown", (event) => {
     if (event.key !== "Enter" || event.shiftKey || event.isComposing || event.keyCode === 229) return;
     event.preventDefault();
