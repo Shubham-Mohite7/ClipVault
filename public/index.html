@@ -581,6 +581,13 @@ try {
   .chat-workspace { display: grid; gap: 12px; animation: chat-appear 240ms cubic-bezier(.22, 1, .36, 1) both; }
   .chat-trust-notice { display: flex; align-items: center; gap: 7px; min-height: 30px; }
   .chat-trust-notice svg { width: 15px; height: 15px; flex: 0 0 auto; fill: none; stroke: #30a46c; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .chat-qr-panel { margin: 10px 0; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); text-align: center; }
+  .chat-qr-panel img { display: block; width: min(100%, 240px); aspect-ratio: 1; margin: 0 auto 8px; image-rendering: pixelated; }
+  .chat-qr-panel p { color: var(--text-2); font-size: 12px; line-height: 1.45; }
+  .chat-qr-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 9px; }
+  .chat-qr-actions .btn { min-height: 36px; padding: 8px 12px; font-size: 12px; }
+  .chat-sidebar .chat-qr-upload { position: relative; display: inline-flex; align-items: center; justify-content: center; min-height: 38px; margin: 8px 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 980px; color: var(--text); font-size: 13px; cursor: pointer; }
+  .chat-qr-upload input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
   .chat-trust-notice details { margin-left: auto; }
   .chat-trust-notice summary { padding: 5px 8px; border-radius: 9px; background: color-mix(in srgb, var(--bg) 70%, transparent); color: var(--text-2); cursor: pointer; white-space: nowrap; }
   .chat-trust-notice details[open] { position: relative; }
@@ -1529,20 +1536,19 @@ try {
         </div>
         <div id="chatColumns" class="chat-columns no-active-chat">
           <aside class="chat-sidebar">
+            <button id="chatCreateInvite" class="btn small" type="button">Show my chat QR</button>
+            <div id="chatInvitePanel" class="chat-qr-panel hidden">
+              <img id="chatInviteQr" alt="Your unique ClipVault chat invitation QR code">
+              <p id="chatInviteExpiry">This private invite expires in 24 hours.</p>
+              <div class="chat-qr-actions"><a id="chatDownloadInvite" class="btn small" download="clipvault-chat-invite.png">Download QR</a><button id="chatRefreshInvite" class="btn small" type="button">New QR</button></div>
+            </div>
+            <p class="chat-code-help">Share your QR, or upload a friend’s QR image to send them a chat request. Your vault code stays private.</p>
+            <label class="chat-qr-upload">Upload QR image<input id="chatQrUpload" type="file" accept="image/*"></label>
+            <p id="chatScannedInvite" class="chat-code-help hidden">Invitation QR ready. Send a request to continue.</p>
             <form id="chatStartForm">
-              <div id="chatCodeEntry" class="chat-code-entry" role="group" aria-label="Enter a vault code">
-                <input class="chat-code-slot" type="text" maxlength="1" aria-label="Code character 1" autocomplete="off" autocapitalize="characters" spellcheck="false">
-                <input class="chat-code-slot" type="text" maxlength="1" aria-label="Code character 2" autocomplete="off" autocapitalize="characters" spellcheck="false">
-                <input class="chat-code-slot" type="text" maxlength="1" aria-label="Code character 3" autocomplete="off" autocapitalize="characters" spellcheck="false">
-                <span class="chat-code-separator" aria-hidden="true">-</span>
-                <input class="chat-code-slot" type="text" maxlength="1" aria-label="Code character 4" autocomplete="off" inputmode="numeric">
-                <input class="chat-code-slot" type="text" maxlength="1" aria-label="Code character 5" autocomplete="off" inputmode="numeric">
-                <input class="chat-code-slot" type="text" maxlength="1" aria-label="Code character 6" autocomplete="off" inputmode="numeric">
-                <input class="chat-recipient-input chat-code-value" id="chatRecipientCode" type="text" tabindex="-1" aria-hidden="true" autocomplete="off" pattern="(?:[A-Za-z]{3}-[0-9]{3}|[0-9]{5})">
-              </div>
-              <button class="btn small" type="submit" style="margin-top:0">Start chat</button>
+              <input id="chatInviteToken" type="hidden">
+              <button id="chatSendRequest" class="btn small" type="submit" disabled>Send chat request</button>
             </form>
-            <p class="chat-code-help">Ask your friend to share their ClipVault code, then enter it here to start chatting.</p>
             <p id="chatStartStatus" class="chat-inline-status" role="status" aria-live="polite"></p>
             <div id="chatRequestsSection">
               <h3 style="margin-top:22px">Requests</h3>
@@ -1558,10 +1564,10 @@ try {
             <div id="chatThreadEmpty" class="chat-thread-empty">
               <div>
                 <div class="chat-process-animation">
-                  <svg viewBox="100 0 600 420" role="img" aria-label="Get a code from a friend, enter it in ClipVault, and start an end-to-end encrypted chat.">
+                    <svg viewBox="100 0 600 420" role="img" aria-label="Share a chat QR, scan a friend's QR, and start an end-to-end encrypted chat.">
                     <g text-anchor="middle">
-                      <text class="cp-text cp-step cp-head-1" x="400" y="30" font-size="28" font-weight="600">Ask your friend for their code</text>
-                      <text class="cp-muted cp-step cp-head-2" x="400" y="30" font-size="28" font-weight="600">Enter the code to connect</text>
+                      <text class="cp-text cp-step cp-head-1" x="400" y="30" font-size="28" font-weight="600">Share a private chat QR</text>
+                      <text class="cp-muted cp-step cp-head-2" x="400" y="30" font-size="28" font-weight="600">Scan or upload their QR</text>
                       <text class="cp-text cp-step cp-head-3" x="400" y="30" font-size="28" font-weight="600">Start chatting privately</text>
                       <text class="cp-muted cp-process-subtitle" x="400" y="52" font-size="15">Three simple steps to connect</text>
                     </g>
@@ -1576,10 +1582,10 @@ try {
                       <line class="cp-line" x1="18" y1="96" x2="172" y2="96" />
                       <g class="cp-scene cp-scene-1">
                         <rect class="cp-bubble" x="16" y="112" width="136" height="34" rx="16" />
-                        <text class="cp-text" x="27" y="134" font-size="11">What's your code?</text>
+                        <text class="cp-text" x="27" y="134" font-size="11">Can we chat privately?</text>
                         <rect class="cp-bubble-blue" x="40" y="160" width="134" height="54" rx="20" />
-                        <text class="cp-white" x="107" y="180" text-anchor="middle" font-size="10">My code is</text>
-                        <text class="cp-white" x="107" y="201" text-anchor="middle" font-size="16" font-weight="700" letter-spacing="1.5">ABC-123</text>
+                        <text class="cp-white" x="107" y="180" text-anchor="middle" font-size="10">Scan my QR</text>
+                        <text class="cp-white" x="107" y="201" text-anchor="middle" font-size="16" font-weight="700" letter-spacing="1.5">QR</text>
                       </g>
                       <g class="cp-scene cp-scene-3">
                         <rect class="cp-bubble" x="16" y="116" width="112" height="34" rx="16" />
@@ -1600,22 +1606,16 @@ try {
                       <rect class="cp-screen" x="7" y="7" width="176" height="278" rx="22" />
                       <rect x="66" y="13" width="58" height="13" rx="7" fill="var(--line)" />
                       <g class="cp-scene cp-scene-2">
-                        <text class="cp-text" x="95" y="60" text-anchor="middle" font-size="14" font-weight="600">Enter code</text>
-                        <text class="cp-muted" x="95" y="78" text-anchor="middle" font-size="10">from your friend</text>
-                        <g>
-                          <rect class="cp-slot" x="18" y="96" width="23" height="36" rx="7" />
-                          <rect class="cp-slot" x="45" y="96" width="23" height="36" rx="7" />
-                          <rect class="cp-slot" x="72" y="96" width="23" height="36" rx="7" />
-                          <text class="cp-muted" x="106" y="119" font-size="12">-</text>
-                          <rect class="cp-slot" x="113" y="96" width="23" height="36" rx="7" />
-                          <rect class="cp-slot" x="140" y="96" width="23" height="36" rx="7" />
-                          <rect class="cp-slot" x="167" y="96" width="16" height="36" rx="7" />
-                          <text class="cp-text cp-char" x="29.5" y="120" text-anchor="middle" font-size="13" font-weight="700">A</text>
-                          <text class="cp-text cp-char" x="56.5" y="120" text-anchor="middle" font-size="13" font-weight="700">B</text>
-                          <text class="cp-text cp-char" x="83.5" y="120" text-anchor="middle" font-size="13" font-weight="700">C</text>
-                          <text class="cp-text cp-char" x="124.5" y="120" text-anchor="middle" font-size="13" font-weight="700">1</text>
-                          <text class="cp-text cp-char" x="151.5" y="120" text-anchor="middle" font-size="13" font-weight="700">2</text>
-                          <text class="cp-text cp-char" x="175" y="120" text-anchor="middle" font-size="13" font-weight="700">3</text>
+                        <text class="cp-text" x="95" y="60" text-anchor="middle" font-size="14" font-weight="600">Scan QR</text>
+                        <text class="cp-muted" x="95" y="78" text-anchor="middle" font-size="10">to connect</text>
+                        <g transform="translate(54 94)">
+                          <rect class="cp-slot" width="82" height="82" rx="8" />
+                          <g fill="var(--text)">
+                            <path d="M9 9h21v21H9z M12 12v15h15V12z M15 15h9v9h-9z M51 9h21v21H51z M54 12v15h15V12z M57 15h9v9h-9z M9 51h21v21H9z M12 54v15h15V54z M15 57h9v9h-9z" fill-rule="evenodd" />
+                            <path d="M36 9h6v6h-6z M36 21h6v6h-6z M33 33h6v6h-6z M45 33h6v6h-6z M36 42h6v6h-6z M48 45h6v6h-6z M36 54h6v6h-6z M45 57h6v6h-6z M54 36h6v6h-6z M63 36h6v6h-6z M36 66h6v6h-6z M51 63h6v6h-6z M63 54h6v6h-6z M69 66h6v6h-6z" />
+                          </g>
+                          <path d="M12 12v15h15V12z M54 12v15h15V12z M12 54v15h15V54z" fill="var(--bg-2)" />
+                          <path d="M15 15h9v9h-9z M57 15h9v9h-9z M15 57h9v9h-9z" fill="var(--text)" />
                         </g>
                         <rect class="cp-button" x="35" y="151" width="120" height="34" rx="17" />
                         <text class="cp-white" x="95" y="173" text-anchor="middle" font-size="12" font-weight="600">Start chat</text>
@@ -2569,6 +2569,7 @@ if (driveNotice === "connected" || driveNotice === "error") {
   }
 })();
 </script>
+<script src="/vendor/jsQR.js" defer></script>
 <script src="/chat-crypto.js" defer></script>
 <script src="/chat.js" defer></script>
 </body>

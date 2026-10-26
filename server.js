@@ -1,5 +1,6 @@
 const express = require("express");
 const crypto = require("crypto");
+const QRCode = require("qrcode");
 const path = require("path");
 const { Readable } = require("stream");
 const {
@@ -88,6 +89,13 @@ if (databaseMode === "postgres") {
       status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected')),
       created_at INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS chat_invites (
+      token_hash TEXT PRIMARY KEY,
+      sender_code TEXT NOT NULL REFERENCES vaults(code) ON DELETE CASCADE,
+      expires_at INTEGER NOT NULL,
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_chat_invites_expiry ON chat_invites(expires_at);
     CREATE INDEX IF NOT EXISTS idx_chat_requests_recipient ON chat_requests(recipient_code, status, created_at);
     CREATE TABLE IF NOT EXISTS chat_conversations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -239,6 +247,15 @@ async function ensureDatabase() {
           created_at BIGINT NOT NULL
         )
       `);
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS chat_invites (
+          token_hash TEXT PRIMARY KEY,
+          sender_code TEXT NOT NULL,
+          expires_at BIGINT NOT NULL,
+          created_at BIGINT NOT NULL
+        )
+      `);
+      await pool.query("CREATE INDEX IF NOT EXISTS idx_chat_invites_expiry ON chat_invites(expires_at)");
       await pool.query("CREATE INDEX IF NOT EXISTS idx_chat_requests_recipient ON chat_requests(recipient_code, status, created_at)");
       await pool.query(`
         CREATE TABLE IF NOT EXISTS chat_conversations (
@@ -462,6 +479,48 @@ async function getChatIdentity(code) {
   return result.rows[0] || null;
 }
 
+function chatPeerId(identity) {
+  if (!identity?.public_key) return "";
+  return crypto.createHash("sha256").update(identity.public_key).digest("base64url").slice(0, 22);
+}
+
+async function createChatInvite(senderCode) {
+  await ensureDatabase();
+  const now = Date.now();
+  if (databaseMode === "postgres") await pool.query("DELETE FROM chat_invites WHERE expires_at <= $1", [now]);
+  else db.prepare("DELETE FROM chat_invites WHERE expires_at <= ?").run(now);
+  if (databaseMode === "postgres") await pool.query("DELETE FROM chat_invites WHERE sender_code = $1", [senderCode]);
+  else db.prepare("DELETE FROM chat_invites WHERE sender_code = ?").run(senderCode);
+  const token = crypto.randomBytes(32).toString("base64url");
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+  const expiresAt = now + 24 * 60 * 60 * 1000;
+  if (databaseMode === "postgres") {
+    await pool.query("INSERT INTO chat_invites (token_hash, sender_code, expires_at, created_at) VALUES ($1, $2, $3, $4)", [tokenHash, senderCode, expiresAt, now]);
+  } else {
+    db.prepare("INSERT INTO chat_invites (token_hash, sender_code, expires_at, created_at) VALUES (?, ?, ?, ?)").run(tokenHash, senderCode, expiresAt, now);
+  }
+  return { token, expiresAt };
+}
+
+async function consumeChatInvite(token, recipientCode) {
+  await ensureDatabase();
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+  const now = Date.now();
+  const invite = databaseMode === "postgres"
+    ? await pool.query("SELECT sender_code FROM chat_invites WHERE token_hash = $1 AND expires_at > $2", [tokenHash, now])
+    : { rows: [db.prepare("SELECT sender_code FROM chat_invites WHERE token_hash = ? AND expires_at > ?").get(tokenHash, now)].filter(Boolean) };
+  if (!invite.rows[0]) return { error: "This chat QR has expired or was already used. Ask your friend for a new one." };
+  const senderCode = invite.rows[0].sender_code;
+  if (senderCode === recipientCode) return { error: "You cannot send a chat request to yourself." };
+  if (!(await getChatIdentity(senderCode))) return { error: "This chat invitation is no longer available." };
+  if (await chatConversationExists(recipientCode, senderCode)) return { error: "You already have a chat with this contact." };
+  const consumed = databaseMode === "postgres"
+    ? await pool.query("DELETE FROM chat_invites WHERE token_hash = $1 AND expires_at > $2 RETURNING sender_code", [tokenHash, now])
+    : { rows: [db.prepare("DELETE FROM chat_invites WHERE token_hash = ? AND expires_at > ? RETURNING sender_code").get(tokenHash, now)].filter(Boolean) };
+  if (!consumed.rows[0]) return { error: "This chat QR has expired or was already used. Ask your friend for a new one." };
+  return { request: await createChatRequest(recipientCode, senderCode) };
+}
+
 async function createChatIdentity(code, value) {
   await ensureDatabase();
   const values = [code, JSON.stringify(value.publicKey), value.wrappedPrivateKey, value.recoverySalt, value.recoveryIv, Date.now()];
@@ -534,10 +593,9 @@ async function listChatRequests(recipientCode) {
     : { rows: db.prepare(
       "SELECT id, sender_code, created_at FROM chat_requests WHERE recipient_code = ? AND status = 'pending' ORDER BY created_at DESC LIMIT 50",
     ).all(recipientCode) };
-  return result.rows.map((request) => ({
-    id: String(request.id),
-    senderCode: request.sender_code.toUpperCase(),
-    createdAt: Number(request.created_at),
+  return Promise.all(result.rows.map(async (request) => {
+    const identity = await getChatIdentity(request.sender_code);
+    return { id: String(request.id), peerId: chatPeerId(identity), createdAt: Number(request.created_at) };
   }));
 }
 
@@ -551,11 +609,9 @@ async function listSentChatRequests(senderCode) {
     : { rows: db.prepare(
       "SELECT id, recipient_code, status, created_at FROM chat_requests WHERE sender_code = ? ORDER BY created_at DESC LIMIT 50",
     ).all(senderCode) };
-  return result.rows.map((request) => ({
-    id: String(request.id),
-    peerCode: request.recipient_code.toUpperCase(),
-    status: request.status,
-    createdAt: Number(request.created_at),
+  return Promise.all(result.rows.map(async (request) => {
+    const identity = await getChatIdentity(request.recipient_code);
+    return { id: String(request.id), peerId: chatPeerId(identity), status: request.status, createdAt: Number(request.created_at) };
   }));
 }
 
@@ -582,7 +638,7 @@ async function acceptChatRequest(recipientCode, requestId) {
         [codeA, codeB, Date.now()],
       );
       await client.query("COMMIT");
-      return { id: String(conversation.rows[0].id), peerCode: senderCode.toUpperCase() };
+      return { id: String(conversation.rows[0].id), peerId: chatPeerId(await getChatIdentity(senderCode)) };
     } catch (error) {
       await client.query("ROLLBACK");
       throw error;
@@ -603,9 +659,10 @@ async function acceptChatRequest(recipientCode, requestId) {
     const conversation = db.prepare(
       "SELECT id FROM chat_conversations WHERE code_a = ? AND code_b = ?",
     ).get(codeA, codeB);
-    return { id: String(conversation.id), peerCode: request.sender_code.toUpperCase() };
+    return { id: String(conversation.id), peerCode: request.sender_code };
   });
-  return accept();
+  const accepted = accept();
+  return accepted ? { id: accepted.id, peerId: chatPeerId(await getChatIdentity(accepted.peerCode)) } : null;
 }
 
 async function rejectChatRequest(recipientCode, requestId) {
@@ -640,7 +697,7 @@ async function listChatConversations(code) {
     if (!identity) continue;
     conversations.push({
       id: String(conversation.id),
-      peerCode: peerCode.toUpperCase(),
+      peerId: chatPeerId(identity),
       peerPublicKey: JSON.parse(identity.public_key),
       createdAt: Number(conversation.created_at),
     });
@@ -685,14 +742,14 @@ async function listChatMessages(conversationId, afterId) {
     : { rows: db.prepare(
       "SELECT id, sender_code, iv, ciphertext, signature, created_at FROM chat_messages WHERE conversation_id = ? AND id > ? ORDER BY id ASC LIMIT 100",
     ).all(conversationId, afterId) };
-  return result.rows.map((message) => ({
+  return Promise.all(result.rows.map(async (message) => ({
     id: String(message.id),
-    senderCode: message.sender_code.toUpperCase(),
+    senderId: chatPeerId(await getChatIdentity(message.sender_code)),
     iv: message.iv,
     ciphertext: message.ciphertext,
     signature: message.signature,
     createdAt: Number(message.created_at),
-  }));
+  })));
 }
 
 async function insertChatMessage(conversationId, senderCode, iv, ciphertext, signature) {
@@ -1115,6 +1172,7 @@ app.get("/api/vaults/:code/chat/identity", chatReadLimit, requireVault, asyncHan
   if (!identity) return res.json({ registered: false });
   res.json({
     registered: true,
+    peerId: chatPeerId(identity),
     publicKey: JSON.parse(identity.public_key),
     wrappedPrivateKey: identity.wrapped_private_key,
     recoverySalt: identity.recovery_salt,
@@ -1128,7 +1186,7 @@ app.post("/api/vaults/:code/chat/identity", chatWriteLimit, requireVault, asyncH
   if (!(await createChatIdentity(req.params.code, identity))) {
     return res.status(409).json({ error: "Chat identity already exists." });
   }
-  res.status(201).json({ ok: true });
+  res.status(201).json({ ok: true, peerId: chatPeerId(await getChatIdentity(req.params.code)) });
 }));
 
 app.put("/api/vaults/:code/chat/identity", chatWriteLimit, requireVault, asyncHandler(async (req, res) => {
@@ -1149,26 +1207,30 @@ app.get("/api/vaults/:code/chat/requests", chatReadLimit, requireVault, asyncHan
   res.json({ requests, sentRequests });
 }));
 
+app.post("/api/vaults/:code/chat/invites", chatWriteLimit, requireVault, asyncHandler(async (req, res) => {
+  if (!(await getChatIdentity(req.params.code))) return res.status(409).json({ error: "Set up secure chat before creating an invite" });
+  const invite = await createChatInvite(req.params.code);
+  const appUrl = PUBLIC_APP_URL || `${req.protocol}://${req.get("host")}`;
+  const inviteUrl = new URL("/", appUrl);
+  inviteUrl.hash = `chat-invite=${invite.token}`;
+  const qrDataUrl = await QRCode.toDataURL(inviteUrl.toString(), { width: 360, margin: 2, errorCorrectionLevel: "H" });
+  res.status(201).json({ expiresAt: invite.expiresAt, qrDataUrl });
+}));
+
 app.post("/api/vaults/:code/chat/requests", chatWriteLimit, requireVault, asyncHandler(async (req, res) => {
-  const recipientCode = normalizeVaultCode(req.body?.recipientCode);
-  if (!isValidVaultCode(recipientCode) || recipientCode === req.params.code) {
-    return res.status(400).json({ error: "Enter a different, valid vault code" });
-  }
-  if (!(await getChatIdentity(req.params.code))) {
-    return res.status(409).json({ error: "Set up secure chat before sending a request" });
-  }
-  if (await chatConversationExists(req.params.code, recipientCode)) {
-    return res.status(409).json({ error: "You already have a chat with that code" });
-  }
-  const request = await createChatRequest(req.params.code, recipientCode);
-  res.status(request.existing ? 200 : 201).json({ id: request.id, status: "pending" });
+  const token = typeof req.body?.inviteToken === "string" ? req.body.inviteToken : "";
+  if (!/^[A-Za-z0-9_-]{43}$/.test(token)) return res.status(400).json({ error: "Choose a valid chat QR code" });
+  if (!(await getChatIdentity(req.params.code))) return res.status(409).json({ error: "Set up secure chat before sending a request" });
+  const result = await consumeChatInvite(token, req.params.code);
+  if (result.error) return res.status(409).json({ error: result.error });
+  res.status(result.request.existing ? 200 : 201).json({ id: result.request.id, status: "pending" });
 }));
 
 app.post("/api/vaults/:code/chat/requests/:requestId/accept", chatWriteLimit, requireVault, asyncHandler(async (req, res) => {
   if (!validChatRequestId(req.params.requestId)) return res.status(400).json({ error: "Invalid request" });
   const conversation = await acceptChatRequest(req.params.code, req.params.requestId);
   if (!conversation) return res.status(404).json({ error: "Chat request not found" });
-  res.json({ id: conversation.id, peerCode: conversation.peerCode });
+  res.json({ id: conversation.id, peerId: conversation.peerId });
 }));
 
 app.post("/api/vaults/:code/chat/requests/:requestId/reject", chatWriteLimit, requireVault, asyncHandler(async (req, res) => {
@@ -1205,7 +1267,7 @@ app.post("/api/vaults/:code/chat/conversations/:id/messages", chatWriteLimit, re
     return res.status(400).json({ error: "Invalid encrypted message" });
   }
   const message = await insertChatMessage(req.params.id, req.params.code, iv, ciphertext, signature);
-  res.status(201).json(message);
+  res.status(201).json({ ...message, senderId: chatPeerId(await getChatIdentity(req.params.code)) });
 }));
 
 app.delete("/api/vaults/:code/chat/conversations/:id", chatWriteLimit, requireVault, asyncHandler(async (req, res) => {

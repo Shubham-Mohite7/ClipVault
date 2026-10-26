@@ -62,7 +62,7 @@ When your browser has loaded the app and opened a vault, the app shell and up to
   <tr>
     <td width="50%" valign="top">
       <h3>03 &nbsp;Private, end-to-end chat</h3>
-      Messages are encrypted in your browser before upload. The server stores ciphertext and message metadata. Both people must set up chat and accept the request.
+      Messages are encrypted in your browser before upload. Connect by sharing a unique QR invitation; the recipient must accept the request before chat starts. Vault codes are not shared with contacts.
     </td>
     <td width="50%" valign="top">
       <h3>04 &nbsp;Save and reuse snippets</h3>

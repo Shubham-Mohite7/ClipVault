@@ -133,7 +133,7 @@
     };
   }
 
-  async function deriveConversationKey(privateKey, peerPublicKey, ownCode, peerCode) {
+  async function deriveConversationKey(privateKey, peerPublicKey, ownPeerId, peerId) {
     const publicKey = await cryptoApi.subtle.importKey(
       "jwk",
       peerPublicKey,
@@ -147,12 +147,12 @@
       256,
     );
     const material = await cryptoApi.subtle.importKey("raw", sharedSecret, "HKDF", false, ["deriveKey"]);
-    const participants = [ownCode.toUpperCase(), peerCode.toUpperCase()].sort().join(":");
+    const participants = [ownPeerId, peerId].sort().join(":");
     return cryptoApi.subtle.deriveKey(
       {
         name: "HKDF",
         hash: "SHA-256",
-        salt: encoder.encode(`ClipVault chat v1:${participants}`),
+        salt: encoder.encode(`ClipVault chat v2:${participants}`),
         info: encoder.encode("message encryption"),
       },
       material,
@@ -162,19 +162,19 @@
     );
   }
 
-  function signaturePayload(message, conversationId, senderCode) {
+  function signaturePayload(message, conversationId, senderId) {
     return encoder.encode(JSON.stringify({
       conversationId: String(conversationId),
-      senderCode: senderCode.toUpperCase(),
+      senderId,
       iv: message.iv,
       ciphertext: message.ciphertext,
     }));
   }
 
-  async function encryptMessage(key, message, conversationId, senderCode, signingKey) {
+  async function encryptMessage(key, message, conversationId, senderId, signingKey) {
     const iv = cryptoApi.getRandomValues(new Uint8Array(12));
     const additionalData = encoder.encode(
-      `ClipVault message v1:${conversationId}:${senderCode.toUpperCase()}`,
+      `ClipVault message v2:${conversationId}:${senderId}`,
     );
     const ciphertext = await cryptoApi.subtle.encrypt(
       { name: "AES-GCM", iv, additionalData },
@@ -188,7 +188,7 @@
     const signature = await cryptoApi.subtle.sign(
       { name: "ECDSA", hash: "SHA-256" },
       signingKey,
-      signaturePayload(encryptedMessage, conversationId, senderCode),
+      signaturePayload(encryptedMessage, conversationId, senderId),
     );
     return { ...encryptedMessage, signature: bytesToBase64Url(new Uint8Array(signature)) };
   }
@@ -205,11 +205,11 @@
       { name: "ECDSA", hash: "SHA-256" },
       signingKey,
       base64UrlToBytes(message.signature),
-      signaturePayload(message, conversationId, message.senderCode),
+      signaturePayload(message, conversationId, message.senderId),
     );
     if (!isAuthentic) throw new Error("Message signature is invalid");
     const additionalData = encoder.encode(
-      `ClipVault message v1:${conversationId}:${message.senderCode.toUpperCase()}`,
+      `ClipVault message v2:${conversationId}:${message.senderId}`,
     );
     const plaintext = await cryptoApi.subtle.decrypt(
       { name: "AES-GCM", iv: base64UrlToBytes(message.iv), additionalData },

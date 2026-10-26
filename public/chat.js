@@ -91,8 +91,8 @@
     try {
       const created = await crypto.createIdentity(vaultCode);
       const { publicKey, wrappedPrivateKey, recoverySalt, recoveryIv } = created;
-      await api("POST", "/chat/identity", { publicKey, wrappedPrivateKey, recoverySalt, recoveryIv });
-      identity = { registered: true, publicKey, wrappedPrivateKey, recoverySalt, recoveryIv };
+      const savedIdentity = await api("POST", "/chat/identity", { publicKey, wrappedPrivateKey, recoverySalt, recoveryIv });
+      identity = { registered: true, peerId: savedIdentity.peerId, publicKey, wrappedPrivateKey, recoverySalt, recoveryIv };
       await unlockIdentity(vaultCode);
     } catch (error) {
       if (error.message.includes("already exists")) {
@@ -122,7 +122,7 @@
 
   function appendMessage(message, plaintext) {
     const element = document.createElement("div");
-    element.className = `chat-message${message.senderCode === vaultCode.toUpperCase() ? " mine" : ""}`;
+    element.className = `chat-message${message.senderId === identity.peerId ? " mine" : ""}`;
     const content = document.createElement("span");
     content.textContent = plaintext;
     const time = document.createElement("time");
@@ -151,7 +151,7 @@
             activeMessageKey,
             message,
             activeConversation.id,
-            message.senderCode === vaultCode.toUpperCase()
+            message.senderId === identity.peerId
               ? identity.publicKey.signing
               : activeConversation.peerPublicKey.signing,
           ),
@@ -172,7 +172,7 @@
   async function selectConversation(conversation) {
     try {
       const peerFingerprint = await crypto.fingerprint(conversation.peerPublicKey);
-      const pinKey = `clipvault-chat-peer:${vaultCode}:${conversation.peerCode}`;
+      const pinKey = `clipvault-chat-peer:${vaultCode}:${conversation.peerId}`;
       let pinnedFingerprint = null;
       try { pinnedFingerprint = localStorage.getItem(pinKey); } catch {}
       if (pinnedFingerprint && pinnedFingerprint !== peerFingerprint) {
@@ -193,11 +193,11 @@
       activeMessageKey = await crypto.deriveConversationKey(
         privateKeys.agreement,
         conversation.peerPublicKey.agreement,
-        vaultCode,
-        conversation.peerCode.toLowerCase(),
+        identity.peerId,
+        conversation.peerId,
       );
       messageCursor = "0";
-      $("chatPeerCode").textContent = conversation.peerCode;
+      $("chatPeerCode").textContent = contactLabel(conversation.peerId);
       $("chatPeerFingerprint").textContent = peerFingerprint;
       $("chatMessages").replaceChildren();
       $("chatThreadEmpty").classList.add("hidden");
@@ -228,7 +228,7 @@
       const item = document.createElement("div");
       item.className = "chat-notification-item";
       const label = document.createElement("span");
-      label.textContent = `Request from ${request.senderCode}`;
+      label.textContent = `Request from ${contactLabel(request.peerId)}`;
       const button = document.createElement("button");
       button.type = "button";
       button.textContent = "Review";
@@ -251,7 +251,7 @@
       for (const request of requests) {
         if (!knownIncomingRequestIds.has(request.id)) {
           newIncomingIds.add(request.id);
-          if (typeof window.toast === "function") window.toast(`New chat request from ${request.senderCode}`);
+          if (typeof window.toast === "function") window.toast(`New chat request from ${contactLabel(request.peerId)}`);
         }
       }
     }
@@ -270,7 +270,7 @@
       const copy = document.createElement("div");
       copy.className = "chat-request-copy";
       const code = document.createElement("strong");
-      code.textContent = request.senderCode;
+      code.textContent = contactLabel(request.peerId);
       const detail = document.createElement("small");
       detail.textContent = "Wants to start a chat";
       copy.append(code, detail);
@@ -318,18 +318,18 @@
     conversations = result.conversations;
     const container = $("chatConversations");
     container.replaceChildren();
-    const conversationsByPeer = new Map(conversations.map((conversation) => [conversation.peerCode.toUpperCase(), conversation]));
+    const conversationsByPeer = new Map(conversations.map((conversation) => [conversation.peerId, conversation]));
     const statusLabels = { pending: "Waiting", accepted: "Accepted", rejected: "Declined" };
     const items = [
       ...conversations.map((conversation) => ({
-        peerCode: conversation.peerCode,
+        peerId: conversation.peerId,
         conversation,
-        request: sentRequests.find((item) => item.peerCode.toUpperCase() === conversation.peerCode.toUpperCase()),
+        request: sentRequests.find((item) => item.peerId === conversation.peerId),
         createdAt: conversation.createdAt,
       })),
       ...sentRequests
-        .filter((request) => !conversationsByPeer.has(request.peerCode.toUpperCase()))
-        .map((request) => ({ peerCode: request.peerCode, request, createdAt: request.createdAt })),
+        .filter((request) => !conversationsByPeer.has(request.peerId))
+        .map((request) => ({ peerId: request.peerId, request, createdAt: request.createdAt })),
     ].sort((a, b) => b.createdAt - a.createdAt);
     $("chatConversationsSection").classList.toggle("hidden", items.length === 0);
     for (const item of items) {
@@ -346,7 +346,7 @@
       }
       const peer = document.createElement("span");
       peer.className = "chat-conversation-code";
-      peer.textContent = item.peerCode;
+      peer.textContent = contactLabel(item.peerId);
       row.append(peer);
       const status = item.request?.status || (item.conversation ? "accepted" : "pending");
       const badge = document.createElement("small");
@@ -359,7 +359,7 @@
     if (activeConversation) {
       const updated = conversations.find((item) => item.id === activeConversation.id);
       if (updated) {
-        const pinKey = `clipvault-chat-peer:${vaultCode}:${updated.peerCode}`;
+        const pinKey = `clipvault-chat-peer:${vaultCode}:${updated.peerId}`;
         let pinnedFingerprint = null;
         try { pinnedFingerprint = localStorage.getItem(pinKey); } catch {}
         if (pinnedFingerprint && pinnedFingerprint !== await crypto.fingerprint(updated.peerPublicKey)) {
@@ -385,55 +385,114 @@
     if (!$("chatPanel").classList.contains("hidden")) await loadMessages();
   }
 
-  function readRecipientCode() {
-    const entry = $("chatCodeEntry");
-    const slots = [...entry.querySelectorAll(".chat-code-slot")];
-    const values = slots.map((slot) => slot.value);
-    const numeric = entry.classList.contains("is-numeric");
-    if (numeric) return values.slice(0, 5).every(Boolean) ? values.slice(0, 5).join("") : "";
-    return values.slice(0, 6).every(Boolean)
-      ? `${values.slice(0, 3).join("")}-${values.slice(3, 6).join("")}`
-      : "";
+  function contactLabel(peerId) {
+    return peerId ? "Contact · " + peerId.slice(0, 6).toUpperCase() : "New contact";
   }
 
-  function clearRecipientCode() {
-    const entry = $("chatCodeEntry");
-    for (const slot of entry.querySelectorAll(".chat-code-slot")) slot.value = "";
-    entry.classList.remove("is-numeric");
-    $("chatRecipientCode").value = "";
-  }
-
-  function fillRecipientCode(value, startAt = 0) {
-    const entry = $("chatCodeEntry");
-    const slots = [...entry.querySelectorAll(".chat-code-slot")];
-    const compact = value.toUpperCase().replace(/[^A-Z0-9]/g, "");
-    const isNumeric = /^\d/.test(compact);
-    entry.classList.toggle("is-numeric", isNumeric);
-    for (const slot of slots) slot.value = "";
-    if (isNumeric) {
-      compact.replace(/\D/g, "").slice(0, 5).split("").forEach((char, index) => { slots[index].value = char; });
-    } else {
-      const letters = (compact.match(/^[A-Z]{0,3}/) || [""])[0];
-      const digits = compact.slice(letters.length).replace(/\D/g, "").slice(0, 3);
-      [...letters, ...digits].forEach((char, index) => { slots[index].value = char; });
+  function setInviteToken(token) {
+    $("chatInviteToken").value = token;
+    $("chatSendRequest").disabled = !token;
+    $("chatScannedInvite").classList.toggle("hidden", !token);
+    if (token) {
+      $("chatStartStatus").textContent = "QR scanned. Send a request to continue.";
+      $("chatStartStatus").classList.remove("error");
     }
-    const completed = readRecipientCode();
-    $("chatRecipientCode").value = completed;
-    const firstEmpty = slots.findIndex((slot, index) => !slot.value && (isNumeric ? index < 5 : index < 6));
-    const focusIndex = firstEmpty < 0 ? Math.min(startAt, slots.length - 1) : firstEmpty;
-    slots[focusIndex]?.focus();
-    return completed;
+  }
+
+  function inviteTokenFromUrl(value) {
+    try {
+      const url = new URL(value, window.location.origin);
+      const appHost = window.location.hostname.replace(/^www\./, "");
+      const inviteHost = url.hostname.replace(/^www\./, "");
+      if (url.protocol !== window.location.protocol || inviteHost !== appHost || url.pathname !== "/" || url.search) return "";
+      const params = new URLSearchParams(url.hash.slice(1));
+      const token = params.get("chat-invite") || "";
+      return /^[A-Za-z0-9_-]{43}$/.test(token) ? token : "";
+    } catch {
+      return "";
+    }
+  }
+
+  async function createInvite() {
+    const button = $("chatCreateInvite");
+    const refreshButton = $("chatRefreshInvite");
+    const status = $("chatStartStatus");
+    button.disabled = true;
+    refreshButton.disabled = true;
+    status.textContent = "Creating a secure chat QR…";
+    status.classList.remove("error");
+    try {
+      const invite = await api("POST", "/chat/invites", {});
+      $("chatInviteQr").src = invite.qrDataUrl;
+      $("chatDownloadInvite").href = invite.qrDataUrl;
+      $("chatInviteExpiry").textContent = "This unique invite expires " + new Date(invite.expiresAt).toLocaleString() + " and can be used once.";
+      $("chatInvitePanel").classList.remove("hidden");
+      status.textContent = "Your chat QR is ready to share.";
+      setStatus("");
+    } catch (error) {
+      status.textContent = error.message || "Could not create a chat QR. Try again.";
+      status.classList.add("error");
+      setStatus(error.message, true);
+    } finally {
+      button.disabled = false;
+      refreshButton.disabled = false;
+    }
+  }
+
+  async function scanInviteImage(file) {
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setStatus("Choose a QR image smaller than 10 MB.", true);
+      return;
+    }
+    let objectUrl = "";
+    try {
+      let bitmap;
+      if (window.createImageBitmap) {
+        bitmap = await window.createImageBitmap(file);
+      } else {
+        objectUrl = URL.createObjectURL(file);
+        bitmap = await new Promise((resolve, reject) => {
+          const image = new Image();
+          image.onload = () => resolve(image);
+          image.onerror = () => reject(new Error("Could not open that QR image."));
+          image.src = objectUrl;
+        });
+      }
+      if (bitmap.width * bitmap.height > 24000000) {
+        bitmap.close?.();
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        throw new Error("That image is too large to scan. Choose a smaller QR image.");
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      context.drawImage(bitmap, 0, 0);
+      bitmap.close?.();
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+      const scanned = window.jsQR?.(pixels.data, pixels.width, pixels.height, { inversionAttempts: "attemptBoth" });
+      const token = scanned ? inviteTokenFromUrl(scanned.data) : "";
+      if (!token) throw new Error("That image does not contain a valid ClipVault chat QR.");
+      setInviteToken(token);
+    } catch (error) {
+      setStatus(error.message || "Could not read that QR image.", true);
+    } finally {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      $("chatQrUpload").value = "";
+    }
   }
 
   async function startChat(event) {
     event.preventDefault();
     if (joiningChat) return;
-    const recipientCode = readRecipientCode();
+    const inviteToken = $("chatInviteToken").value;
     const button = $("chatStartForm").querySelector('button[type="submit"]');
     const status = $("chatStartStatus") || $("chatStatus");
     const inlineStatus = status.id === "chatStartStatus";
-    if (!recipientCode) {
-      status.textContent = "Enter all code characters first.";
+    if (!inviteToken) {
+      status.textContent = "Scan or upload a friend’s chat QR first.";
       status.classList.remove("error");
       return;
     }
@@ -443,8 +502,8 @@
     status.textContent = "Sending invitation…";
     status.classList.remove("error");
     try {
-      const result = await api("POST", "/chat/requests", { recipientCode });
-      clearRecipientCode();
+      const result = await api("POST", "/chat/requests", { inviteToken });
+      setInviteToken("");
       const message = result.status === "pending"
         ? "Invitation sent. Chat opens after they accept."
         : "Invitation already sent. Waiting for them to accept.";
@@ -453,15 +512,15 @@
       else window.setTimeout(() => {
         if (status.textContent === message) status.textContent = "";
       }, 3500);
-      await loadConversations();
+      await refreshChatData();
     } catch (error) {
       status.textContent = error.message;
       status.classList.add("error");
       if (!inlineStatus) setStatus(error.message, true);
     } finally {
       joiningChat = false;
-      button.disabled = false;
-      button.textContent = "Start chat";
+      button.disabled = !$("chatInviteToken").value;
+      button.textContent = "Send chat request";
     }
   }
 
@@ -477,7 +536,7 @@
         activeMessageKey,
         content,
         activeConversation.id,
-        vaultCode,
+        identity.peerId,
         privateKeys.signing,
       );
       await api("POST", `/chat/conversations/${encodeURIComponent(activeConversation.id)}/messages`, encrypted);
@@ -499,7 +558,7 @@
       activeConversation = null;
       activeMessageKey = null;
       $("chatActiveThread").classList.add("hidden");
-      $("chatThreadEmpty").textContent = "Choose a chat or enter a vault code to start one.";
+      $("chatThreadEmpty").textContent = "Choose a chat or share a QR to connect.";
       $("chatThreadEmpty").classList.remove("hidden");
       $("chatColumns").classList.add("no-active-chat");
       $("chatColumns").classList.remove("has-active-chat");
@@ -610,57 +669,17 @@
       $("chatUnlockButton").disabled = false;
     }
   });
-  $("chatStartForm").addEventListener("submit", startChat);
-  const codeEntry = $("chatCodeEntry");
-  const codeSlots = [...codeEntry.querySelectorAll(".chat-code-slot")];
-  codeSlots.forEach((slot, index) => {
-    slot.addEventListener("input", () => {
-      const entryIsNumeric = codeEntry.classList.contains("is-numeric");
-      const raw = slot.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
-      if (index === 0 && raw) codeEntry.classList.toggle("is-numeric", /\d/.test(raw[0]));
-      const numeric = codeEntry.classList.contains("is-numeric");
-      const allowed = numeric ? /\d/ : index < 3 ? /[A-Z]/ : /\d/;
-      const character = raw.split("").find((item) => allowed.test(item)) || "";
-      slot.value = character;
-      const code = readRecipientCode();
-      $("chatRecipientCode").value = code;
-      const status = $("chatStartStatus");
-      status.textContent = "";
-      status.classList.remove("error");
-      if (character && index < (numeric ? 4 : 5)) {
-        const nextSlot = codeSlots[index + 1];
-        requestAnimationFrame(() => {
-          nextSlot.focus({ preventScroll: true });
-          nextSlot.select();
-        });
-      }
-      if (code && !joiningChat) $("chatStartForm").requestSubmit();
-      if (entryIsNumeric && !numeric) codeEntry.classList.remove("is-numeric");
-    });
-    slot.addEventListener("paste", (event) => {
-      const pasted = event.clipboardData?.getData("text") || "";
-      if (!pasted) return;
-      event.preventDefault();
-      const complete = fillRecipientCode(pasted, index);
-      $("chatStartStatus").textContent = "";
-      $("chatStartStatus").classList.remove("error");
-      if (complete && !joiningChat) $("chatStartForm").requestSubmit();
-    });
-    slot.addEventListener("keydown", (event) => {
-      if (event.key === "Backspace" && !slot.value && index > 0) {
-        event.preventDefault();
-        codeSlots[index - 1].value = "";
-        $("chatRecipientCode").value = readRecipientCode();
-        codeSlots[index - 1].focus();
-      } else if (event.key === "ArrowLeft" && index > 0) {
-        event.preventDefault();
-        codeSlots[index - 1].focus();
-      } else if (event.key === "ArrowRight" && index < codeSlots.length - 1) {
-        event.preventDefault();
-        codeSlots[index + 1].focus();
-      }
-    });
+  $("chatCreateInvite").addEventListener("click", createInvite);
+  $("chatRefreshInvite").addEventListener("click", createInvite);
+  $("chatQrUpload").addEventListener("change", (event) => {
+    void scanInviteImage(event.target.files?.[0]);
   });
+  $("chatStartForm").addEventListener("submit", startChat);
+  const urlInvite = inviteTokenFromUrl(window.location.href);
+  if (urlInvite) {
+    setInviteToken(urlInvite);
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  }
   $("chatComposeForm").addEventListener("submit", sendMessage);
   $("chatMessageInput").addEventListener("keydown", (event) => {
     if (event.key !== "Enter" || event.shiftKey || event.isComposing || event.keyCode === 229) return;

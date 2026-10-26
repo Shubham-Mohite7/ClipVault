@@ -1,4 +1,4 @@
-const CACHE_NAME = "clipvault-shell-v30";
+const CACHE_NAME = "clipvault-shell-v31";
 const VAULT_CACHE_NAME = "clipvault-vault-data-v1";
 const MAX_OFFLINE_VAULT_RESPONSES = 24;
 const SHELL_URLS = [
@@ -12,6 +12,7 @@ const SHELL_URLS = [
   "/icons/apple-touch-icon.png",
   "/chat-crypto.js",
   "/chat.js",
+  "/vendor/jsQR.js",
   "/snippets-animation.svg",
 ];
 
