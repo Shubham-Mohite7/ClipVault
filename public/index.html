@@ -164,6 +164,7 @@ try {
   .chat-notification-item span { min-width: 0; overflow-wrap: anywhere; }
   .chat-notification-item button { min-height: 32px; padding: 4px 8px; color: var(--text); font-size: 12px; }
   .chat-notification-empty { padding: 10px 5px; color: var(--text-2); font-size: 13px; }
+  .offline-notice { padding: 10px 18px; border-bottom: 1px solid var(--line); background: var(--bg-2); color: var(--text-2); text-align: center; font-size: 13px; line-height: 1.45; }
   nav button { min-height: 44px; padding: 0 10px; background: none; border: 0; border-radius: 10px; color: var(--text-2); cursor: pointer; font-size: 14px; transition: color var(--motion-fast), background var(--motion-fast); }
   nav button:hover { color: var(--text); background: var(--bg-2); }
   nav .install-app { padding-inline: 12px; color: var(--text); font-weight: 550; }
@@ -886,6 +887,7 @@ try {
     <button id="logout" class="hidden">Sign out</button>
   </div>
 </nav>
+<div id="offlineNotice" class="offline-notice hidden" role="status" aria-live="polite"></div>
 
 <!-- Landing -->
 <main id="landing">
@@ -1705,6 +1707,7 @@ const $ = (id) => document.getElementById(id);
 const KEY = "clipvault-code";
 const THEME_KEY = "clipvault-theme";
 let code = null, snippets = [], hasEverAddedSnippet = false, editingId = null;
+let offlineCacheUsed = false;
 let snippetAnimationMarkupPromise = null;
 let codeEntryInProgress = false;
 let drivePanelLoaded = false, drivePanelLoading = false, fileUploadInProgress = false;
@@ -1795,10 +1798,30 @@ async function api(method, url, body) {
     method, headers: body ? { "Content-Type": "application/json" } : undefined,
     body: body ? JSON.stringify(body) : undefined,
   });
+  if (res.headers.get("X-ClipVault-Offline") === "true") offlineCacheUsed = true;
+  else if (navigator.onLine) offlineCacheUsed = false;
+  updateOfflineNotice();
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || "Something went wrong");
   return data;
 }
+
+function updateOfflineNotice() {
+  const notice = $("offlineNotice");
+  if (!notice) return;
+  const offline = !navigator.onLine || offlineCacheUsed;
+  notice.classList.toggle("hidden", !offline);
+  notice.textContent = offline
+    ? "Offline. Previously opened snippets may be available read-only. Saving, editing, chat, and Google Drive need a connection."
+    : "";
+}
+window.addEventListener("online", () => {
+  offlineCacheUsed = false;
+  updateOfflineNotice();
+  if (code) void reload().catch(() => {});
+});
+window.addEventListener("offline", updateOfflineNotice);
+updateOfflineNotice();
 
 /* ---------- Landing ---------- */
 const codeInputs = [...$("codeRow").querySelectorAll("input")];

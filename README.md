@@ -42,6 +42,8 @@ Save text, images, and PDFs. Open your vault on any device with a short code. No
 > [!NOTE]
 > Anyone with your code can open your vault, so keep it private and don't store passwords or other sensitive information in it.
 
+When your browser has loaded the app and opened a vault, the app shell and up to 24 recent vault responses are cached on that device. Previously opened snippets can be read offline; creating, editing, chat, and Google Drive actions require a connection.
+
 <br>
 
 ## Made for everyday sharing
