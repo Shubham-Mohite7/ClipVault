@@ -425,7 +425,7 @@
       const invite = await api("POST", "/chat/invites", {});
       $("chatInviteQr").src = invite.qrDataUrl;
       $("chatDownloadInvite").href = invite.qrDataUrl;
-      $("chatInviteExpiry").textContent = "This unique invite expires " + new Date(invite.expiresAt).toLocaleString() + " and can be used once.";
+      $("chatInviteExpiry").textContent = "This QR works for multiple friends until " + new Date(invite.expiresAt).toLocaleString() + ". Creating a new QR replaces it.";
       $("chatInvitePanel").classList.remove("hidden");
       status.textContent = "Your chat QR is ready to share.";
       setStatus("");

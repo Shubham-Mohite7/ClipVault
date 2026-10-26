@@ -509,15 +509,11 @@ async function consumeChatInvite(token, recipientCode) {
   const invite = databaseMode === "postgres"
     ? await pool.query("SELECT sender_code FROM chat_invites WHERE token_hash = $1 AND expires_at > $2", [tokenHash, now])
     : { rows: [db.prepare("SELECT sender_code FROM chat_invites WHERE token_hash = ? AND expires_at > ?").get(tokenHash, now)].filter(Boolean) };
-  if (!invite.rows[0]) return { error: "This chat QR has expired or was already used. Ask your friend for a new one." };
+  if (!invite.rows[0]) return { error: "This chat QR has expired. Ask your friend for a new one." };
   const senderCode = invite.rows[0].sender_code;
   if (senderCode === recipientCode) return { error: "You cannot send a chat request to yourself." };
   if (!(await getChatIdentity(senderCode))) return { error: "This chat invitation is no longer available." };
   if (await chatConversationExists(recipientCode, senderCode)) return { error: "You already have a chat with this contact." };
-  const consumed = databaseMode === "postgres"
-    ? await pool.query("DELETE FROM chat_invites WHERE token_hash = $1 AND expires_at > $2 RETURNING sender_code", [tokenHash, now])
-    : { rows: [db.prepare("DELETE FROM chat_invites WHERE token_hash = ? AND expires_at > ? RETURNING sender_code").get(tokenHash, now)].filter(Boolean) };
-  if (!consumed.rows[0]) return { error: "This chat QR has expired or was already used. Ask your friend for a new one." };
   return { request: await createChatRequest(recipientCode, senderCode) };
 }
 
