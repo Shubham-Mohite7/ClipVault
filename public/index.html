@@ -295,6 +295,9 @@ try {
   .developer-card-section > h2 { margin-bottom: 16px; }
   .developer-card-link { display: block; border-radius: 12px; }
   .developer-card-link:focus-visible { outline: 3px solid var(--text-2); outline-offset: 5px; }
+  .coffee-support { display: grid; justify-items: center; gap: 9px; margin-top: 18px; text-align: center; }
+  .coffee-button { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+  .coffee-note { max-width: 46ch; color: var(--text-2); font-size: 12px; line-height: 1.5; }
   .developer-card-image { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 12px; opacity: 0; transform: translate3d(0, 14px, 0) scale(.99); transition: opacity 560ms cubic-bezier(.22, 1, .36, 1), transform 680ms cubic-bezier(.22, 1, .36, 1), box-shadow 260ms ease; }
   .developer-card-section.is-visible .developer-card-image { opacity: 1; transform: translate3d(0, 0, 0) scale(1); box-shadow: 0 18px 44px -30px color-mix(in srgb, var(--text) 45%, transparent); }
   .developer-card-section.is-visible .developer-card-image:hover { transform: translate3d(0, -3px, 0) scale(1.006); }
@@ -1257,6 +1260,10 @@ try {
       <a class="developer-card-link" href="https://github.com/Shubham-Mohite7" aria-label="Visit Shubham Mohite on GitHub">
         <img id="developerCardImage" class="developer-card-image" src="/Shubham-Mohite7-card.svg" data-asset="/Shubham-Mohite7-card.svg" alt="GitHub profile card for Shubham Mohite, showing JavaScript as the primary language and 18 public repositories." width="1200" height="630" loading="lazy" decoding="async">
       </a>
+      <div class="coffee-support">
+        <a class="btn coffee-button" href="upi://pay?pa=9730161655%40ybl&amp;pn=Shubham%20Mohite&amp;am=50.00&amp;cu=INR&amp;tn=Buy%20me%20a%20coffee" aria-label="Buy me a coffee for 50 rupees using UPI">☕ Buy me a coffee · ₹50</a>
+        <p class="coffee-note">Opens your UPI app with ₹50 prefilled. Review the payment details and confirm in the app.</p>
+      </div>
     </section>
     <section class="faq-section" aria-labelledby="faq-heading">
       <h2 id="faq-heading">Frequently asked questions</h2>
