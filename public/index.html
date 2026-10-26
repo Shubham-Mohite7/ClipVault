@@ -433,8 +433,6 @@ try {
   .wrap { max-width: 900px; margin: 0 auto; padding: 48px 28px 88px; animation: rise-in 320ms ease-out both; }
   .head { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 18px; margin-bottom: 28px; }
   .head h2 { font-size: clamp(36px, 5vw, 46px); font-weight: 700; letter-spacing: -0.04em; }
-  .head .codechip { color: var(--text-2); font-size: 15px; margin-top: 4px; }
-  .head .codechip b { color: var(--text); letter-spacing: .12em; }
   .segmented { display: inline-flex; gap: 3px; padding: 4px; margin-bottom: 24px; background: var(--bg-2); border-radius: 980px; }
   .segmented button { min-height: 40px; border: 0; padding: 8px 20px; border-radius: 980px; color: var(--text-2); background: transparent; cursor: pointer; transition: color var(--motion-fast), background var(--motion-fast), box-shadow var(--motion-fast); }
   .segmented button[aria-selected="true"] { color: var(--text); background: var(--bg); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
@@ -1280,8 +1278,7 @@ try {
   <div class="wrap">
     <div class="head">
       <div>
-        <h2>Snippets</h2>
-        <div class="codechip">Code <b id="codeChip"></b></div>
+        <h2 id="vaultCodeTitle"></h2>
       </div>
       <button class="btn" id="add">New snippet</button>
     </div>
@@ -1863,7 +1860,7 @@ $("create").onclick = async () => {
 function showApp(loading = false) {
   $("landing").classList.add("hidden"); $("app").classList.remove("hidden");
   $("installApp").classList.add("hidden");
-  $("logout").classList.remove("hidden"); $("codeChip").textContent = code;
+  $("logout").classList.remove("hidden"); $("vaultCodeTitle").textContent = code;
   window.initChatNotifications?.(code);
   if (loading) renderSnippetSkeleton();
   else render();
