@@ -293,7 +293,13 @@ try {
   .seo-guide article p { margin-top: 7px; color: var(--text-2); font-size: 14px; line-height: 1.65; }
   .developer-card-section { max-width: 760px; margin: 54px auto 0; }
   .developer-card-section > h2 { margin-bottom: 16px; }
-  .developer-card-image { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 12px; }
+  .developer-card-image { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 12px; opacity: 0; transform: translate3d(0, 14px, 0) scale(.99); transition: opacity 560ms cubic-bezier(.22, 1, .36, 1), transform 680ms cubic-bezier(.22, 1, .36, 1), box-shadow 260ms ease; }
+  .developer-card-section.is-visible .developer-card-image { opacity: 1; transform: translate3d(0, 0, 0) scale(1); box-shadow: 0 18px 44px -30px color-mix(in srgb, var(--text) 45%, transparent); }
+  .developer-card-section.is-visible .developer-card-image:hover { transform: translate3d(0, -3px, 0) scale(1.006); }
+  @media (prefers-reduced-motion: reduce) {
+    .developer-card-image { opacity: 1; transform: none; transition: none; }
+    .developer-card-section.is-visible .developer-card-image:hover { transform: none; }
+  }
   .faq-list { margin-top: 20px; border-top: 1px solid var(--line); }
   .faq-list details { padding: 16px 2px; border-bottom: 1px solid var(--line); }
   .faq-list summary { display: flex; justify-content: space-between; align-items: center; gap: 18px; color: var(--text); font-size: 15px; font-weight: 600; line-height: 1.45; cursor: pointer; list-style: none; }
@@ -1246,7 +1252,7 @@ try {
     </section>
     <section class="developer-card-section" aria-labelledby="developer-card-heading">
       <h2 id="developer-card-heading">Meet the developer</h2>
-      <img class="developer-card-image" src="/Shubham-Mohite7-card.svg" alt="GitHub profile card for Shubham Mohite, showing JavaScript as the primary language and 18 public repositories." width="1200" height="630" loading="lazy" decoding="async">
+      <img id="developerCardImage" class="developer-card-image" src="/Shubham-Mohite7-card.svg" data-asset="/Shubham-Mohite7-card.svg" alt="GitHub profile card for Shubham Mohite, showing JavaScript as the primary language and 18 public repositories." width="1200" height="630" loading="lazy" decoding="async">
     </section>
     <section class="faq-section" aria-labelledby="faq-heading">
       <h2 id="faq-heading">Frequently asked questions</h2>
@@ -1632,9 +1638,54 @@ let deferredInstallPrompt = null;
 const allowedFileTypes = new Set(["image/png", "image/jpeg", "image/gif", "image/webp", "application/pdf"]);
 const maxFileSize = 4 * 1024 * 1024;
 
+let developerCardSvgPromise = null;
+
 function currentTheme() {
   return document.documentElement.dataset.theme
     || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+}
+
+function updateDeveloperCardTheme() {
+  const image = document.getElementById("developerCardImage");
+  if (!image) return;
+  const theme = currentTheme();
+  if (image.dataset.theme === theme) return;
+  image.dataset.theme = theme;
+  if (theme === "light") {
+    image.src = image.dataset.asset;
+    return;
+  }
+  if (!developerCardSvgPromise) {
+    developerCardSvgPromise = fetch(image.dataset.asset, { cache: "force-cache" }).then((response) => {
+      if (!response.ok) throw new Error("Could not load developer card");
+      return response.text();
+    });
+  }
+  developerCardSvgPromise.then((svg) => {
+    if (image.dataset.theme !== "dark") return;
+    const darkSvg = svg
+      .replaceAll("#f6f3ea", "#17191e")
+      .replaceAll('stroke="#11110f"', 'stroke="#414651"')
+      .replaceAll("#11110f", "#f4f5f7")
+      .replaceAll("#514f49", "#a1a1aa")
+      .replaceAll("#6b7280", "#858d9b");
+    image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(darkSvg)}`;
+  }).catch(() => { image.src = image.dataset.asset; });
+}
+
+function initDeveloperCardMotion() {
+  const section = document.querySelector(".developer-card-section");
+  if (!section) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || typeof IntersectionObserver === "undefined") {
+    section.classList.add("is-visible");
+    return;
+  }
+  const observer = new IntersectionObserver(([entry]) => {
+    if (!entry.isIntersecting) return;
+    section.classList.add("is-visible");
+    observer.disconnect();
+  }, { threshold: .12, rootMargin: "0px 0px -6% 0px" });
+  observer.observe(section);
 }
 
 function updateThemeToggle() {
@@ -1646,6 +1697,7 @@ function updateThemeToggle() {
   $("moonIcon").hidden = dark;
   $("sunIcon").hidden = !dark;
   document.querySelector('meta[name="theme-color"]').content = dark ? "#000000" : "#ffffff";
+  updateDeveloperCardTheme();
 }
 
 $("themeToggle").onclick = () => {
@@ -1662,6 +1714,7 @@ $("themeToggle").onclick = () => {
   }
 };
 updateThemeToggle();
+initDeveloperCardMotion();
 
 function isInstalledApp() {
   return window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
