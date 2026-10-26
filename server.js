@@ -123,7 +123,8 @@ if (databaseMode === "postgres") {
                 AND substr(code, 5, 3) NOT GLOB '*[^0-9]*')
           ),
           created_at INTEGER NOT NULL,
-          last_used INTEGER NOT NULL
+          last_used INTEGER NOT NULL,
+          has_added_snippet INTEGER NOT NULL DEFAULT 0
         );
         INSERT INTO vaults_new (code, created_at, last_used)
           SELECT code, created_at, last_used FROM vaults;
@@ -141,6 +142,13 @@ if (databaseMode === "postgres") {
       throw new Error("SQLite vault-code migration left invalid references");
     }
   }
+  if (!db.pragma("table_info(vaults)").some((column) => column.name === "has_added_snippet")) {
+    db.exec("ALTER TABLE vaults ADD COLUMN has_added_snippet INTEGER NOT NULL DEFAULT 0");
+  }
+  db.exec(`
+    UPDATE vaults SET has_added_snippet = 1
+    WHERE EXISTS (SELECT 1 FROM snippets WHERE snippets.vault_code = vaults.code)
+  `);
 }
 
 const YEAR = 365 * 24 * 3600 * 1000;
@@ -175,6 +183,11 @@ async function ensureDatabase() {
           created_at BIGINT NOT NULL,
           updated_at BIGINT NOT NULL
         )
+      `);
+      await pool.query("ALTER TABLE vaults ADD COLUMN IF NOT EXISTS has_added_snippet BOOLEAN NOT NULL DEFAULT FALSE");
+      await pool.query(`
+        UPDATE vaults SET has_added_snippet = TRUE
+        WHERE EXISTS (SELECT 1 FROM snippets WHERE snippets.vault_code = vaults.code)
       `);
       await pool.query("CREATE INDEX IF NOT EXISTS idx_snippets_vault ON snippets(vault_code)");
       await pool.query(`
@@ -383,15 +396,33 @@ async function insertSnippet(code, title, content, now) {
   await ensureDatabase();
   if (databaseMode === "postgres") {
     const result = await pool.query(
-      "INSERT INTO snippets (vault_code, title, content, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+      `WITH inserted AS (
+        INSERT INTO snippets (vault_code, title, content, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5) RETURNING id
+      ), marked AS (
+        UPDATE vaults SET has_added_snippet = TRUE WHERE code = $1
+      )
+      SELECT id FROM inserted`,
       [code, title, content, now, now],
     );
     return Number(result.rows[0].id);
   }
-  const result = db.prepare(
-    "INSERT INTO snippets (vault_code, title, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
-  ).run(code, title, content, now, now);
-  return result.lastInsertRowid;
+  return db.transaction(() => {
+    const result = db.prepare(
+      "INSERT INTO snippets (vault_code, title, content, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+    ).run(code, title, content, now, now);
+    db.prepare("UPDATE vaults SET has_added_snippet = 1 WHERE code = ?").run(code);
+    return result.lastInsertRowid;
+  })();
+}
+
+async function vaultHasEverAddedSnippet(code) {
+  await ensureDatabase();
+  if (databaseMode === "postgres") {
+    const result = await pool.query("SELECT has_added_snippet FROM vaults WHERE code = $1", [code]);
+    return Boolean(result.rows[0]?.has_added_snippet);
+  }
+  return Boolean(db.prepare("SELECT has_added_snippet FROM vaults WHERE code = ?").get(code)?.has_added_snippet);
 }
 
 async function updateSnippet(code, id, title, content, now) {
@@ -1051,7 +1082,9 @@ app.get("/api/vaults/:code/check", codeCheckLimit, asyncHandler(async (req, res)
 }));
 
 app.get("/api/vaults/:code/snippets", lookupLimit, requireVault, asyncHandler(async (req, res) => {
-  res.json({ snippets: await listSnippets(req.params.code) });
+  const snippets = await listSnippets(req.params.code);
+  const hasEverAddedSnippet = await vaultHasEverAddedSnippet(req.params.code);
+  res.json({ snippets, hasEverAddedSnippet });
 }));
 
 app.post("/api/vaults/:code/snippets", lookupLimit, requireVault, asyncHandler(async (req, res) => {

@@ -1,0 +1,181 @@
+<svg xmlns="http://www.w3.org/2000/svg" class="cva " viewBox="0 0 960 530" role="img" aria-label="Save text snippets in your vault, search and copy them in one tap, then open the same vault on any device with your code."><style>
+.cva{--cv-text:#1d1d1f;--cv-sub:#86868b;--cv-frame:#f2f2f7;--cv-border:#d1d1d6;--cv-screen:#ffffff;--cv-island:#1d1d1f;
+--cv-box:#f2f2f7;--cv-blue:#0a84ff;--cv-btn:#1d1d1f;--cv-btn-text:#ffffff;--cv-line:#c7c7cc;--cv-tile:#000000;--cv-dim:.32;
+width:100%;height:auto;display:block;overflow:visible}
+.dark .cva,[data-theme="dark"] .cva{--cv-text:#f5f5f7;--cv-sub:#86868b;--cv-frame:#1c1c1e;--cv-border:#3a3a3c;--cv-screen:#000000;--cv-island:#2c2c2e;
+--cv-box:#1c1c1e;--cv-btn:#f5f5f7;--cv-btn-text:#1d1d1f;--cv-line:#48484a;--cv-tile:#1c1c1e;--cv-dim:.6}
+.cva text{font-family:inherit}
+.cva .t{fill:var(--cv-text)}.cva .s{fill:var(--cv-sub)}.cva .subfill{fill:var(--cv-sub)}.cva .blueT{fill:var(--cv-blue)}
+.cva .frame{fill:var(--cv-frame);stroke:var(--cv-border);stroke-width:3}
+.cva .screen{fill:var(--cv-screen)}.cva .island{fill:var(--cv-island)}
+.cva .batt{fill:none;stroke:var(--cv-sub);stroke-width:1}
+.cva .home{fill:var(--cv-border)}
+.cva .box{fill:var(--cv-box)}
+.cva .seg{fill:var(--cv-screen);stroke:var(--cv-border);stroke-width:1}
+.cva .btn{fill:var(--cv-btn)}.cva .btnt{fill:var(--cv-btn-text)}.cva .btnts{stroke:var(--cv-btn-text);fill:none;stroke-width:2;stroke-linecap:round}
+.cva .blue{fill:var(--cv-blue)}
+.cva .card{fill:var(--cv-screen);stroke:var(--cv-border);stroke-width:2}
+.cva .pill{fill:var(--cv-screen);stroke:var(--cv-border);stroke-width:1.5}
+.cva .ring{fill:none;stroke:var(--cv-blue);stroke-width:2.2}
+.cva .hair{fill:var(--cv-border);opacity:.7}
+.cva .check{fill:none;stroke:var(--cv-border);stroke-width:1.5}
+.cva .dot{fill:var(--cv-text)}
+.cva .tile{fill:var(--cv-tile)}
+.cva .glyph{fill:none;stroke:#fff;stroke-linecap:round;stroke-linejoin:round}
+.cva .lockarc{fill:none;stroke:var(--cv-sub);stroke-width:1.2}
+.cva .mag{fill:none;stroke:var(--cv-sub);stroke-width:1.6;stroke-linecap:round}
+.cva .copyicon rect{fill:none;stroke:var(--cv-sub);stroke-width:1.4}
+.cva .copyicon .copyfront{fill:var(--cv-box)}
+.cva .dim{fill:#000;fill-opacity:var(--cv-dim)}
+.cva .sheet{fill:var(--cv-screen);stroke:var(--cv-border);stroke-width:1.5}
+.cva .field{fill:var(--cv-box)}
+.cva .vring{fill:var(--cv-box);stroke:var(--cv-border);stroke-width:3}
+.cva .vin{fill:var(--cv-screen);stroke:var(--cv-border);stroke-width:2}
+.cva .tick{stroke:var(--cv-sub);stroke-width:2;stroke-linecap:round}
+.cva .bolt{fill:var(--cv-border)}
+.cva .toast{fill:var(--cv-btn)}
+.cva .shk{fill:none;stroke:var(--cv-sub);stroke-width:2;stroke-linecap:round}
+.cva .guide{fill:none;stroke:var(--cv-line);stroke-width:3;stroke-linecap:round;stroke-dasharray:1 11;animation:cva-dash 1.2s linear infinite}
+@keyframes cva-dash{to{stroke-dashoffset:-12}}
+
+.cva-hh1{animation:cva-hh1 34s ease-in-out infinite;opacity:0}
+@keyframes cva-hh1{0%,0%{opacity:0;transform:translateY(8px)}3%,37%{opacity:1;transform:translateY(0)}40%,100%{opacity:0}}
+.cva-hh2{animation:cva-hh2 34s ease-in-out infinite;opacity:0}
+@keyframes cva-hh2{0%,40%{opacity:0;transform:translateY(8px)}43%,62%{opacity:1;transform:translateY(0)}65%,100%{opacity:0}}
+.cva-hh3{animation:cva-hh3 34s ease-in-out infinite;opacity:0}
+@keyframes cva-hh3{0%,65%{opacity:0;transform:translateY(8px)}68%,96%{opacity:1;transform:translateY(0)}99%,100%{opacity:0}}
+
+/* your phone: new snippet */
+.cva-pp{animation:cva-pp 34s ease-in-out infinite}
+@keyframes cva-pp{0%,4%{transform:scale(1)}5.2%{transform:scale(.92)}6.5%,100%{transform:scale(1)}}
+.cva-sh{animation:cva-sh 34s ease-in-out infinite;opacity:0}
+@keyframes cva-sh{0%,5%{opacity:0}8%,22%{opacity:1}25%,100%{opacity:0}}
+.cva-shs{animation:cva-shs 34s ease-in-out infinite}
+@keyframes cva-shs{0%,5%{transform:translateY(70px)}8%,22%{transform:translateY(0)}25%,100%{transform:translateY(70px)}}
+.cva-y0{animation:cva-y0 34s ease-out infinite;fill-opacity:0}
+@keyframes cva-y0{0%,9%{fill-opacity:0}10%,23%{fill-opacity:1}25%,100%{fill-opacity:0}}
+.cva-y1{animation:cva-y1 34s ease-out infinite;fill-opacity:0}
+@keyframes cva-y1{0%,11.5%{fill-opacity:0}12.5%,23%{fill-opacity:1}25%,100%{fill-opacity:0}}
+.cva-y2{animation:cva-y2 34s ease-out infinite;fill-opacity:0}
+@keyframes cva-y2{0%,14%{fill-opacity:0}15%,23%{fill-opacity:1}25%,100%{fill-opacity:0}}
+.cva-y3{animation:cva-y3 34s ease-out infinite;fill-opacity:0}
+@keyframes cva-y3{0%,16.5%{fill-opacity:0}17.5%,23%{fill-opacity:1}25%,100%{fill-opacity:0}}
+.cva-sv{animation:cva-sv 34s ease-in-out infinite}
+@keyframes cva-sv{0%,20%{transform:scale(1)}21%{transform:scale(.92)}22.5%,100%{transform:scale(1)}}
+
+/* your phone: list */
+.cva-k1{animation:cva-k1 34s ease-in-out infinite;opacity:0}
+@keyframes cva-k1{0%,23%{opacity:0;transform:translateY(8px)}26%,48%{opacity:1;transform:translateY(0)}50%,100%{opacity:0}}
+.cva-k2{animation:cva-k2 34s ease-in-out infinite;opacity:0}
+@keyframes cva-k2{0%,28%{opacity:0;transform:translateY(8px)}30.5%,48%{opacity:1;transform:translateY(0)}50%,100%{opacity:0}}
+.cva-k3{animation:cva-k3 34s ease-in-out infinite;opacity:0}
+@keyframes cva-k3{0%,33%{opacity:0;transform:translateY(8px)}35.5%,96%{opacity:1;transform:translateY(0)}99%,100%{opacity:0}}
+.cva-k3s{animation:cva-k3s 34s ease-in-out infinite}
+@keyframes cva-k3s{0%,50%{transform:translateY(0)}54%,100%{transform:translateY(-96px)}}
+
+/* search + copy */
+.cva-ph{animation:cva-ph 34s ease-in-out infinite;opacity:0}
+@keyframes cva-ph{0%,0%{opacity:0}1%,44%{opacity:1}46%,100%{opacity:0}}
+.cva-s0{animation:cva-s0 34s ease-out infinite;fill-opacity:0}
+@keyframes cva-s0{0%,44.5%{fill-opacity:0}45.5%,62%{fill-opacity:1}64.5%,100%{fill-opacity:0}}
+.cva-s1{animation:cva-s1 34s ease-out infinite;fill-opacity:0}
+@keyframes cva-s1{0%,45.7%{fill-opacity:0}46.7%,62%{fill-opacity:1}64.5%,100%{fill-opacity:0}}
+.cva-s2{animation:cva-s2 34s ease-out infinite;fill-opacity:0}
+@keyframes cva-s2{0%,46.9%{fill-opacity:0}47.9%,62%{fill-opacity:1}64.5%,100%{fill-opacity:0}}
+.cva-s3{animation:cva-s3 34s ease-out infinite;fill-opacity:0}
+@keyframes cva-s3{0%,48.1%{fill-opacity:0}49.1%,62%{fill-opacity:1}64.5%,100%{fill-opacity:0}}
+.cva-cpress{animation:cva-cpress 34s ease-in-out infinite}
+@keyframes cva-cpress{0%,55%{transform:scale(1)}56%{transform:scale(.92)}57.5%,100%{transform:scale(1)}}
+.cva-cp{animation:cva-cp 34s ease-in-out infinite}
+@keyframes cva-cp{0%,55.5%{opacity:1}57%,98%{opacity:0}100%{opacity:1}}
+.cva-ck{animation:cva-ck 34s ease-in-out infinite;opacity:0}
+@keyframes cva-ck{0%,56%{opacity:0;transform:scale(0.4)}57.5%,62%{opacity:1;transform:scale(1)}64%,100%{opacity:0}}
+.cva-toast{animation:cva-toast 34s ease-in-out infinite;opacity:0}
+@keyframes cva-toast{0%,57%{opacity:0;transform:translateY(-8px)}59%,62%{opacity:1;transform:translateY(0)}64%,100%{opacity:0}}
+
+/* vault */
+.cva-dial{animation:cva-dial 34s ease-in-out infinite}
+@keyframes cva-dial{0%,30%{transform:rotate(0)}32%,35%{transform:rotate(60deg)}37%,40%{transform:rotate(120deg)}42%,80%{transform:rotate(180deg)}86%,100%{transform:rotate(720deg)}}
+.cva-lc{animation:cva-lc 34s ease-in-out infinite}
+@keyframes cva-lc{0%,82%{opacity:1}84%,98%{opacity:0}100%{opacity:1}}
+.cva-lo{animation:cva-lo 34s ease-in-out infinite;opacity:0}
+@keyframes cva-lo{0%,83%{opacity:0}85%,96%{opacity:1}98.5%,100%{opacity:0}}
+.cva-n1{animation:cva-n1 34s ease-in-out infinite;opacity:0}
+@keyframes cva-n1{0%,31%{opacity:0}32%,35.5%{opacity:1}37%,100%{opacity:0}}
+.cva-n2{animation:cva-n2 34s ease-in-out infinite;opacity:0}
+@keyframes cva-n2{0%,35.5%{opacity:0}37%,40%{opacity:1}41.5%,100%{opacity:0}}
+.cva-n3{animation:cva-n3 34s ease-in-out infinite;opacity:0}
+@keyframes cva-n3{0%,40%{opacity:0}41.5%,96%{opacity:1}99%,100%{opacity:0}}
+
+/* other device */
+.cva-rp{animation:cva-rp 34s ease-in-out infinite;opacity:.35}
+@keyframes cva-rp{0%,62%{opacity:.35}66%,96%{opacity:1}99%,100%{opacity:.35}}
+.cva-ra{animation:cva-ra 34s ease-in-out infinite;opacity:0}
+@keyframes cva-ra{0%,0%{opacity:0}1%,82%{opacity:1}84.5%,100%{opacity:0}}
+.cva-rpress{animation:cva-rpress 34s ease-in-out infinite}
+@keyframes cva-rpress{0%,80%{transform:scale(1)}81.3%{transform:scale(.92)}83%,100%{transform:scale(1)}}
+.cva-rg{animation:cva-rg 34s ease-in-out infinite;opacity:0}
+@keyframes cva-rg{0%,65%{opacity:0;transform:translateX(0)}66%,79%{opacity:1}67%,68.5%{transform:translateX(0px)}68.7%,70.1%{transform:translateX(31px)}70.3%,71.7%{transform:translateX(62px)}71.9%,73.3%{transform:translateX(93px)}73.5%,74.9%{transform:translateX(124px)}75.1%,76.5%{transform:translateX(155px)}81%,100%{opacity:0}}
+.cva-c0{animation:cva-c0 34s ease-out infinite;opacity:0}
+@keyframes cva-c0{0%,67%{opacity:0}68%,81%{opacity:1}83%,100%{opacity:0}}
+.cva-c1{animation:cva-c1 34s ease-out infinite;opacity:0}
+@keyframes cva-c1{0%,68.6%{opacity:0}69.6%,81%{opacity:1}83%,100%{opacity:0}}
+.cva-c2{animation:cva-c2 34s ease-out infinite;opacity:0}
+@keyframes cva-c2{0%,70.2%{opacity:0}71.2%,81%{opacity:1}83%,100%{opacity:0}}
+.cva-c3{animation:cva-c3 34s ease-out infinite;opacity:0}
+@keyframes cva-c3{0%,71.8%{opacity:0}72.8%,81%{opacity:1}83%,100%{opacity:0}}
+.cva-c4{animation:cva-c4 34s ease-out infinite;opacity:0}
+@keyframes cva-c4{0%,73.4%{opacity:0}74.4%,81%{opacity:1}83%,100%{opacity:0}}
+.cva-c5{animation:cva-c5 34s ease-out infinite;opacity:0}
+@keyframes cva-c5{0%,75%{opacity:0}76%,81%{opacity:1}83%,100%{opacity:0}}
+.cva-rb{animation:cva-rb 34s ease-in-out infinite;opacity:0}
+@keyframes cva-rb{0%,83%{opacity:0}85%,96%{opacity:1}98.5%,100%{opacity:0}}
+.cva-q1{animation:cva-q1 34s ease-in-out infinite;opacity:0}
+@keyframes cva-q1{0%,85.5%{opacity:0;transform:translateY(8px)}87.5%,96%{opacity:1;transform:translateY(0)}98.5%,100%{opacity:0}}
+.cva-q2{animation:cva-q2 34s ease-in-out infinite;opacity:0}
+@keyframes cva-q2{0%,88%{opacity:0;transform:translateY(8px)}90%,96%{opacity:1;transform:translateY(0)}98.5%,100%{opacity:0}}
+.cva-q3{animation:cva-q3 34s ease-in-out infinite;opacity:0}
+@keyframes cva-q3{0%,90.5%{opacity:0;transform:translateY(8px)}92.5%,96%{opacity:1;transform:translateY(0)}98.5%,100%{opacity:0}}
+
+/* snippets in flight */
+.cva-f1{animation:cva-f1 34s ease-in-out infinite;opacity:0}
+@keyframes cva-f1{0%,25%{opacity:0}26.5%,30%{opacity:1}31%,100%{opacity:0}}
+.cva-f1i{animation:cva-f1i 34s ease-in-out infinite}
+@keyframes cva-f1i{0%,26%{transform:scale(1)}31%,100%{transform:scale(.6)}}
+.cva-f2{animation:cva-f2 34s ease-in-out infinite;opacity:0}
+@keyframes cva-f2{0%,30%{opacity:0}31.5%,34.5%{opacity:1}35.5%,100%{opacity:0}}
+.cva-f2i{animation:cva-f2i 34s ease-in-out infinite}
+@keyframes cva-f2i{0%,31%{transform:scale(1)}35.5%,100%{transform:scale(.6)}}
+.cva-f3{animation:cva-f3 34s ease-in-out infinite;opacity:0}
+@keyframes cva-f3{0%,35%{opacity:0}36.5%,39.5%{opacity:1}40.5%,100%{opacity:0}}
+.cva-f3i{animation:cva-f3i 34s ease-in-out infinite}
+@keyframes cva-f3i{0%,36%{transform:scale(1)}40.5%,100%{transform:scale(.6)}}
+.cva-f4{animation:cva-f4 34s ease-in-out infinite;opacity:0}
+@keyframes cva-f4{0%,81%{opacity:0}82.5%,85%{opacity:1}86%,100%{opacity:0}}
+.cva-f4i{animation:cva-f4i 34s ease-in-out infinite}
+@keyframes cva-f4i{0%,82%{transform:scale(1)}86%,100%{transform:scale(.6)}}
+.cva-f5{animation:cva-f5 34s ease-in-out infinite;opacity:0}
+@keyframes cva-f5{0%,83%{opacity:0}84.5%,87%{opacity:1}88%,100%{opacity:0}}
+.cva-f5i{animation:cva-f5i 34s ease-in-out infinite}
+@keyframes cva-f5i{0%,84%{transform:scale(1)}88%,100%{transform:scale(.6)}}
+.cva-f6{animation:cva-f6 34s ease-in-out infinite;opacity:0}
+@keyframes cva-f6{0%,85%{opacity:0}86.5%,89%{opacity:1}90%,100%{opacity:0}}
+.cva-f6i{animation:cva-f6i 34s ease-in-out infinite}
+@keyframes cva-f6i{0%,86%{transform:scale(1)}90%,100%{transform:scale(.6)}}
+
+/* step dots */
+.cva-p1{animation:cva-p1 34s ease-in-out infinite}
+@keyframes cva-p1{0%,38%{opacity:1}42%,97%{opacity:.2}100%{opacity:1}}
+.cva-p2{animation:cva-p2 34s ease-in-out infinite;opacity:.2}
+@keyframes cva-p2{0%,41%{opacity:.2}45%,62%{opacity:1}66%,100%{opacity:.2}}
+.cva-p3{animation:cva-p3 34s ease-in-out infinite;opacity:.2}
+@keyframes cva-p3{0%,64%{opacity:.2}68%,96%{opacity:1}98%,100%{opacity:.2}}
+
+.cva-pp,.cva-sv,.cva-cpress,.cva-rpress,.cva-ck,.cva-dial,.cva-f1i,.cva-f2i,.cva-f3i,.cva-f4i,.cva-f5i,.cva-f6i{transform-box:fill-box;transform-origin:center}
+
+@media (prefers-reduced-motion:reduce){
+.cva *{animation:none!important}
+.cva-hh3,.cva-k1,.cva-k2,.cva-k3,.cva-rb,.cva-q1,.cva-q2,.cva-q3,.cva-n3,.cva-lo,.cva-rp,.cva-p3,.cva-ph{opacity:1}
+.cva-hh1,.cva-hh2,.cva-sh,.cva-ra,.cva-lc,.cva-toast,.cva-ck,.cva-rg,.cva-f1,.cva-f2,.cva-f3,.cva-f4,.cva-f5,.cva-f6{opacity:0}
+.cva-cp{opacity:1}
+}@media (prefers-color-scheme:dark){:root:not([data-theme]) .cva{--cv-text:#f5f5f7;--cv-sub:#86868b;--cv-frame:#1c1c1e;--cv-border:#3a3a3c;--cv-screen:#000000;--cv-island:#2c2c2e;--cv-box:#1c1c1e;--cv-btn:#f5f5f7;--cv-btn-text:#1d1d1f;--cv-line:#48484a;--cv-tile:#1c1c1e;--cv-dim:.6}}</style><g class="cva-hh1" text-anchor="middle"><text x="480" y="52" font-size="30" font-weight="600" letter-spacing="-0.8" class="t">Save the text you reuse</text><text x="480" y="84" font-size="16" class="s">Notes, links and replies, all in one vault.</text></g><g class="cva-hh2" text-anchor="middle"><text x="480" y="52" font-size="30" font-weight="600" letter-spacing="-0.8" class="t">Search it. Copy it in one tap.</text><text x="480" y="84" font-size="16" class="s">Find any snippet fast, then paste it anywhere.</text></g><g class="cva-hh3" text-anchor="middle"><text x="480" y="52" font-size="30" font-weight="600" letter-spacing="-0.8" class="t">Open it on any device</text><text x="480" y="84" font-size="16" class="s">Enter your code. Your snippets are right there.</text></g><path class="guide" d="M320 282 H395"></path><path class="guide" d="M565 282 H640"></path><g transform="translate(105,112)"><rect width="210" height="340" rx="40" class="frame"></rect><rect x="7" y="7" width="196" height="326" rx="33" class="screen"></rect><text x="30" y="31" font-size="11" font-weight="600" class="t">9:41</text><rect x="73" y="17" width="64" height="18" rx="9" class="island"></rect><rect x="161" y="22" width="18" height="9" rx="2.8" class="batt"></rect><rect x="163" y="24" width="11" height="5" rx="1.2" class="t"></rect><rect x="180" y="24.5" width="1.6" height="4" rx=".8" class="subfill"></rect><g transform="translate(18,50) scale(0.021484375)"><rect width="1024" height="1024" rx="230" class="tile"></rect><path d="M612 400 V620 a100 100 0 0 1 -200 0 V360 a60 60 0 0 1 120 0 V560 a20 20 0 0 1 -40 0 V420" class="glyph" stroke-width="72"></path><circle cx="512" cy="664" r="34" fill="#fff"></circle></g><text x="46" y="66" font-size="15" font-weight="600" class="t">My vault</text><rect x="124" y="51" width="72" height="22" rx="11" class="box"></rect><text x="160" y="66" text-anchor="middle" font-size="11" font-weight="600" letter-spacing="1.2" class="t">ABC-123</text><rect x="14" y="84" width="182" height="1" class="hair"></rect><g><rect x="14" y="92" width="182" height="26" rx="13" class="box"></rect><rect x="16" y="94" width="56" height="22" rx="11" class="seg"></rect><text x="44" y="109" text-anchor="middle" font-size="11" font-weight="600" class="t">Text</text><text x="104" y="109" text-anchor="middle" font-size="11" font-weight="500" class="s">Files</text><text x="164" y="109" text-anchor="middle" font-size="11" font-weight="500" class="s">Chat</text></g><rect x="14" y="126" width="132" height="28" rx="14" class="box"></rect><circle cx="29" cy="139" r="4.5" class="mag"></circle><path d="M32.5 142.5 L36 146" class="mag"></path><text class="cva-ph s" x="42" y="144" font-size="10.5">Search snippets</text><text x="42" y="144" font-size="11" class="t" style="white-space:pre"><tspan class="cva-s0">m</tspan><tspan class="cva-s1">e</tspan><tspan class="cva-s2">e</tspan><tspan class="cva-s3">t</tspan></text><g class="cva-pp"><rect x="152" y="126" width="44" height="28" rx="14" class="btn"></rect><path class="btnts" d="M170 140 h8 M174 136 v8"></path></g><g class="cva-k1"><g><rect x="14" y="162" width="182" height="44" rx="14" class="box"></rect><text x="26" y="181" font-size="11" font-weight="500" class="t">Thanks for reaching out!</text><text x="26" y="196" font-size="10" class="s">I&#x27;ll reply by Friday.</text><g transform="translate(178,184)" class="copyicon"><rect x="-6" y="-6" width="9" height="9" rx="2.5"></rect><rect x="-2.5" y="-2.5" width="9" height="9" rx="2.5" class="copyfront"></rect></g></g></g><g class="cva-k2"><g><rect x="14" y="210" width="182" height="44" rx="14" class="box"></rect><text x="26" y="229" font-size="11" font-weight="500" class="t">Order #4821 — refund</text><text x="26" y="244" font-size="10" class="s">approved on Oct 12.</text><g transform="translate(178,232)" class="copyicon"><rect x="-6" y="-6" width="9" height="9" rx="2.5"></rect><rect x="-2.5" y="-2.5" width="9" height="9" rx="2.5" class="copyfront"></rect></g></g></g><g class="cva-k3"><g class="cva-k3s"><g><rect x="14" y="258" width="182" height="44" rx="14" class="box"></rect><text x="26" y="277" font-size="11" font-weight="500" class="t">meet.example.com/standup</text><text x="26" y="292" font-size="10" class="s">9:30 every weekday</text><g class="cva-cpress"><g class="cva-cp"><g transform="translate(178,280)" class="copyicon"><rect x="-6" y="-6" width="9" height="9" rx="2.5"></rect><rect x="-2.5" y="-2.5" width="9" height="9" rx="2.5" class="copyfront"></rect></g></g></g><g class="cva-ck"><g transform="translate(178,280) scale(1)"><circle r="8" fill="#30b06b"></circle><path d="M-3.6 0.2 L-1 2.8 L3.8 -2.6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g></g></g></g></g><g class="cva-sh"><rect x="7" y="7" width="196" height="326" rx="33" class="dim"></rect><g class="cva-shs"><rect x="7" y="138" width="196" height="195" rx="33" class="sheet"></rect><text x="26" y="172" font-size="11.5" class="blueT">Cancel</text><text x="105" y="172" text-anchor="middle" font-size="13" font-weight="600" class="t">New snippet</text><g class="cva-sv"><rect x="150" y="157" width="40" height="22" rx="11" class="blue"></rect><text x="170" y="172" text-anchor="middle" font-size="11" font-weight="600" fill="#fff">Save</text></g><rect x="20" y="190" width="170" height="84" rx="14" class="field"></rect><text x="32" y="214" font-size="12.5" class="t" style="white-space:pre"><tspan class="cva-y0">Thanks for </tspan><tspan class="cva-y1">reaching out!</tspan></text><text x="32" y="234" font-size="12.5" class="t" style="white-space:pre"><tspan class="cva-y2">I&#x27;ll reply </tspan><tspan class="cva-y3">by Friday.</tspan></text><text x="105" y="296" text-anchor="middle" font-size="10" class="s">Not a password manager. Keep it everyday.</text></g></g><g class="cva-toast"><rect x="46" y="44" width="118" height="28" rx="14" class="toast"></rect><g transform="translate(64,58) scale(0.875)"><circle r="8" fill="#30b06b"></circle><path d="M-3.6 0.2 L-1 2.8 L3.8 -2.6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g><text x="78" y="62.5" font-size="12" font-weight="600" class="btnt">Copied</text></g><rect x="75" y="324" width="60" height="4" rx="2" class="home"></rect></g><g><rect x="400" y="196" width="160" height="170" rx="34" class="card"></rect><circle cx="420" cy="216" r="3" class="bolt"></circle><circle cx="420" cy="346" r="3" class="bolt"></circle><circle cx="540" cy="346" r="3" class="bolt"></circle><g class="cva-dial"><circle cx="480" cy="281" r="50" class="vring"></circle><line x1="480.0" y1="243.0" x2="480.0" y2="237.0" class="tick"></line><line x1="499.0" y1="248.1" x2="502.0" y2="242.9" class="tick"></line><line x1="512.9" y1="262.0" x2="518.1" y2="259.0" class="tick"></line><line x1="518.0" y1="281.0" x2="524.0" y2="281.0" class="tick"></line><line x1="512.9" y1="300.0" x2="518.1" y2="303.0" class="tick"></line><line x1="499.0" y1="313.9" x2="502.0" y2="319.1" class="tick"></line><line x1="480.0" y1="319.0" x2="480.0" y2="325.0" class="tick"></line><line x1="461.0" y1="313.9" x2="458.0" y2="319.1" class="tick"></line><line x1="447.1" y1="300.0" x2="441.9" y2="303.0" class="tick"></line><line x1="442.0" y1="281.0" x2="436.0" y2="281.0" class="tick"></line><line x1="447.1" y1="262.0" x2="441.9" y2="259.0" class="tick"></line><line x1="461.0" y1="248.1" x2="458.0" y2="242.9" class="tick"></line><circle cx="480" cy="241" r="4" class="blue"></circle></g><circle cx="480" cy="281" r="27" class="vin"></circle><circle cx="480" cy="281" r="5.5" class="dot"></circle><g transform="translate(534,216)"><g class="cva-lc"><rect x="-6" y="-1" width="12" height="9" rx="2.5" class="subfill"></rect><path d="M-3.5 -1 v-3 a3.5 3.5 0 0 1 7 0 v3" class="shk"></path></g><g class="cva-lo"><rect x="-6" y="-1" width="12" height="9" rx="2.5" fill="#30b06b"></rect><path d="M-3.5 -1 v-3 a3.5 3.5 0 0 1 7 0 v1.5" class="shk" stroke="#30b06b"></path></g></g></g><rect x="441" y="378" width="78" height="24" rx="12" class="box"></rect><text x="480" y="394" text-anchor="middle" font-size="12" font-weight="600" letter-spacing="1.2" class="t">ABC-123</text><g text-anchor="middle" font-size="12" class="s"><text class="cva-n1 s" x="480" y="424">1 snippet</text><text class="cva-n2 s" x="480" y="424">2 snippets</text><text class="cva-n3 s" x="480" y="424">3 snippets</text></g><g class="cva-rp"><g transform="translate(645,112)"><rect width="210" height="340" rx="40" class="frame"></rect><rect x="7" y="7" width="196" height="326" rx="33" class="screen"></rect><text x="30" y="31" font-size="11" font-weight="600" class="t">9:41</text><rect x="73" y="17" width="64" height="18" rx="9" class="island"></rect><rect x="161" y="22" width="18" height="9" rx="2.8" class="batt"></rect><rect x="163" y="24" width="11" height="5" rx="1.2" class="t"></rect><rect x="180" y="24.5" width="1.6" height="4" rx=".8" class="subfill"></rect><rect x="40" y="46" width="130" height="22" rx="11" class="box"></rect><g transform="translate(60,57)"><rect x="-3.5" y="-0.5" width="7" height="5.5" rx="1.4" class="subfill"></rect><path d="M-2 -0.5 v-1.8 a2 2 0 0 1 4 0 v1.8" class="lockarc"></path></g><text x="112" y="61" text-anchor="middle" font-size="11" class="s">clipvault.lol</text><g class="cva-ra"><g transform="translate(93,82) scale(0.0234375)"><rect width="1024" height="1024" rx="230" class="tile"></rect><path d="M612 400 V620 a100 100 0 0 1 -200 0 V360 a60 60 0 0 1 120 0 V560 a20 20 0 0 1 -40 0 V420" class="glyph" stroke-width="72"></path><circle cx="512" cy="664" r="34" fill="#fff"></circle></g><text x="105" y="130" text-anchor="middle" font-size="16" font-weight="600" class="t">Enter code</text><text x="105" y="148" text-anchor="middle" font-size="11" class="s">No account or login needed</text><rect x="15" y="162" width="26" height="40" rx="9" class="box"></rect><rect x="46" y="162" width="26" height="40" rx="9" class="box"></rect><rect x="77" y="162" width="26" height="40" rx="9" class="box"></rect><rect x="108" y="162" width="26" height="40" rx="9" class="box"></rect><rect x="139" y="162" width="26" height="40" rx="9" class="box"></rect><rect x="170" y="162" width="26" height="40" rx="9" class="box"></rect><g class="cva-rg"><rect x="13" y="160" width="30" height="44" rx="11" class="ring"></rect></g><text class="cva-c0 t" x="28" y="188" text-anchor="middle" font-size="18" font-weight="600">A</text><text class="cva-c1 t" x="59" y="188" text-anchor="middle" font-size="18" font-weight="600">B</text><text class="cva-c2 t" x="90" y="188" text-anchor="middle" font-size="18" font-weight="600">C</text><text class="cva-c3 t" x="121" y="188" text-anchor="middle" font-size="18" font-weight="600">1</text><text class="cva-c4 t" x="152" y="188" text-anchor="middle" font-size="18" font-weight="600">2</text><text class="cva-c5 t" x="183" y="188" text-anchor="middle" font-size="18" font-weight="600">3</text><g class="cva-rpress"><rect x="40" y="220" width="130" height="38" rx="19" class="btn"></rect><text x="105" y="244" text-anchor="middle" font-size="13.5" font-weight="600" class="btnt">Open vault</text></g><rect x="30" y="274" width="12" height="12" rx="3.5" class="check"></rect><text x="48" y="284" font-size="10" class="s">Remember me on this device</text></g><g class="cva-rb"><g transform="translate(18,80) scale(0.021484375)"><rect width="1024" height="1024" rx="230" class="tile"></rect><path d="M612 400 V620 a100 100 0 0 1 -200 0 V360 a60 60 0 0 1 120 0 V560 a20 20 0 0 1 -40 0 V420" class="glyph" stroke-width="72"></path><circle cx="512" cy="664" r="34" fill="#fff"></circle></g><text x="46" y="96" font-size="15" font-weight="600" class="t">My vault</text><rect x="124" y="81" width="72" height="22" rx="11" class="box"></rect><text x="160" y="96" text-anchor="middle" font-size="11" font-weight="600" letter-spacing="1.2" class="t">ABC-123</text><rect x="14" y="112" width="182" height="1" class="hair"></rect><g><rect x="14" y="120" width="182" height="26" rx="13" class="box"></rect><rect x="16" y="122" width="56" height="22" rx="11" class="seg"></rect><text x="44" y="137" text-anchor="middle" font-size="11" font-weight="600" class="t">Text</text><text x="104" y="137" text-anchor="middle" font-size="11" font-weight="500" class="s">Files</text><text x="164" y="137" text-anchor="middle" font-size="11" font-weight="500" class="s">Chat</text></g><rect x="14" y="152" width="182" height="26" rx="13" class="box"></rect><circle cx="29" cy="165" r="4.5" class="mag"></circle><path d="M32.5 168.5 L36 172" class="mag"></path><text x="42" y="169" font-size="10.5" class="s">Search snippets</text><g class="cva-q1"><g><rect x="14" y="186" width="182" height="40" rx="14" class="box"></rect><text x="26" y="203" font-size="11" font-weight="500" class="t">Thanks for reaching out!</text><text x="26" y="218" font-size="10" class="s">I&#x27;ll reply by Friday.</text><g transform="translate(178,206)" class="copyicon"><rect x="-6" y="-6" width="9" height="9" rx="2.5"></rect><rect x="-2.5" y="-2.5" width="9" height="9" rx="2.5" class="copyfront"></rect></g></g></g><g class="cva-q2"><g><rect x="14" y="230" width="182" height="40" rx="14" class="box"></rect><text x="26" y="247" font-size="11" font-weight="500" class="t">Order #4821 — refund</text><text x="26" y="262" font-size="10" class="s">approved on Oct 12.</text><g transform="translate(178,250)" class="copyicon"><rect x="-6" y="-6" width="9" height="9" rx="2.5"></rect><rect x="-2.5" y="-2.5" width="9" height="9" rx="2.5" class="copyfront"></rect></g></g></g><g class="cva-q3"><g><rect x="14" y="274" width="182" height="40" rx="14" class="box"></rect><text x="26" y="291" font-size="11" font-weight="500" class="t">meet.example.com/standup</text><text x="26" y="306" font-size="10" class="s">9:30 every weekday</text><g transform="translate(178,294)" class="copyicon"><rect x="-6" y="-6" width="9" height="9" rx="2.5"></rect><rect x="-2.5" y="-2.5" width="9" height="9" rx="2.5" class="copyfront"></rect></g></g></g></g><rect x="75" y="324" width="60" height="4" rx="2" class="home"></rect></g></g><text x="210" y="486" text-anchor="middle" font-size="15" font-weight="500" class="s">Your phone</text><text x="480" y="486" text-anchor="middle" font-size="15" font-weight="500" class="s">Your vault</text><text x="750" y="486" text-anchor="middle" font-size="15" font-weight="500" class="s">Any other device</text><g class="cva-f1"><g class="cva-f1i"><rect x="-62" y="-16" width="124" height="32" rx="16" class="pill"></rect><path d="M-50 -4 h10 M-50 0 h10 M-50 4 h6" class="mag"></path><text x="-33" y="4" font-size="11" font-weight="500" class="t">Thanks for…</text></g><animateMotion dur="34s" repeatCount="indefinite" calcMode="linear" keyTimes="0;0.26;0.31;1" keyPoints="0;0;1;1" path="M318 282 H415"></animateMotion></g><g class="cva-f2"><g class="cva-f2i"><rect x="-62" y="-16" width="124" height="32" rx="16" class="pill"></rect><path d="M-50 -4 h10 M-50 0 h10 M-50 4 h6" class="mag"></path><text x="-33" y="4" font-size="11" font-weight="500" class="t">Order #4821…</text></g><animateMotion dur="34s" repeatCount="indefinite" calcMode="linear" keyTimes="0;0.31;0.355;1" keyPoints="0;0;1;1" path="M318 282 H415"></animateMotion></g><g class="cva-f3"><g class="cva-f3i"><rect x="-62" y="-16" width="124" height="32" rx="16" class="pill"></rect><path d="M-50 -4 h10 M-50 0 h10 M-50 4 h6" class="mag"></path><text x="-33" y="4" font-size="11" font-weight="500" class="t">meet.example…</text></g><animateMotion dur="34s" repeatCount="indefinite" calcMode="linear" keyTimes="0;0.36;0.405;1" keyPoints="0;0;1;1" path="M318 282 H415"></animateMotion></g><g class="cva-f4"><g class="cva-f4i"><rect x="-62" y="-16" width="124" height="32" rx="16" class="pill"></rect><path d="M-50 -4 h10 M-50 0 h10 M-50 4 h6" class="mag"></path><text x="-33" y="4" font-size="11" font-weight="500" class="t">Thanks for…</text></g><animateMotion dur="34s" repeatCount="indefinite" calcMode="linear" keyTimes="0;0.82;0.86;1" keyPoints="0;0;1;1" path="M545 282 H650"></animateMotion></g><g class="cva-f5"><g class="cva-f5i"><rect x="-62" y="-16" width="124" height="32" rx="16" class="pill"></rect><path d="M-50 -4 h10 M-50 0 h10 M-50 4 h6" class="mag"></path><text x="-33" y="4" font-size="11" font-weight="500" class="t">Order #4821…</text></g><animateMotion dur="34s" repeatCount="indefinite" calcMode="linear" keyTimes="0;0.84;0.88;1" keyPoints="0;0;1;1" path="M545 282 H650"></animateMotion></g><g class="cva-f6"><g class="cva-f6i"><rect x="-62" y="-16" width="124" height="32" rx="16" class="pill"></rect><path d="M-50 -4 h10 M-50 0 h10 M-50 4 h6" class="mag"></path><text x="-33" y="4" font-size="11" font-weight="500" class="t">meet.example…</text></g><animateMotion dur="34s" repeatCount="indefinite" calcMode="linear" keyTimes="0;0.86;0.9;1" keyPoints="0;0;1;1" path="M545 282 H650"></animateMotion></g><g><circle class="cva-p1 dot" cx="465" cy="514" r="3.5"></circle><circle class="cva-p2 dot" cx="480" cy="514" r="3.5"></circle><circle class="cva-p3 dot" cx="495" cy="514" r="3.5"></circle></g></svg>

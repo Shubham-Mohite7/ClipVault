@@ -457,6 +457,8 @@ try {
   .card .row { display: flex; gap: 18px; align-items: center; margin-top: 16px; }
   .card .row .grow { flex: 1; }
   .empty { text-align: center; color: var(--text-2); padding: 70px 0; font-size: 19px; }
+  .snippet-empty-guide { width: 100%; max-width: 900px; margin: 4px auto 0; }
+  .snippet-empty-guide svg { display: block; width: 100%; height: auto; }
   .file-grid > .empty { grid-column: 1 / -1; }
   .skeleton {
     background: linear-gradient(100deg, var(--bg-2) 30%, color-mix(in srgb, var(--text-2) 16%, var(--bg-2)) 50%, var(--bg-2) 70%);
@@ -1702,7 +1704,8 @@ try {
 const $ = (id) => document.getElementById(id);
 const KEY = "clipvault-code";
 const THEME_KEY = "clipvault-theme";
-let code = null, snippets = [], editingId = null;
+let code = null, snippets = [], hasEverAddedSnippet = false, editingId = null;
+let snippetAnimationMarkupPromise = null;
 let codeEntryInProgress = false;
 let drivePanelLoaded = false, drivePanelLoading = false, fileUploadInProgress = false;
 let uploadProgressTimeout = 0;
@@ -1893,6 +1896,7 @@ async function enterCode(c) {
     showApp(true);
     const data = await api("GET", `/api/vaults/${candidateCode}/snippets`);
     snippets = data.snippets;
+    hasEverAddedSnippet = Boolean(data.hasEverAddedSnippet);
     saveRememberedCode(code);
     $("err").textContent = "";
     showApp();
@@ -2267,7 +2271,16 @@ function render() {
   const items = snippets.filter((s) => (s.title + s.content).toLowerCase().includes(term));
   const list = $("list"); list.innerHTML = ""; list.removeAttribute("aria-busy");
   if (!items.length) {
-    list.innerHTML = `<div class="empty">${snippets.length ? "No matches." : "Nothing here yet.<br>Add your first snippet."}</div>`;
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.innerHTML = snippets.length ? "No matches." : "Nothing here yet.<br>Add your first snippet.";
+    list.append(empty);
+    if (!snippets.length && !hasEverAddedSnippet) {
+      const guide = document.createElement("div");
+      guide.className = "snippet-empty-guide";
+      list.append(guide);
+      void renderSnippetAnimation(guide);
+    }
     return;
   }
   for (const s of items) {
@@ -2284,6 +2297,32 @@ function render() {
     del.onclick = () => remove(s.id);
     row.append(copy, grow, edit, del);
     el.append(h, pre, row); list.append(el);
+  }
+}
+
+async function renderSnippetAnimation(target) {
+  try {
+    if (!snippetAnimationMarkupPromise) {
+      snippetAnimationMarkupPromise = fetch("/snippets-animation.svg")
+        .then((response) => {
+          if (!response.ok) throw new Error("Animation unavailable");
+          return response.text();
+        });
+    }
+    let markup = await snippetAnimationMarkupPromise;
+    if (!target.isConnected || snippets.length || hasEverAddedSnippet) return;
+    const compactCode = (code || "ABC-123").toUpperCase().replace(/-/g, "");
+    const displayCode = (code || "ABC-123").toUpperCase();
+    markup = markup.replaceAll("ABC-123", displayCode);
+    for (let index = 0; index < 6; index++) {
+      const character = compactCode[index] || " ";
+      const escaped = character.replace(/[&<>]/g, (value) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[value]);
+      const pattern = new RegExp(`(<text class="cva-c${index} t"[^>]*>)[^<]*(</text>)`);
+      markup = markup.replace(pattern, `$1${escaped}$2`);
+    }
+    if (target.isConnected && !snippets.length && !hasEverAddedSnippet) target.innerHTML = markup;
+  } catch {
+    target.remove();
   }
 }
 
@@ -2331,12 +2370,16 @@ async function copyText(text) {
 
 async function reload() {
   const previousSnippets = snippets;
+  const previousHasEverAddedSnippet = hasEverAddedSnippet;
   renderSnippetSkeleton();
   try {
-    snippets = (await api("GET", `/api/vaults/${code}/snippets`)).snippets;
+    const data = await api("GET", `/api/vaults/${code}/snippets`);
+    snippets = data.snippets;
+    hasEverAddedSnippet = Boolean(data.hasEverAddedSnippet);
     render();
   } catch (e) {
     snippets = previousSnippets;
+    hasEverAddedSnippet = previousHasEverAddedSnippet;
     render();
     throw e;
   }
@@ -2361,7 +2404,10 @@ $("save").onclick = async () => {
   button.textContent = "Saving…";
   try {
     if (editingId) await api("PUT", `/api/vaults/${code}/snippets/${editingId}`, body);
-    else await api("POST", `/api/vaults/${code}/snippets`, body);
+    else {
+      await api("POST", `/api/vaults/${code}/snippets`, body);
+      hasEverAddedSnippet = true;
+    }
     closeModal(); await reload(); toast("Saved");
   } catch (e) { toast(e.message); }
   finally { button.disabled = false; button.textContent = "Save"; }
