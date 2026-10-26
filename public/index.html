@@ -588,6 +588,9 @@ try {
   .chat-qr-actions .btn { min-height: 36px; padding: 8px 12px; font-size: 12px; }
   .chat-sidebar .chat-qr-upload { position: relative; display: inline-flex; align-items: center; justify-content: center; min-height: 38px; margin: 8px 0; padding: 8px 12px; border: 1px solid var(--line); border-radius: 980px; color: var(--text); font-size: 13px; cursor: pointer; }
   .chat-qr-upload input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+  .chat-qr-camera { margin: 8px 0; }
+  .chat-qr-camera video { display: block; width: 100%; max-height: 260px; margin: 8px 0; border-radius: 12px; background: #111; object-fit: cover; }
+  .chat-qr-camera canvas { display: none; }
   .chat-trust-notice details { margin-left: auto; }
   .chat-trust-notice summary { padding: 5px 8px; border-radius: 9px; background: color-mix(in srgb, var(--bg) 70%, transparent); color: var(--text-2); cursor: pointer; white-space: nowrap; }
   .chat-trust-notice details[open] { position: relative; }
@@ -1542,7 +1545,8 @@ try {
               <p id="chatInviteExpiry">This private invite expires in 24 hours.</p>
               <div class="chat-qr-actions"><a id="chatDownloadInvite" class="btn small" download="clipvault-chat-invite.png">Download QR</a><button id="chatRefreshInvite" class="btn small" type="button">New QR</button></div>
             </div>
-            <p class="chat-code-help">Share your QR, or upload a friend’s QR image to send them a chat request. Your vault code stays private.</p>
+            <p class="chat-code-help">Share your QR, or scan a friend’s QR with your camera or upload its image. Your vault code stays private.</p>
+            <div class="chat-qr-camera"><button id="chatStartCamera" class="btn small" type="button">Scan with camera</button><div id="chatCameraPanel" class="hidden"><video id="chatQrVideo" playsinline muted aria-label="Camera view for scanning a chat QR"></video><canvas id="chatQrCanvas"></canvas><button id="chatStopCamera" class="btn small" type="button">Stop camera</button></div></div>
             <label class="chat-qr-upload">Upload QR image<input id="chatQrUpload" type="file" accept="image/*"></label>
             <p id="chatScannedInvite" class="chat-code-help hidden">Invitation QR ready. Send a request to continue.</p>
             <form id="chatStartForm">

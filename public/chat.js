@@ -14,6 +14,8 @@
   let polling = false;
   let statusTimer = 0;
   let joiningChat = false;
+  let qrCameraStream = null;
+  let qrCameraFrame = 0;
   let knownIncomingRequestIds = null;
 
   function setStatus(message, isError = false) {
@@ -484,6 +486,60 @@
     }
   }
 
+  function stopInviteCamera() {
+    if (qrCameraFrame) cancelAnimationFrame(qrCameraFrame);
+    qrCameraFrame = 0;
+    qrCameraStream?.getTracks().forEach((track) => track.stop());
+    qrCameraStream = null;
+    $("chatQrVideo").srcObject = null;
+    $("chatCameraPanel").classList.add("hidden");
+    $("chatStartCamera").disabled = false;
+  }
+
+  async function scanInviteWithCamera() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      $("chatStartStatus").textContent = "Camera scanning needs a secure connection. Use HTTPS or upload a QR image.";
+      $("chatStartStatus").classList.add("error");
+      return;
+    }
+    $("chatStartCamera").disabled = true;
+    try {
+      qrCameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
+      const video = $("chatQrVideo");
+      video.srcObject = qrCameraStream;
+      $("chatCameraPanel").classList.remove("hidden");
+      await video.play();
+      const canvas = $("chatQrCanvas");
+      const context = canvas.getContext("2d", { willReadFrequently: true });
+      const scanFrame = () => {
+        if (!qrCameraStream) return;
+        if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && video.videoWidth) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+          const scanned = window.jsQR?.(pixels.data, pixels.width, pixels.height, { inversionAttempts: "attemptBoth" });
+          const token = scanned ? inviteTokenFromUrl(scanned.data) : "";
+          if (token) {
+            stopInviteCamera();
+            setInviteToken(token);
+            return;
+          }
+        }
+        qrCameraFrame = requestAnimationFrame(scanFrame);
+      };
+      $("chatStartStatus").textContent = "Point your camera at a friend’s ClipVault chat QR.";
+      $("chatStartStatus").classList.remove("error");
+      qrCameraFrame = requestAnimationFrame(scanFrame);
+    } catch (error) {
+      stopInviteCamera();
+      $("chatStartStatus").textContent = error.name === "NotAllowedError"
+        ? "Camera access was denied. Allow camera access or upload a QR image."
+        : "Could not start the camera. Upload a QR image instead.";
+      $("chatStartStatus").classList.add("error");
+    }
+  }
+
   async function startChat(event) {
     event.preventDefault();
     if (joiningChat) return;
@@ -674,6 +730,9 @@
   $("chatQrUpload").addEventListener("change", (event) => {
     void scanInviteImage(event.target.files?.[0]);
   });
+  $("chatStartCamera").addEventListener("click", scanInviteWithCamera);
+  $("chatStopCamera").addEventListener("click", stopInviteCamera);
+  window.addEventListener("pagehide", stopInviteCamera);
   $("chatStartForm").addEventListener("submit", startChat);
   const urlInvite = inviteTokenFromUrl(window.location.href);
   if (urlInvite) {

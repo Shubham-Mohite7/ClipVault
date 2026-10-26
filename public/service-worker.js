@@ -1,4 +1,4 @@
-const CACHE_NAME = "clipvault-shell-v31";
+const CACHE_NAME = "clipvault-shell-v32";
 const VAULT_CACHE_NAME = "clipvault-vault-data-v1";
 const MAX_OFFLINE_VAULT_RESPONSES = 24;
 const SHELL_URLS = [
