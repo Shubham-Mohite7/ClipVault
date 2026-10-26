@@ -581,8 +581,8 @@ try {
   .chat-workspace { display: grid; gap: 12px; animation: chat-appear 240ms cubic-bezier(.22, 1, .36, 1) both; }
   .chat-trust-notice { display: flex; align-items: center; gap: 7px; min-height: 30px; }
   .chat-trust-notice svg { width: 15px; height: 15px; flex: 0 0 auto; fill: none; stroke: #30a46c; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-  .chat-qr-panel { margin: 10px 0; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); text-align: center; }
-  .chat-qr-panel img { display: block; width: min(100%, 240px); aspect-ratio: 1; margin: 0 auto 8px; image-rendering: pixelated; }
+  .chat-qr-panel { margin: 0; padding: 10px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-2); text-align: center; }
+  .chat-qr-panel img { display: block; width: min(100%, 190px, 30vh); max-height: min(30vh, 190px); max-height: min(30dvh, 190px); aspect-ratio: 1; margin: 0 auto 8px; object-fit: contain; image-rendering: pixelated; }
   .chat-qr-panel p { color: var(--text-2); font-size: 12px; line-height: 1.45; }
   .chat-qr-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 9px; }
   .chat-qr-actions .btn { min-height: 36px; padding: 8px 12px; font-size: 12px; }
@@ -603,6 +603,9 @@ try {
   .chat-connect-card #chatStartForm.hidden { display: none; }
   .chat-connect-card #chatStartForm .btn { width: 100%; }
   .chat-connect-card #chatStartStatus:empty { display: none; }
+  .chat-contacts-card { margin-top: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); }
+  .chat-contacts-card h3 { margin: 0 0 8px !important; color: var(--text); font-size: 13px !important; font-weight: 600 !important; }
+  .chat-contacts-card .chat-list { margin: 0; }
   .chat-thread { background: var(--bg) !important; }
   .chat-thread-empty { min-height: 0; height: 100%; padding: 32px; align-content: center; gap: 12px; }
   .chat-empty-icon { width: 52px; height: 52px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 16px; background: var(--bg-2); color: var(--text-2); }
@@ -757,7 +760,7 @@ try {
     #app:has(#chatTab[aria-selected="true"]):has(.chat-columns.no-active-chat) #chatPanel { flex: 0 0 auto; min-height: 0; }
     #app:has(#chatTab[aria-selected="true"]):has(.chat-columns.no-active-chat) .chat-workspace { display: flex; flex: 0 0 auto; flex-direction: column; min-height: 0; gap: 12px; }
     #app:has(#chatTab[aria-selected="true"]) .chat-columns.no-active-chat { display: flex; flex: 0 0 auto; flex-direction: column; align-self: stretch; width: 100%; height: auto; gap: 18px; overflow: visible; border: 0; background: transparent; }
-    #app:has(#chatTab[aria-selected="true"]) .chat-columns.no-active-chat .chat-sidebar { flex: 0 0 auto; max-height: min(42vh, 340px); max-height: min(42dvh, 340px); overflow-y: auto; border: 1px solid var(--line); border-radius: 14px; }
+    #app:has(#chatTab[aria-selected="true"]) .chat-columns.no-active-chat .chat-sidebar { flex: 0 0 auto; max-height: none; overflow: visible; border: 1px solid var(--line); border-radius: 14px; }
     #app:has(#chatTab[aria-selected="true"]) .chat-columns.no-active-chat .chat-thread { display: flex; flex: 0 0 auto; height: auto; min-height: 0; overflow: visible; background: transparent; }
     #app:has(#chatTab[aria-selected="true"]) .chat-columns.no-active-chat .chat-thread-empty { min-height: 0; padding: 0 8px; }
     #app:has(#chatTab[aria-selected="true"]) .chat-columns.no-active-chat .chat-thread-empty > div { width: 100%; min-width: 0; }
@@ -1520,6 +1523,11 @@ try {
               <h3>Start a conversation</h3>
               <p>Share an invite or scan a friend’s QR. Your vault code stays private.</p>
               <button id="chatCreateInvite" class="btn small chat-create-invite" type="button">Show my chat QR</button>
+              <div id="chatInvitePanel" class="chat-qr-panel hidden">
+                <img id="chatInviteQr" alt="Your unique ClipVault chat invitation QR code">
+                <p id="chatInviteExpiry">This private invite expires in 24 hours.</p>
+                <div class="chat-qr-actions"><a id="chatDownloadInvite" class="btn small" download="clipvault-chat-invite.png">Download QR</a><button id="chatRefreshInvite" class="btn small" type="button">New QR</button></div>
+              </div>
               <div class="chat-connect-options">
                 <button id="chatStartCamera" class="btn small" type="button">Scan with camera</button>
                 <label class="chat-qr-upload">Upload image<input id="chatQrUpload" type="file" accept="image/*"></label>
@@ -1531,17 +1539,12 @@ try {
               </form>
               <p id="chatStartStatus" class="chat-inline-status" role="status" aria-live="polite"></p>
             </div>
-            <div id="chatInvitePanel" class="chat-qr-panel hidden">
-              <img id="chatInviteQr" alt="Your unique ClipVault chat invitation QR code">
-              <p id="chatInviteExpiry">This private invite expires in 24 hours.</p>
-              <div class="chat-qr-actions"><a id="chatDownloadInvite" class="btn small" download="clipvault-chat-invite.png">Download QR</a><button id="chatRefreshInvite" class="btn small" type="button">New QR</button></div>
-            </div>
-            <div id="chatRequestsSection">
-              <h3 style="margin-top:22px">Requests</h3>
+            <div id="chatRequestsSection" class="chat-contacts-card">
+              <h3>Requests</h3>
               <div id="chatRequests" class="chat-list"></div>
             </div>
-            <div id="chatConversationsSection">
-              <h3>Recent</h3>
+            <div id="chatConversationsSection" class="chat-contacts-card">
+              <h3>Recent contacts</h3>
               <div id="chatConversations" class="chat-list"></div>
             </div>
             <div id="chatSentRequestsSection" hidden aria-hidden="true"><div id="chatSentRequests"></div></div>
