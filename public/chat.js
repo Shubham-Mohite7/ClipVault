@@ -483,7 +483,7 @@
   function setInviteToken(token) {
     $("chatInviteToken").value = token;
     $("chatSendRequest").disabled = !token;
-    $("chatScannedInvite").classList.toggle("hidden", !token);
+    $("chatStartForm").classList.toggle("hidden", !token);
     if (token) {
       $("chatStartStatus").textContent = "QR scanned. Send a request to continue.";
       $("chatStartStatus").classList.remove("error");

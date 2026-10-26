@@ -591,6 +591,24 @@ try {
   .chat-qr-camera { margin: 8px 0; }
   .chat-qr-camera video { display: block; width: 100%; max-height: 260px; margin: 8px 0; border-radius: 12px; background: #111; object-fit: cover; }
   .chat-qr-camera canvas { display: none; }
+  .chat-connect-card { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); }
+  .chat-connect-card h3 { margin: 0 !important; color: var(--text); font-size: 15px !important; letter-spacing: -.02em; }
+  .chat-connect-card p { margin: -7px 0 0; color: var(--text-2); font-size: 12px; line-height: 1.45; }
+  .chat-connect-card .chat-create-invite { width: 100%; min-height: 42px; font-size: 13px; }
+  .chat-connect-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .chat-connect-options .btn, .chat-connect-options .chat-qr-upload { display: inline-flex; align-items: center; justify-content: center; width: 100%; min-height: 38px; margin: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-2); color: var(--text); font-size: 12px; }
+  .chat-connect-options .chat-qr-upload { position: relative; cursor: pointer; }
+  .chat-connect-options .chat-qr-upload input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+  .chat-connect-card #chatStartForm { display: grid; }
+  .chat-connect-card #chatStartForm.hidden { display: none; }
+  .chat-connect-card #chatStartForm .btn { width: 100%; }
+  .chat-connect-card #chatStartStatus:empty { display: none; }
+  .chat-thread { background: var(--bg) !important; }
+  .chat-thread-empty { min-height: 0; height: 100%; padding: 32px; align-content: center; gap: 12px; }
+  .chat-empty-icon { width: 52px; height: 52px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 16px; background: var(--bg-2); color: var(--text-2); }
+  .chat-empty-icon svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .chat-thread-empty .chat-empty-title { color: var(--text); font-size: 16px; font-weight: 600; letter-spacing: -.02em; }
+  .chat-thread-empty p { max-width: 300px; margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5; }
   .chat-trust-notice details { margin-left: auto; }
   .chat-trust-notice summary { padding: 5px 8px; border-radius: 9px; background: color-mix(in srgb, var(--bg) 70%, transparent); color: var(--text-2); cursor: pointer; white-space: nowrap; }
   .chat-trust-notice details[open] { position: relative; }
@@ -613,50 +631,7 @@ try {
   .chat-list-item small { color: var(--text-2); }
   .chat-list-empty { display: none; }
   .chat-thread-empty { min-height: 240px; display: grid; place-items: center; color: var(--text-2); text-align: center; }
-  .chat-empty-art { width: 48px; height: 48px; margin-bottom: 12px; display: grid; place-items: center; border-radius: 16px; background: color-mix(in srgb, var(--accent) 7%, var(--bg-2)); color: var(--text-2); }
-  .chat-empty-art svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
   .chat-empty-title { color: var(--text); font-size: 15px; font-weight: 550; }
-  .chat-process-animation { display: block; width: min(100%, 660px); margin: 0 auto 12px; }
-  .chat-process-animation svg { display: block; width: 100%; height: auto; max-height: min(46vh, 360px); }
-  .chat-process-animation .cp-phone { fill: var(--bg-2); stroke: var(--line); stroke-width: 2; }
-  .chat-process-animation .cp-screen { fill: var(--bg); stroke: var(--line); stroke-width: 1; }
-  .chat-process-animation .cp-text { fill: var(--text); font-family: inherit; }
-  .chat-process-animation .cp-muted { fill: var(--text-2); font-family: inherit; }
-  .chat-process-animation .cp-bubble { fill: color-mix(in srgb, var(--text) 8%, var(--bg)); }
-  .chat-process-animation .cp-bubble-blue, .chat-process-animation .cp-button { fill: #0a84ff; }
-  .chat-process-animation .cp-white { fill: #fff; font-family: inherit; }
-  .chat-process-animation .cp-line { stroke: var(--line); stroke-width: 1; }
-  .chat-process-animation .cp-slot { fill: var(--bg-2); stroke: var(--line); stroke-width: 1.5; }
-  .chat-process-animation .cp-lock { fill: none; stroke: #30a46c; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .chat-process-animation .cp-dots { fill: var(--text-2); }
-  .chat-process-animation .cp-step, .chat-process-animation .cp-scene, .chat-process-animation .cp-flight { opacity: 0; animation-duration: 14s; animation-iteration-count: infinite; animation-timing-function: ease-in-out; }
-  .chat-process-animation .cp-head-1 { animation-name: cp-head-1; }
-  .chat-process-animation .cp-head-2 { animation-name: cp-head-2; }
-  .chat-process-animation .cp-head-3 { animation-name: cp-head-3; }
-  .chat-process-animation .cp-scene-1 { animation-name: cp-scene-1; }
-  .chat-process-animation .cp-scene-2 { animation-name: cp-scene-2; }
-  .chat-process-animation .cp-scene-3 { animation-name: cp-scene-3; }
-  .chat-process-animation .cp-flight { animation-name: cp-flight; }
-  .chat-process-animation .cp-char { opacity: 0; animation: cp-char 14s ease-in-out infinite; }
-  .chat-process-animation .cp-char:nth-of-type(2) { animation-delay: .35s; }
-  .chat-process-animation .cp-char:nth-of-type(3) { animation-delay: .7s; }
-  .chat-process-animation .cp-char:nth-of-type(4) { animation-delay: 1.05s; }
-  .chat-process-animation .cp-char:nth-of-type(5) { animation-delay: 1.4s; }
-  .chat-process-animation .cp-char:nth-of-type(6) { animation-delay: 1.75s; }
-  .chat-process-animation .cp-guide { fill: none; stroke: var(--line); stroke-width: 2; stroke-dasharray: 2 9; stroke-linecap: round; }
-  @keyframes cp-head-1 { 0%, 27% { opacity: 1; } 31%, 100% { opacity: 0; } }
-  @keyframes cp-head-2 { 0%, 30% { opacity: 0; } 34%, 61% { opacity: 1; } 65%, 100% { opacity: 0; } }
-  @keyframes cp-head-3 { 0%, 64% { opacity: 0; } 68%, 94% { opacity: 1; } 98%, 100% { opacity: 0; } }
-  @keyframes cp-scene-1 { 0%, 3% { opacity: 0; transform: translateY(5px); } 8%, 30% { opacity: 1; transform: translateY(0); } 34%, 100% { opacity: 0; } }
-  @keyframes cp-scene-2 { 0%, 31% { opacity: 0; transform: translateY(5px); } 36%, 62% { opacity: 1; transform: translateY(0); } 66%, 100% { opacity: 0; } }
-  @keyframes cp-scene-3 { 0%, 65% { opacity: 0; transform: translateY(5px); } 70%, 94% { opacity: 1; transform: translateY(0); } 98%, 100% { opacity: 0; } }
-  @keyframes cp-char { 0%, 31% { opacity: 0; transform: translateY(4px); } 37%, 61% { opacity: 1; transform: translateY(0); } 66%, 100% { opacity: 0; } }
-  @keyframes cp-flight { 0%, 15% { opacity: 0; transform: translate(0, 0); } 18% { opacity: 1; } 39% { opacity: 1; transform: translate(188px, -28px); } 43%, 100% { opacity: 0; transform: translate(188px, -28px); } }
-  @media (prefers-reduced-motion: reduce) {
-    .chat-process-animation .cp-step, .chat-process-animation .cp-scene, .chat-process-animation .cp-flight, .chat-process-animation .cp-char { animation: none !important; }
-    .chat-process-animation .cp-head-1, .chat-process-animation .cp-head-2, .chat-process-animation .cp-scene-1, .chat-process-animation .cp-scene-2, .chat-process-animation .cp-flight { display: none; }
-    .chat-process-animation .cp-head-3, .chat-process-animation .cp-scene-3 { opacity: 1; }
-  }
   .chat-messages { display: flex; flex-direction: column; gap: 10px; min-height: 180px; max-height: 50vh; overflow-y: auto; padding: 14px 4px; }
   .chat-message { max-width: min(88%, 520px); padding: 10px 14px; border-radius: 17px; background: var(--bg); overflow-wrap: anywhere; white-space: pre-wrap; animation: chat-appear 180ms ease-out both; }
   .chat-message.mine { align-self: flex-end; background: var(--accent); color: var(--accent-text); }
@@ -750,8 +725,9 @@ try {
   #app:has(#chatTab[aria-selected="true"]) .chat-request-status[data-status="accepted"] { color: #248a55; background: color-mix(in srgb, #30a46c 10%, transparent); }
   #app:has(#chatTab[aria-selected="true"]) .chat-thread { display: flex; min-width: 0; min-height: 0; height: 100%; overflow: hidden; padding: 0; border: 0; border-radius: 0; background: var(--bg); }
   #app:has(#chatTab[aria-selected="true"]) .chat-thread-empty { flex: 1 1 auto; min-height: 0; }
-  #app:has(#chatTab[aria-selected="true"]) .chat-empty-art { display: none; }
-  #app:has(#chatTab[aria-selected="true"]) .chat-empty-title { color: var(--text-2); font-size: 13px; font-weight: 450; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-thread-empty > div { display: grid; justify-items: center; gap: 12px; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-empty-title { color: var(--text); font-size: 16px; font-weight: 600; letter-spacing: -.02em; }
+  #app:has(#chatTab[aria-selected="true"]) .chat-thread-empty p { max-width: 300px; margin: 0; color: var(--text-2); font-size: 13px; line-height: 1.5; }
   #app:has(#chatTab[aria-selected="true"]) #chatActiveThread { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; min-height: 0; height: 100%; padding: 14px 18px 12px; }
   #app:has(#chatTab[aria-selected="true"]) .chat-thread-head { min-height: 38px; flex: 0 0 auto; margin: 0; padding: 0 0 10px; border-bottom: 1px solid color-mix(in srgb, var(--line) 75%, transparent); }
   #app:has(#chatTab[aria-selected="true"]) .chat-thread-head h3 { flex: 1; margin: 0; font-size: 14px; font-weight: 600; }
@@ -789,17 +765,12 @@ try {
     #app:has(#chatTab[aria-selected="true"]) .chat-columns.has-active-chat .chat-thread { display: flex; min-height: 0; }
     #app:has(#chatTab[aria-selected="true"]) .chat-columns.has-active-chat .chat-back-button { display: inline-grid; place-items: center; }
     #app:has(#chatTab[aria-selected="true"]) .chat-sidebar { padding: 12px; border-right: 0; }
-    #app:has(#chatTab[aria-selected="true"]) .chat-process-animation svg { max-height: min(28vh, 190px); max-height: min(28dvh, 190px); }
     #app:has(#chatTab[aria-selected="true"]) #chatActiveThread { min-height: 0; padding: 12px 14px max(12px, env(safe-area-inset-bottom)); }
     #app:has(#chatTab[aria-selected="true"]) #chatMessages { min-height: 0; max-height: none; }
     #app:has(#chatTab[aria-selected="true"]) .chat-message { max-width: 84%; }
   }
   @media (max-width: 600px) {
     #app:has(#chatTab[aria-selected="true"]) { height: calc(100vh - 58px); height: calc(100dvh - 58px); }
-    #app:has(#chatTab[aria-selected="true"]) .chat-process-animation { width: min(100%, 560px); max-width: 100%; }
-    #app:has(#chatTab[aria-selected="true"]) .chat-process-animation svg { max-height: min(46vh, 300px); max-height: min(46dvh, 300px); }
-    #app:has(#chatTab[aria-selected="true"]) .chat-process-animation .cp-step { font-size: 34px; }
-    #app:has(#chatTab[aria-selected="true"]) .chat-process-animation .cp-process-subtitle { font-size: 18px; }
   }
   @media (max-width: 380px) {
     #app:has(#chatTab[aria-selected="true"]) .chat-sidebar form { grid-template-columns: minmax(0, 1fr) auto; gap: 5px; }
@@ -1545,21 +1516,26 @@ try {
         </div>
         <div id="chatColumns" class="chat-columns no-active-chat">
           <aside class="chat-sidebar">
-            <button id="chatCreateInvite" class="btn small" type="button">Show my chat QR</button>
+            <div class="chat-connect-card">
+              <h3>Start a conversation</h3>
+              <p>Share an invite or scan a friend’s QR. Your vault code stays private.</p>
+              <button id="chatCreateInvite" class="btn small chat-create-invite" type="button">Show my chat QR</button>
+              <div class="chat-connect-options">
+                <button id="chatStartCamera" class="btn small" type="button">Scan with camera</button>
+                <label class="chat-qr-upload">Upload image<input id="chatQrUpload" type="file" accept="image/*"></label>
+              </div>
+              <div id="chatCameraPanel" class="chat-qr-camera hidden"><video id="chatQrVideo" playsinline muted aria-label="Camera view for scanning a chat QR"></video><canvas id="chatQrCanvas"></canvas><button id="chatStopCamera" class="btn small" type="button">Stop camera</button></div>
+              <form id="chatStartForm" class="hidden">
+                <input id="chatInviteToken" type="hidden">
+                <button id="chatSendRequest" class="btn small" type="submit" disabled>Send chat request</button>
+              </form>
+              <p id="chatStartStatus" class="chat-inline-status" role="status" aria-live="polite"></p>
+            </div>
             <div id="chatInvitePanel" class="chat-qr-panel hidden">
               <img id="chatInviteQr" alt="Your unique ClipVault chat invitation QR code">
               <p id="chatInviteExpiry">This private invite expires in 24 hours.</p>
               <div class="chat-qr-actions"><a id="chatDownloadInvite" class="btn small" download="clipvault-chat-invite.png">Download QR</a><button id="chatRefreshInvite" class="btn small" type="button">New QR</button></div>
             </div>
-            <p class="chat-code-help">Share your QR, or scan a friend’s QR with your camera or upload its image. Your vault code stays private.</p>
-            <div class="chat-qr-camera"><button id="chatStartCamera" class="btn small" type="button">Scan with camera</button><div id="chatCameraPanel" class="hidden"><video id="chatQrVideo" playsinline muted aria-label="Camera view for scanning a chat QR"></video><canvas id="chatQrCanvas"></canvas><button id="chatStopCamera" class="btn small" type="button">Stop camera</button></div></div>
-            <label class="chat-qr-upload">Upload QR image<input id="chatQrUpload" type="file" accept="image/*"></label>
-            <p id="chatScannedInvite" class="chat-code-help hidden">Invitation QR ready. Send a request to continue.</p>
-            <form id="chatStartForm">
-              <input id="chatInviteToken" type="hidden">
-              <button id="chatSendRequest" class="btn small" type="submit" disabled>Send chat request</button>
-            </form>
-            <p id="chatStartStatus" class="chat-inline-status" role="status" aria-live="polite"></p>
             <div id="chatRequestsSection">
               <h3 style="margin-top:22px">Requests</h3>
               <div id="chatRequests" class="chat-list"></div>
@@ -1573,91 +1549,9 @@ try {
           <section class="chat-thread" aria-label="Conversation">
             <div id="chatThreadEmpty" class="chat-thread-empty">
               <div>
-                <div class="chat-process-animation">
-                    <svg viewBox="100 0 600 420" role="img" aria-label="Share a chat QR, scan a friend's QR, and start an end-to-end encrypted chat.">
-                    <g text-anchor="middle">
-                      <text class="cp-text cp-step cp-head-1" x="400" y="30" font-size="28" font-weight="600">Share a private chat QR</text>
-                      <text class="cp-muted cp-step cp-head-2" x="400" y="30" font-size="28" font-weight="600">Scan or upload their QR</text>
-                      <text class="cp-text cp-step cp-head-3" x="400" y="30" font-size="28" font-weight="600">Start chatting privately</text>
-                      <text class="cp-muted cp-process-subtitle" x="400" y="52" font-size="15">Three simple steps to connect</text>
-                    </g>
-                    <path class="cp-guide" d="M278 230 C 350 270, 440 190, 520 220" />
-                    <g transform="translate(105 72)">
-                      <rect class="cp-phone" width="190" height="292" rx="28" />
-                      <rect class="cp-screen" x="7" y="7" width="176" height="278" rx="22" />
-                      <rect x="66" y="13" width="58" height="13" rx="7" fill="var(--line)" />
-                      <circle cx="95" cy="56" r="15" fill="var(--bg-2)" stroke="var(--line)" />
-                      <text class="cp-muted" x="95" y="60" text-anchor="middle" font-size="11" font-weight="600">F</text>
-                      <text class="cp-muted" x="95" y="82" text-anchor="middle" font-size="11">Your friend</text>
-                      <line class="cp-line" x1="18" y1="96" x2="172" y2="96" />
-                      <g class="cp-scene cp-scene-1">
-                        <rect class="cp-bubble" x="16" y="112" width="136" height="34" rx="16" />
-                        <text class="cp-text" x="27" y="134" font-size="11">Can we chat privately?</text>
-                        <rect class="cp-bubble-blue" x="40" y="160" width="134" height="54" rx="20" />
-                        <text class="cp-white" x="107" y="180" text-anchor="middle" font-size="10">Scan my QR</text>
-                        <text class="cp-white" x="107" y="201" text-anchor="middle" font-size="16" font-weight="700" letter-spacing="1.5">QR</text>
-                      </g>
-                      <g class="cp-scene cp-scene-3">
-                        <rect class="cp-bubble" x="16" y="116" width="112" height="34" rx="16" />
-                        <text class="cp-text" x="28" y="138" font-size="11">Hey, it's me!</text>
-                        <rect class="cp-bubble-blue" x="74" y="162" width="100" height="34" rx="16" />
-                        <text class="cp-white" x="124" y="184" text-anchor="middle" font-size="11">Hi, friend!</text>
-                        <rect class="cp-bubble" x="16" y="208" width="66" height="28" rx="14" />
-                        <circle class="cp-dots" cx="37" cy="222" r="2.5" />
-                        <circle class="cp-dots" cx="49" cy="222" r="2.5" />
-                        <circle class="cp-dots" cx="61" cy="222" r="2.5" />
-                        <path class="cp-lock" d="M25 254v-5a5 5 0 0 1 10 0v5m-12 0h14v13H23z" />
-                        <text class="cp-muted" x="44" y="263" font-size="9">End-to-end encrypted</text>
-                      </g>
-                      <text class="cp-muted" x="95" y="274" text-anchor="middle" font-size="9">Friend</text>
-                    </g>
-                    <g transform="translate(505 72)">
-                      <rect class="cp-phone" width="190" height="292" rx="28" />
-                      <rect class="cp-screen" x="7" y="7" width="176" height="278" rx="22" />
-                      <rect x="66" y="13" width="58" height="13" rx="7" fill="var(--line)" />
-                      <g class="cp-scene cp-scene-2">
-                        <text class="cp-text" x="95" y="60" text-anchor="middle" font-size="14" font-weight="600">Scan QR</text>
-                        <text class="cp-muted" x="95" y="78" text-anchor="middle" font-size="10">to connect</text>
-                        <g transform="translate(54 94)">
-                          <rect class="cp-slot" width="82" height="82" rx="8" />
-                          <g fill="var(--text)">
-                            <path d="M9 9h21v21H9z M12 12v15h15V12z M15 15h9v9h-9z M51 9h21v21H51z M54 12v15h15V12z M57 15h9v9h-9z M9 51h21v21H9z M12 54v15h15V54z M15 57h9v9h-9z" fill-rule="evenodd" />
-                            <path d="M36 9h6v6h-6z M36 21h6v6h-6z M33 33h6v6h-6z M45 33h6v6h-6z M36 42h6v6h-6z M48 45h6v6h-6z M36 54h6v6h-6z M45 57h6v6h-6z M54 36h6v6h-6z M63 36h6v6h-6z M36 66h6v6h-6z M51 63h6v6h-6z M63 54h6v6h-6z M69 66h6v6h-6z" />
-                          </g>
-                          <path d="M12 12v15h15V12z M54 12v15h15V12z M12 54v15h15V54z" fill="var(--bg-2)" />
-                          <path d="M15 15h9v9h-9z M57 15h9v9h-9z M15 57h9v9h-9z" fill="var(--text)" />
-                        </g>
-                        <rect class="cp-button" x="35" y="151" width="120" height="34" rx="17" />
-                        <text class="cp-white" x="95" y="173" text-anchor="middle" font-size="12" font-weight="600">Start chat</text>
-                      </g>
-                      <g class="cp-scene cp-scene-3">
-                        <circle cx="95" cy="55" r="14" fill="var(--bg-2)" stroke="var(--line)" />
-                        <text class="cp-muted" x="95" y="59" text-anchor="middle" font-size="10" font-weight="600">F</text>
-                        <text class="cp-text" x="95" y="82" text-anchor="middle" font-size="11" font-weight="600">Your friend</text>
-                        <line class="cp-line" x1="18" y1="96" x2="172" y2="96" />
-                        <rect class="cp-bubble" x="16" y="112" width="112" height="34" rx="16" />
-                        <text class="cp-text" x="28" y="134" font-size="11">Hey, it's me!</text>
-                        <rect class="cp-bubble-blue" x="73" y="160" width="101" height="34" rx="16" />
-                        <text class="cp-white" x="123" y="182" text-anchor="middle" font-size="11">Hi, friend!</text>
-                        <path class="cp-lock" d="M25 222v-5a5 5 0 0 1 10 0v5m-12 0h14v13H23z" />
-                        <text class="cp-muted" x="44" y="231" font-size="9">Encrypted on your devices</text>
-                      </g>
-                      <text class="cp-muted" x="95" y="274" text-anchor="middle" font-size="9">You</text>
-                    </g>
-                    <g transform="translate(296 235)">
-                      <g class="cp-flight">
-                        <rect class="cp-bubble-blue" x="-48" y="-15" width="96" height="30" rx="15" />
-                        <text class="cp-white" x="0" y="5" text-anchor="middle" font-size="12" font-weight="700" letter-spacing="1">ABC-123</text>
-                      </g>
-                    </g>
-                    <g fill="var(--text-2)">
-                      <circle class="cp-step cp-head-1" cx="380" cy="398" r="3" />
-                      <circle class="cp-step cp-head-2" cx="400" cy="398" r="3" />
-                      <circle class="cp-step cp-head-3" cx="420" cy="398" r="3" />
-                    </g>
-                  </svg>
-                </div>
+                <div class="chat-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-9.5A7.5 7.5 0 0 1 10.5 4H12"/><path d="M14 5h7m-3.5-3.5v7"/></svg></div>
                 <span class="chat-empty-title">Your conversations, private.</span>
+                <p>Share your invite QR or scan a friend’s to start a private conversation.</p>
               </div>
             </div>
             <div id="chatActiveThread" class="hidden">
