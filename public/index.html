@@ -576,6 +576,17 @@ try {
   .upload-progress-detail { display: flex; justify-content: space-between; gap: 12px; color: var(--text-2); font-size: 12px; font-variant-numeric: tabular-nums; }
   .upload-progress-detail span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); gap: 14px; margin-top: 22px; }
+  .file-view-toolbar { display: flex; justify-content: flex-end; margin-top: 16px; }
+  .file-view-toggle { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-2); }
+  .file-view-toggle button { display: grid; place-items: center; width: 36px; height: 34px; padding: 0; border: 0; border-radius: 7px; color: var(--text-2); background: transparent; cursor: pointer; }
+  .file-view-toggle button[aria-pressed="true"] { color: var(--text); background: var(--bg); box-shadow: 0 1px 3px color-mix(in srgb, var(--text) 12%, transparent); }
+  .file-view-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .file-grid.list-view { grid-template-columns: 1fr; gap: 8px; }
+  .file-grid.list-view .file-card { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; }
+  .file-grid.list-view .file-preview { width: 64px; height: 64px; }
+  .file-grid.list-view .file-info { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 16px; padding: 10px 14px; }
+  .file-grid.list-view .file-size { margin-top: 0; }
+  .file-grid.list-view .file-actions { grid-column: 1 / -1; margin-top: 4px; }
   .file-card { min-width: 0; overflow: hidden; background: var(--bg-2); border-radius: var(--radius); transition: transform var(--motion), box-shadow var(--motion), background-color var(--motion); }
   .file-card[tabindex="0"] { cursor: pointer; }
   .file-card[tabindex="0"]:focus-visible { outline: 3px solid var(--text); outline-offset: 3px; }
@@ -1354,6 +1365,16 @@ try {
           </div>
         </div>
         <div id="uploadStatus" class="upload-status" aria-live="polite"></div>
+        <div class="file-view-toolbar" role="group" aria-label="File layout">
+          <div class="file-view-toggle">
+            <button id="gridViewButton" type="button" aria-label="Grid view" aria-pressed="true" title="Grid view">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>
+            </button>
+            <button id="listViewButton" type="button" aria-label="List view" aria-pressed="false" title="List view">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r=".7"/><circle cx="4.5" cy="12" r=".7"/><circle cx="4.5" cy="18" r=".7"/></svg>
+            </button>
+          </div>
+        </div>
         <div id="fileGrid" class="file-grid"></div>
       </div>
       <div id="driveProcessGuide" class="drive-process-guide hidden">
@@ -2018,8 +2039,20 @@ function formatFileSize(size) {
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+let driveFileView = localStorage.getItem("clipvault-file-view") === "list" ? "list" : "grid";
+function setDriveFileView(view) {
+  driveFileView = view === "list" ? "list" : "grid";
+  localStorage.setItem("clipvault-file-view", driveFileView);
+  const grid = $("fileGrid");
+  grid.classList.toggle("list-view", driveFileView === "list");
+  $("gridViewButton").setAttribute("aria-pressed", String(driveFileView === "grid"));
+  $("listViewButton").setAttribute("aria-pressed", String(driveFileView === "list"));
+}
+$("gridViewButton").onclick = () => setDriveFileView("grid");
+$("listViewButton").onclick = () => setDriveFileView("list");
 function renderDriveFiles(files) {
   const grid = $("fileGrid");
+  setDriveFileView(driveFileView);
   grid.replaceChildren();
   grid.removeAttribute("aria-busy");
   $("driveProcessGuide").classList.toggle("hidden", files.length > 0);
