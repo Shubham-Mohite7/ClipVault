@@ -591,7 +591,7 @@ try {
   .file-card[tabindex="0"] { cursor: pointer; }
   .file-card[tabindex="0"]:focus-visible { outline: 3px solid var(--text); outline-offset: 3px; }
   .file-preview { width: 100%; height: 160px; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--bg-2) 70%, var(--line)); object-fit: cover; }
-  canvas.file-preview.pdf-preview { object-fit: contain; }
+  .file-preview.pdf-preview { object-fit: contain; }
   .pdf-icon { color: var(--text-2); font-size: 28px; font-weight: 700; letter-spacing: .08em; }
   .file-info { padding: 14px; }
   .file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
@@ -2033,6 +2033,9 @@ async function loadDrivePanel() {
 function driveFileUrl(id, download = false) {
   return `/api/vaults/${encodeURIComponent(code)}/files/${encodeURIComponent(id)}/content${download ? "?download=1" : ""}`;
 }
+function driveFileThumbnailUrl(id) {
+  return `/api/vaults/${encodeURIComponent(code)}/files/${encodeURIComponent(id)}/thumbnail`;
+}
 
 function formatFileSize(size) {
   if (size < 1024) return `${size} B`;
@@ -2046,10 +2049,27 @@ const pdfThumbnailObserver = "IntersectionObserver" in window
     for (const entry of entries) {
       if (!entry.isIntersecting) continue;
       pdfThumbnailObserver.unobserve(entry.target);
-      void renderPdfThumbnail(entry.target.pdfFile, entry.target.pdfCanvas, entry.target);
+      loadPdfThumbnail(entry.target.pdfFile, entry.target);
     }
   }, { rootMargin: "200px" })
   : null;
+function loadPdfThumbnail(file, fallback) {
+  const image = document.createElement("img");
+  image.className = "file-preview pdf-preview";
+  image.alt = `First page of ${file.name}`;
+  image.decoding = "async";
+  image.onload = () => {
+    if (fallback.isConnected) fallback.replaceWith(image);
+  };
+  image.onerror = () => {
+    const canvas = document.createElement("canvas");
+    canvas.className = "file-preview pdf-preview";
+    canvas.setAttribute("role", "img");
+    canvas.setAttribute("aria-label", `First page of ${file.name}`);
+    void renderPdfThumbnail(file, canvas, fallback);
+  };
+  image.src = driveFileThumbnailUrl(file.id);
+}
 async function renderPdfThumbnail(file, canvas, fallback) {
   try {
     if (!pdfJsPromise) {
@@ -2127,15 +2147,10 @@ function renderDriveFiles(files) {
       const preview = document.createElement("div");
       preview.className = "file-preview pdf-icon";
       preview.textContent = "PDF";
-      const canvas = document.createElement("canvas");
-      canvas.className = "file-preview pdf-preview";
-      canvas.setAttribute("role", "img");
-      canvas.setAttribute("aria-label", `First page of ${file.name}`);
       preview.pdfFile = file;
-      preview.pdfCanvas = canvas;
       card.append(preview);
       if (pdfThumbnailObserver) pdfThumbnailObserver.observe(preview);
-      else void renderPdfThumbnail(file, canvas, preview);
+      else loadPdfThumbnail(file, preview);
     }
 
     const info = document.createElement("div");

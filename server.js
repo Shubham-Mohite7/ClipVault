@@ -1579,6 +1579,51 @@ app.get("/api/vaults/:code/files/:id/content", requireDriveBackend, fileContentL
   Readable.fromWeb(response.body).on("error", () => res.destroy()).pipe(res);
 }));
 
+app.get("/api/vaults/:code/files/:id/thumbnail", requireDriveBackend, fileContentLimit, requireVault, requireDriveConnection, asyncHandler(async (req, res) => {
+  if (!/^\d+$/.test(req.params.id)) return res.status(404).json({ error: "Not found" });
+  const file = await getDriveFile(req.params.code, req.params.id);
+  if (!file || file.mime !== "application/pdf") return res.status(404).json({ error: "Not found" });
+  const accessToken = await getDriveAccessToken(req.params.code, req.driveVault);
+  let metadataResponse;
+  try {
+    metadataResponse = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(file.drive_file_id)}?fields=thumbnailLink`,
+      { headers: driveAuthorizationHeader(accessToken) },
+    );
+  } catch {
+    throw googleError();
+  }
+  if (!metadataResponse.ok) throw googleError();
+  const metadata = await metadataResponse.json().catch(() => null);
+  if (typeof metadata?.thumbnailLink !== "string") return res.status(404).json({ error: "Thumbnail not available" });
+
+  let thumbnailUrl;
+  try {
+    thumbnailUrl = new URL(metadata.thumbnailLink);
+  } catch {
+    throw googleError();
+  }
+  if (thumbnailUrl.protocol !== "https:" || !thumbnailUrl.hostname.endsWith(".googleusercontent.com")) {
+    throw googleError();
+  }
+
+  let thumbnailResponse;
+  try {
+    thumbnailResponse = await fetch(thumbnailUrl, { headers: driveAuthorizationHeader(accessToken) });
+  } catch {
+    throw googleError();
+  }
+  if (!thumbnailResponse.ok || !thumbnailResponse.body) return res.status(404).json({ error: "Thumbnail not available" });
+  const contentType = thumbnailResponse.headers.get("content-type") || "image/jpeg";
+  if (!contentType.startsWith("image/")) return res.status(404).json({ error: "Thumbnail not available" });
+  res.set({
+    "Content-Type": contentType,
+    "X-Content-Type-Options": "nosniff",
+    "Cache-Control": "private, max-age=3600",
+  });
+  Readable.fromWeb(thumbnailResponse.body).on("error", () => res.destroy()).pipe(res);
+}));
+
 app.delete("/api/vaults/:code/files/:id", requireDriveBackend, lookupLimit, requireVault, requireDriveConnection, asyncHandler(async (req, res) => {
   if (!/^\d+$/.test(req.params.id)) return res.status(404).json({ error: "Not found" });
   const file = await getDriveFile(req.params.code, req.params.id);
