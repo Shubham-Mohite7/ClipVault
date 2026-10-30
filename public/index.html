@@ -591,6 +591,7 @@ try {
   .file-card[tabindex="0"] { cursor: pointer; }
   .file-card[tabindex="0"]:focus-visible { outline: 3px solid var(--text); outline-offset: 3px; }
   .file-preview { width: 100%; height: 160px; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--bg-2) 70%, var(--line)); object-fit: cover; }
+  canvas.file-preview.pdf-preview { object-fit: contain; }
   .pdf-icon { color: var(--text-2); font-size: 28px; font-weight: 700; letter-spacing: .08em; }
   .file-info { padding: 14px; }
   .file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
@@ -2039,6 +2040,41 @@ function formatFileSize(size) {
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+let pdfJsPromise;
+const pdfThumbnailObserver = "IntersectionObserver" in window
+  ? new IntersectionObserver((entries) => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      pdfThumbnailObserver.unobserve(entry.target);
+      void renderPdfThumbnail(entry.target.pdfFile, entry.target.pdfCanvas, entry.target);
+    }
+  }, { rootMargin: "200px" })
+  : null;
+async function renderPdfThumbnail(file, canvas, fallback) {
+  try {
+    if (!pdfJsPromise) {
+      pdfJsPromise = import("/vendor/pdfjs/pdf.min.mjs").then((pdfjs) => {
+        pdfjs.GlobalWorkerOptions.workerSrc = "/vendor/pdfjs/pdf.worker.min.mjs";
+        return pdfjs;
+      });
+    }
+    const pdfjs = await pdfJsPromise;
+    const pdf = await pdfjs.getDocument({ url: driveFileUrl(file.id), useSystemFonts: true }).promise;
+    const page = await pdf.getPage(1);
+    const baseViewport = page.getViewport({ scale: 1 });
+    const scale = Math.min(320 / baseViewport.width, 200 / baseViewport.height);
+    const viewport = page.getViewport({ scale });
+    const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.ceil(viewport.width * outputScale);
+    canvas.height = Math.ceil(viewport.height * outputScale);
+    await page.render({ canvasContext: canvas.getContext("2d"), viewport, transform: outputScale === 1 ? null : [outputScale, 0, 0, outputScale, 0, 0] }).promise;
+    fallback.replaceWith(canvas);
+    await pdf.destroy();
+  } catch {
+    canvas.remove();
+  }
+}
+
 let driveFileView = localStorage.getItem("clipvault-file-view") === "list" ? "list" : "grid";
 function setDriveFileView(view) {
   driveFileView = view === "list" ? "list" : "grid";
@@ -2091,7 +2127,15 @@ function renderDriveFiles(files) {
       const preview = document.createElement("div");
       preview.className = "file-preview pdf-icon";
       preview.textContent = "PDF";
+      const canvas = document.createElement("canvas");
+      canvas.className = "file-preview pdf-preview";
+      canvas.setAttribute("role", "img");
+      canvas.setAttribute("aria-label", `First page of ${file.name}`);
+      preview.pdfFile = file;
+      preview.pdfCanvas = canvas;
       card.append(preview);
+      if (pdfThumbnailObserver) pdfThumbnailObserver.observe(preview);
+      else void renderPdfThumbnail(file, canvas, preview);
     }
 
     const info = document.createElement("div");
