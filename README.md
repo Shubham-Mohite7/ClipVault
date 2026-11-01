@@ -11,7 +11,7 @@
   &nbsp;·&nbsp;
   <a href="#how-it-works">How it works</a>
   &nbsp;·&nbsp;
-  <a href="#private-from-end-to-end">Private chat</a>
+  <a href="#private-from-end-to-end">Private chat</a> 
   &nbsp;·&nbsp;
   <a href="#getting-started">Get started</a>
 </p>
